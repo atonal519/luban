@@ -248,8 +248,7 @@ export function Board({ items, stageFilter = "" }: { items: Item[]; stageFilter?
             {filteredItems.map((item: Item) => (
               <tr
                 key={item.id}
-                onClick={() => openDrawer(item)}
-                className={`cursor-pointer group ${selectedId === item.id ? "bg-blue-500/5" : ""}`}
+                className={`group ${selectedId === item.id ? "bg-blue-500/5" : ""}`}
               >
                 {/* 版本号 - editable text */}
                 <td className="px-3 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors sticky left-0 z-[3]">
@@ -346,7 +345,7 @@ export function Board({ items, stageFilter = "" }: { items: Item[]; stageFilter?
                     </td>
                   );
                 })}
-                <td className="px-3 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
+                <td className="px-3 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors cursor-pointer" onClick={() => openDrawer(item)}>
                   {(() => {
                     const os = overallStatus(item);
                     return (

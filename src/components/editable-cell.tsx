@@ -37,6 +37,7 @@ export function EditableCell({
 
   function startEdit(e: React.MouseEvent) {
     e.stopPropagation();
+    e.preventDefault();
     setEditValue(value);
     setEditing(true);
   }
@@ -65,9 +66,9 @@ export function EditableCell({
   if (!editing) {
     return (
       <div
-        onDoubleClick={startEdit}
-        className="cursor-default min-h-[20px] rounded px-1 -mx-1 hover:bg-[var(--bg-3)] transition-colors"
-        title="双击编辑"
+        onClick={startEdit}
+        className="cursor-pointer min-h-[20px] rounded px-1 -mx-1 hover:bg-[var(--bg-3)] transition-colors"
+        title="点击编辑"
       >
         {displayNode || <span className="text-[12px]">{value || "—"}</span>}
       </div>
