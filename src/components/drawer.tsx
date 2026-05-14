@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 type Item = any;
 
@@ -166,8 +167,138 @@ function SubNodeList({ children, stageCode }: { children: Item[]; stageCode: str
   );
 }
 
+function EditableTextArea({ value, placeholder, onSave }: { value: string; placeholder: string; onSave: (v: string) => void }) {
+  const [editing, setEditing] = useState(false);
+  const [text, setText] = useState(value);
+
+  useEffect(() => { setText(value); }, [value]);
+
+  if (!editing) {
+    return (
+      <div onClick={() => { setText(value); setEditing(true); }} className="cursor-pointer group/eta">
+        {value ? (
+          <div className="text-[12px] text-[var(--txt-1)] leading-relaxed whitespace-pre-wrap">{value}</div>
+        ) : (
+          <div className="text-[12px] text-[var(--txt-3)]">{placeholder}</div>
+        )}
+        <span className="text-[10px] text-[var(--txt-3)] opacity-0 group-hover/eta:opacity-100 transition-opacity">✎ 点击编辑</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <textarea
+        autoFocus
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        className="w-full px-3 py-2 rounded-lg border border-[var(--accent)] bg-[var(--bg-2)] text-[12px] text-[var(--txt-0)] outline-none resize-none min-h-[80px] leading-relaxed"
+        placeholder={placeholder}
+      />
+      <div className="flex gap-1.5 justify-end">
+        <button onClick={() => setEditing(false)} className="px-3 py-1 rounded text-[11px] text-[var(--txt-1)] border border-[var(--line-2)] hover:bg-[var(--bg-3)]">取消</button>
+        <button onClick={() => { onSave(text); setEditing(false); }} className="px-3 py-1 rounded text-[11px] text-white bg-[var(--accent)] hover:opacity-85">保存</button>
+      </div>
+    </div>
+  );
+}
+
+function MokraField({ label, color, value, field, placeholder, onSave }: { label: string; color: string; value: string; field: string; placeholder: string; onSave: (field: string, value: unknown) => void }) {
+  const [editing, setEditing] = useState(false);
+  const [text, setText] = useState(value);
+
+  useEffect(() => { setText(value); }, [value]);
+
+  const tagCls = `text-[10px] font-mono text-${color}-500 bg-${color}-500/8 px-1.5 py-0.5 rounded flex-shrink-0`;
+
+  if (!editing) {
+    return (
+      <div className="flex items-start gap-2 cursor-pointer group/mokra" onClick={() => { setText(value); setEditing(true); }}>
+        <span className={tagCls}>{label}</span>
+        <span className="text-[12px] text-[var(--txt-1)] flex-1">{value || <span className="text-[var(--txt-3)]">{placeholder}</span>}</span>
+        <span className="text-[10px] text-[var(--txt-3)] opacity-0 group-hover/mokra:opacity-100 transition-opacity mt-0.5">✎</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-start gap-2">
+      <span className={tagCls}>{label}</span>
+      <div className="flex-1 flex flex-col gap-1">
+        <textarea
+          autoFocus
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          className="w-full px-2 py-1.5 rounded border border-[var(--accent)] bg-[var(--bg-2)] text-[12px] text-[var(--txt-0)] outline-none resize-none min-h-[48px] leading-relaxed"
+          placeholder={placeholder}
+        />
+        <div className="flex gap-1.5 justify-end">
+          <button onClick={() => setEditing(false)} className="px-2 py-0.5 rounded text-[10px] text-[var(--txt-1)] border border-[var(--line-2)]">取消</button>
+          <button onClick={() => { onSave(field, text); setEditing(false); }} className="px-2 py-0.5 rounded text-[10px] text-white bg-[var(--accent)]">保存</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DrawerModuleSelect({ currentModules, allModules, onSave }: { currentModules: any[]; allModules: any[]; onSave: (ids: string[]) => Promise<void> }) {
+  const [selected, setSelected] = useState<string[]>(currentModules.map((m: any) => m.module.id));
+  useEffect(() => { setSelected(currentModules.map((m: any) => m.module.id)); }, [currentModules]);
+
+  function toggle(id: string) {
+    const next = selected.includes(id) ? selected.filter(m => m !== id) : [...selected, id];
+    setSelected(next);
+    onSave(next);
+  }
+
+  return (
+    <div>
+      <div className="text-[11px] text-[var(--txt-2)]">研发模块</div>
+      <div className="flex gap-1.5 flex-wrap mt-1">
+        {allModules.map((m: any) => (
+          <button
+            key={m.id}
+            type="button"
+            onClick={() => toggle(m.id)}
+            className={`px-2 py-0.5 rounded text-[11px] font-medium border transition-colors ${
+              selected.includes(m.id) ? "border-current" : "border-transparent opacity-40 hover:opacity-70"
+            }`}
+            style={{ color: m.color, background: selected.includes(m.id) ? m.color + "18" : "transparent" }}
+          >
+            {m.name}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function Drawer({ item, initialStage, onClose }: { item: Item; initialStage: number; onClose: () => void }) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState(initialStage);
+  const [options, setOptions] = useState<any>(null);
+
+  useEffect(() => {
+    fetch("/api/options").then(r => r.json()).then(setOptions);
+  }, []);
+
+  async function save(field: string, value: unknown) {
+    await fetch(`/api/versions/${item.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ [field]: value }),
+    });
+    router.refresh();
+  }
+
+  async function saveModules(moduleIds: string[]) {
+    await fetch(`/api/versions/${item.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ moduleIds }),
+    });
+    router.refresh();
+  }
 
   return (
     <>
@@ -194,41 +325,65 @@ export function Drawer({ item, initialStage, onClose }: { item: Item; initialSta
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto">
-          {/* Info Grid — 3 cols × 2 rows */}
+          {/* Info Grid — 3 cols × 2 rows, editable */}
           <div className="px-5 py-4 border-b border-[var(--line)]">
             <div className="text-[11px] text-[var(--txt-2)] tracking-wider uppercase font-mono mb-3">基本信息</div>
             <div className="grid grid-cols-3 gap-x-4 gap-y-2.5">
-              <div><div className="text-[11px] text-[var(--txt-2)]">创建日期</div><div className="text-[12px] font-mono mt-0.5">{item.createdAt?.slice(0, 10) || "—"}</div></div>
-              <div><div className="text-[11px] text-[var(--txt-2)]">预计交付</div><div className="text-[12px] font-mono mt-0.5">{item.plannedEnd?.slice(0, 10) || "—"}</div></div>
-              <div><div className="text-[11px] text-[var(--txt-2)]">计划起止</div><div className="text-[12px] font-mono mt-0.5 text-[var(--txt-3)]">待填写</div></div>
-              <div><div className="text-[11px] text-[var(--txt-2)]">责任人</div><div className="text-[13px] font-medium mt-0.5">{item.owner?.name || "—"}</div></div>
-              <div><div className="text-[11px] text-[var(--txt-2)]">研发模块</div><div className="text-[13px] font-medium mt-0.5 flex gap-1 flex-wrap">{item.modules?.map((im: any) => (
-                <span key={im.id} className="px-2 py-0.5 rounded text-[11px]" style={{ background: im.module.color + "18", color: im.module.color }}>{im.module.name}</span>
-              )) || "—"}</div></div>
+              <div>
+                <div className="text-[11px] text-[var(--txt-2)]">创建日期</div>
+                <div className="text-[12px] font-mono mt-0.5">{item.createdAt?.slice(0, 10) || "—"}</div>
+              </div>
+              <div>
+                <div className="text-[11px] text-[var(--txt-2)]">预计交付</div>
+                <input
+                  type="date"
+                  defaultValue={item.plannedEnd?.slice(0, 10) || ""}
+                  onBlur={(e) => save("plannedEnd", e.target.value || null)}
+                  className="text-[12px] font-mono mt-0.5 bg-transparent border-b border-transparent hover:border-[var(--line-2)] focus:border-[var(--accent)] outline-none w-full transition-colors"
+                />
+              </div>
+              <div>
+                <div className="text-[11px] text-[var(--txt-2)]">计划起止</div>
+                <div className="text-[12px] font-mono mt-0.5 text-[var(--txt-3)]">待填写</div>
+              </div>
+              <div>
+                <div className="text-[11px] text-[var(--txt-2)]">责任人</div>
+                <select
+                  defaultValue={item.ownerId || ""}
+                  onChange={(e) => save("ownerId", e.target.value || null)}
+                  className="text-[13px] font-medium mt-0.5 bg-transparent border-b border-transparent hover:border-[var(--line-2)] focus:border-[var(--accent)] outline-none w-full transition-colors cursor-pointer"
+                >
+                  <option value="">—</option>
+                  {options?.users?.map((u: any) => (
+                    <option key={u.id} value={u.id}>{u.name}</option>
+                  ))}
+                </select>
+              </div>
+              <DrawerModuleSelect
+                currentModules={item.modules || []}
+                allModules={options?.modules || []}
+                onSave={saveModules}
+              />
               <div />
             </div>
           </div>
 
-          {/* 规格 */}
+          {/* 规格 — editable */}
           <div className="px-5 py-4 border-b border-[var(--line)]">
             <div className="text-[11px] text-[var(--txt-2)] tracking-wider uppercase font-mono mb-3">规格</div>
-            <div className="text-[12px] text-[var(--txt-1)] leading-relaxed whitespace-pre-wrap">
-              {item.description || <span className="text-[var(--txt-3)]">暂无规格描述</span>}
-            </div>
+            <EditableTextArea value={item.description || ""} placeholder="点击添加规格描述…" onSave={(v) => save("description", v)} />
           </div>
 
-          {/* MOKRA */}
-          {(item.mokraMotivation || item.mokraObjects || item.mokraKeyResults || item.mokraActions) && (
-            <div className="px-5 py-4 border-b border-[var(--line)]">
-              <div className="text-[11px] text-[var(--txt-2)] tracking-wider uppercase font-mono mb-3">MOKRA</div>
-              <div className="flex flex-col gap-2">
-                {item.mokraMotivation && <div><span className="text-[10px] font-mono text-blue-500 bg-blue-500/8 px-1.5 py-0.5 rounded mr-2">M</span><span className="text-[12px] text-[var(--txt-1)]">{item.mokraMotivation}</span></div>}
-                {item.mokraObjects && <div><span className="text-[10px] font-mono text-emerald-500 bg-emerald-500/8 px-1.5 py-0.5 rounded mr-2">O</span><span className="text-[12px] text-[var(--txt-1)]">{item.mokraObjects}</span></div>}
-                {item.mokraKeyResults && <div><span className="text-[10px] font-mono text-amber-500 bg-amber-500/8 px-1.5 py-0.5 rounded mr-2">KR</span><span className="text-[12px] text-[var(--txt-1)]">{item.mokraKeyResults}</span></div>}
-                {item.mokraActions && <div><span className="text-[10px] font-mono text-purple-500 bg-purple-500/8 px-1.5 py-0.5 rounded mr-2">A</span><span className="text-[12px] text-[var(--txt-1)]">{item.mokraActions}</span></div>}
-              </div>
+          {/* MOKRA — editable */}
+          <div className="px-5 py-4 border-b border-[var(--line)]">
+            <div className="text-[11px] text-[var(--txt-2)] tracking-wider uppercase font-mono mb-3">MOKRA</div>
+            <div className="flex flex-col gap-2.5">
+              <MokraField label="M" color="blue" value={item.mokraMotivation || ""} field="mokraMotivation" onSave={save} placeholder="背景动机…" />
+              <MokraField label="O" color="emerald" value={item.mokraObjects || ""} field="mokraObjects" onSave={save} placeholder="目标…" />
+              <MokraField label="KR" color="amber" value={item.mokraKeyResults || ""} field="mokraKeyResults" onSave={save} placeholder="关键结果…" />
+              <MokraField label="A" color="purple" value={item.mokraActions || ""} field="mokraActions" onSave={save} placeholder="行动项…" />
             </div>
-          )}
+          </div>
 
           {/* Stage tabs */}
           <div className="border-b border-[var(--line)]">
