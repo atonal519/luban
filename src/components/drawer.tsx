@@ -337,7 +337,6 @@ function DrawerPersonSelect({ currentOwners, allUsers, onSave }: { currentOwners
         ) : (
           <span className="text-[12px] text-[var(--txt-3)]">—</span>
         )}
-        <span className="text-[10px] text-[var(--txt-3)] ml-1">✎</span>
       </div>
       {open && (
         <div className="absolute z-50 mt-1 bg-[var(--bg-1)] border border-[var(--line-2)] rounded-lg shadow-lg w-[160px] p-1.5">
@@ -410,7 +409,6 @@ function DrawerModuleSelect({ currentModules, allModules, onSave }: { currentMod
         ) : (
           <span className="text-[13px] text-[var(--txt-3)]">—</span>
         )}
-        <span className="text-[10px] text-[var(--txt-3)] ml-1">✎</span>
       </div>
       {open && (
         <div className="absolute z-50 mt-1 bg-[var(--bg-1)] border border-[var(--line-2)] rounded-lg shadow-lg w-[180px] p-1.5">
@@ -652,9 +650,9 @@ export function Drawer({ item, initialStage, onClose }: { item: Item; initialSta
               />
               <div>
                 <div className="text-[11px] text-[var(--txt-2)] mb-1">回溯历史</div>
-                <div className="text-[12px] font-mono bg-[var(--bg-2)] border border-[var(--line-2)] rounded-md px-2 py-0.5 leading-[22px] text-[var(--txt-1)]">
+                <div className="text-[12px] font-mono leading-[22px]">
                   {(item.rejections?.length || 0) > 0
-                    ? <span className="text-[var(--late)]">打回 {item.rejections.length} 次</span>
+                    ? <span className="text-[var(--late)] font-medium">打回 {item.rejections.length} 次</span>
                     : <span className="text-[var(--txt-3)]">0 次</span>
                   }
                 </div>
