@@ -561,6 +561,8 @@ export function Drawer({ item, initialStage, onClose }: { item: Item; initialSta
   const router = useRouter();
   const [activeTab, setActiveTab] = useState(initialStage);
   const [options, setOptions] = useState<any>(null);
+  const [logContent, setLogContent] = useState("");
+  const [logSubmitting, setLogSubmitting] = useState(false);
 
   useEffect(() => {
     fetch("/api/options").then(r => r.json()).then(setOptions);
@@ -581,6 +583,19 @@ export function Drawer({ item, initialStage, onClose }: { item: Item; initialSta
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ moduleIds }),
     });
+    router.refresh();
+  }
+
+  async function submitLog() {
+    if (!logContent.trim() || logSubmitting) return;
+    setLogSubmitting(true);
+    await fetch(`/api/versions/${item.id}/logs`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: logContent.trim(), authorId: item.ownerId || "" }),
+    });
+    setLogContent("");
+    setLogSubmitting(false);
     router.refresh();
   }
 
@@ -730,12 +745,19 @@ export function Drawer({ item, initialStage, onClose }: { item: Item; initialSta
         {/* Log input */}
         <div className="px-5 py-3 border-t border-[var(--line)] flex gap-2 items-end flex-shrink-0">
           <textarea
-            id="logInput"
-            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); document.getElementById("logSubmitBtn")?.click(); } }}
+            value={logContent}
+            onChange={(e) => setLogContent(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submitLog(); } }}
             className="flex-1 bg-[var(--bg-2)] border border-[var(--line-2)] rounded-lg px-3 py-2 text-[12px] text-[var(--txt-0)] outline-none resize-none min-h-[40px] focus:border-[var(--accent)] transition-colors placeholder:text-[var(--txt-3)]"
             placeholder="记录今日进展… (Enter 提交, Shift+Enter 换行)"
           />
-          <button id="logSubmitBtn" className="px-3.5 rounded-lg bg-[var(--accent)] text-white text-[12px] font-medium h-[40px] hover:opacity-85 transition-opacity">提交</button>
+          <button
+            onClick={submitLog}
+            disabled={logSubmitting || !logContent.trim()}
+            className="px-3.5 rounded-lg bg-[var(--accent)] text-white text-[12px] font-medium h-[40px] hover:opacity-85 transition-opacity disabled:opacity-50"
+          >
+            {logSubmitting ? "…" : "提交"}
+          </button>
         </div>
       </div>
 
