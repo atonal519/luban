@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Drawer } from "./drawer";
 import { CreateModal } from "./create-modal";
 import { EditableCell } from "./editable-cell";
+import { ModuleCell } from "./module-cell";
 
 type Item = any;
 
@@ -142,6 +143,15 @@ export function Board({ items, stageFilter = "" }: { items: Item[]; stageFilter?
     router.refresh();
   }
 
+  async function saveModules(itemId: string, moduleIds: string[]) {
+    await fetch(`/api/versions/${itemId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ moduleIds }),
+    });
+    router.refresh();
+  }
+
   // Stage filter: only show versions that have children in the selected stage
   const filteredItems = stageFilter
     ? items.filter((item: Item) => {
@@ -271,16 +281,14 @@ export function Board({ items, stageFilter = "" }: { items: Item[]; stageFilter?
                     displayNode={<span className="text-[13px] font-medium max-w-[200px] block leading-tight" title={item.title} style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{item.title}</span>}
                   />
                 </td>
-                {/* 研发模块 - display only (多选太复杂，走抽屉改) */}
+                {/* 研发模块 - multi-select popover */}
                 <td className="px-3 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
-                  <div className="flex gap-1 flex-wrap">
-                    {item.modules?.map((im: any) => (
-                      <span key={im.id} className="px-2 py-0.5 rounded text-[11px] font-medium" style={{ background: im.module.color + "18", color: im.module.color }}>
-                        {im.module.name}
-                      </span>
-                    ))}
-                    {(!item.modules || item.modules.length === 0) && <span className="text-[var(--txt-3)] text-[11px]">—</span>}
-                  </div>
+                  <ModuleCell
+                    itemId={item.id}
+                    currentModules={item.modules || []}
+                    allModules={options?.modules || []}
+                    onSave={saveModules}
+                  />
                 </td>
                 {/* 类型 - editable select */}
                 <td className="px-3 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
