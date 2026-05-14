@@ -266,12 +266,13 @@ function SubNodeList({ children, stageCode, options, onChanged, parentId }: { ch
             value={flowStatus}
             onChange={(e) => changeFlowStatus(e.target.value)}
             onClick={(e) => e.stopPropagation()}
-            className={`text-[10px] font-medium px-1.5 py-0.5 rounded-md border-0 outline-none cursor-pointer appearance-none ${
-              flowStatus === "passed" ? "bg-emerald-500/12 text-emerald-600"
-              : flowStatus === "rejected" ? "bg-red-500/12 text-red-600"
-              : flowStatus === "active" ? "bg-blue-500/12 text-blue-600"
-              : "bg-[var(--bg-3)] text-[var(--txt-2)]"
+            className={`text-[10px] font-medium pl-1.5 pr-4 py-0.5 rounded-md border outline-none cursor-pointer ${
+              flowStatus === "passed" ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+              : flowStatus === "rejected" ? "bg-red-500/10 text-red-600 border-red-500/20"
+              : flowStatus === "active" ? "bg-blue-500/10 text-blue-600 border-blue-500/20"
+              : "bg-[var(--bg-3)] text-[var(--txt-2)] border-[var(--line-2)]"
             }`}
+            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Cpath d='M1.5 3L4 5.5 6.5 3' stroke='%237e8da8' stroke-width='1.2' fill='none'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 4px center' }}
           >
             <option value="idle">未开始</option>
             <option value="active">进行中</option>
