@@ -57,11 +57,16 @@ export function ModuleCell({
         className="flex gap-1 flex-wrap items-center cursor-pointer group/mod"
       >
         {currentModules.length > 0 ? (
-          currentModules.map((im) => (
-            <span key={im.module.id} className="px-2 py-0.5 rounded text-[11px] font-medium" style={{ background: im.module.color + "18", color: im.module.color }}>
-              {im.module.name}
-            </span>
-          ))
+          <>
+            {currentModules.slice(0, 2).map((im) => (
+              <span key={im.module.id} className="px-2 py-0.5 rounded text-[11px] font-medium" style={{ background: im.module.color + "18", color: im.module.color }}>
+                {im.module.name}
+              </span>
+            ))}
+            {currentModules.length > 2 && (
+              <span className="text-[10px] text-[var(--txt-2)]">+{currentModules.length - 2}</span>
+            )}
+          </>
         ) : (
           <span className="text-[var(--txt-3)] text-[11px]">—</span>
         )}
