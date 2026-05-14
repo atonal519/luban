@@ -248,7 +248,8 @@ export function Board({ items, stageFilter = "" }: { items: Item[]; stageFilter?
             {filteredItems.map((item: Item) => (
               <tr
                 key={item.id}
-                className={`group ${selectedId === item.id ? "bg-blue-500/5" : ""}`}
+                onClick={() => openDrawer(item)}
+                className={`cursor-pointer group ${selectedId === item.id ? "bg-blue-500/5" : ""}`}
               >
                 {/* 版本号 - editable text */}
                 <td className="px-3 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors sticky left-0 z-[3]">
@@ -267,7 +268,7 @@ export function Board({ items, stageFilter = "" }: { items: Item[]; stageFilter?
                     itemId={item.id}
                     field="title"
                     onSave={saveField}
-                    displayNode={<span className="text-[13px] font-medium max-w-[160px] truncate block">{item.title}</span>}
+                    displayNode={<span className="text-[13px] font-medium max-w-[200px] block leading-tight" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{item.title}</span>}
                   />
                 </td>
                 {/* 研发模块 - display only (多选太复杂，走抽屉改) */}

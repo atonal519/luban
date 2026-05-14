@@ -180,7 +180,7 @@ export function Drawer({ item, initialStage, onClose }: { item: Item; initialSta
         <div className="px-5 py-4 border-b border-[var(--line)] flex items-start gap-3 flex-shrink-0">
           <div className="flex-1 min-w-0">
             <div className="font-mono text-[18px] font-semibold">{item.versionNo}</div>
-            <div className="text-[13px] text-[var(--txt-1)] mt-0.5">{item.title}</div>
+            <div className="text-[13px] text-[var(--txt-1)] mt-0.5 break-words">{item.title}</div>
           </div>
           {item.status && (
             <span className="px-2 py-1 rounded text-[11px] font-medium" style={{ background: item.status.color + "18", color: item.status.color }}>
