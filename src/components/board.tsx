@@ -1,0 +1,222 @@
+"use client";
+
+import { useState } from "react";
+import { Drawer } from "./drawer";
+
+type Item = any;
+
+const STAGE_GROUPS = [
+  { code: "REQUIREMENT", label: "需求入口" },
+  { code: "GENERATION", label: "版本生成" },
+  { code: "DEVELOPMENT", label: "版本开发" },
+  { code: "TEST", label: "版本测试" },
+  { code: "DELIVERY", label: "版本交付" },
+];
+
+const STAGE_GROUP_MAP: Record<string, string> = {
+  PENDING_SCHEDULE: "REQUIREMENT", SPEC: "REQUIREMENT", DESIGN: "REQUIREMENT",
+  TMG: "GENERATION",
+  DEVELOPING: "DEVELOPMENT", SELF_TEST: "DEVELOPMENT", REJECTED: "DEVELOPMENT",
+  SUBMIT_TEST: "TEST", HIL: "TEST", SIL: "TEST", INTEGRATION: "TEST",
+  REAL_CAR: "TEST", PRE_TEST: "TEST", PRE_PRODUCTION: "TEST",
+  PENDING_RELEASE: "DELIVERY", DELIVERED: "DELIVERY", ABORTED: "DELIVERY",
+};
+
+function priorityTag(p: string) {
+  const cls = p === "HIGH" ? "bg-red-500/8 text-red-600" : p === "MID" ? "bg-amber-500/8 text-amber-600" : "bg-slate-500/8 text-slate-500";
+  const label = p === "HIGH" ? "高" : p === "MID" ? "中" : "低";
+  return <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-medium ${cls}`}>
+    <span className="w-[5px] h-[5px] rounded-full bg-current" />{label}
+  </span>;
+}
+
+function stageStatus(item: Item, stageCode: string) {
+  const children = (item.children || []) as Item[];
+  const stageChildren = children.filter((c: Item) => {
+    if (c.stageType === stageCode) return true;
+    if (c.status?.code && STAGE_GROUP_MAP[c.status.code] === stageCode) return true;
+    return false;
+  });
+
+  if (stageChildren.length === 0) {
+    // Check if the item itself is at or past this stage
+    const itemStageGroup = item.status?.code ? STAGE_GROUP_MAP[item.status.code] : item.stageType;
+    const itemIdx = STAGE_GROUPS.findIndex(g => g.code === itemStageGroup);
+    const stageIdx = STAGE_GROUPS.findIndex(g => g.code === stageCode);
+    if (stageIdx < itemIdx) return { label: "完成", cls: "text-emerald-600 bg-emerald-500/8", progress: "—", sub: "" };
+    if (stageIdx === itemIdx) return { label: item.status?.label || "进行中", cls: "text-blue-600 bg-blue-500/8", progress: "", sub: "" };
+    return { label: "未开始", cls: "text-slate-400 bg-transparent", progress: "", sub: "" };
+  }
+
+  const done = stageChildren.filter((c: Item) => c.progress >= 100 || c.status?.code === "DELIVERED").length;
+  const hasLate = stageChildren.some((c: Item) => c.approval?.state === "REJECTED");
+  const hasActive = stageChildren.some((c: Item) => c.progress > 0 && c.progress < 100);
+  const activeChild = stageChildren.find((c: Item) => c.progress > 0 && c.progress < 100);
+  const hasParallel = stageChildren.some((c: Item) => c.isParallel);
+
+  if (done === stageChildren.length) {
+    return { label: "完成", cls: "text-emerald-600 bg-emerald-500/8", progress: `${done}/${stageChildren.length}`, sub: "" };
+  }
+  if (hasLate) {
+    return { label: "驳回", cls: "text-red-600 bg-red-500/8", progress: `${done}/${stageChildren.length}`, sub: activeChild?.title || "", hasParallel };
+  }
+  if (hasActive) {
+    return { label: "进行中", cls: "text-blue-600 bg-blue-500/8", progress: `${done}/${stageChildren.length}`, sub: activeChild?.title || "", hasParallel };
+  }
+  return { label: "未开始", cls: "text-slate-400 bg-transparent", progress: `${done}/${stageChildren.length}`, sub: "" };
+}
+
+function AlertBar({ items }: { items: Item[] }) {
+  const alerts = items.flatMap((item: Item) =>
+    (item.alerts || []).map((a: any) => ({ ...a, item }))
+  );
+  if (alerts.length === 0) return null;
+
+  return (
+    <div className="flex items-center gap-2.5 px-5 py-2 bg-red-500/7 border-b border-red-500/15 text-[12px] text-red-700">
+      <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse flex-shrink-0" />
+      <div className="flex gap-4 flex-wrap">
+        {alerts.map((a: any) => (
+          <div key={a.id} className="flex items-center gap-1.5">
+            <span className="px-1.5 py-0.5 rounded text-[11px] font-mono font-medium bg-red-500/15 text-red-600">
+              {a.level === "LATE" ? "延期" : "风险"}
+            </span>
+            {a.item.versionNo} {a.item.title} · {a.message}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function Board({ items }: { items: Item[] }) {
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [drawerStage, setDrawerStage] = useState(0);
+  const selectedItem = items.find((i: Item) => i.id === selectedId);
+
+  function openDrawer(item: Item, stageIdx?: number) {
+    setSelectedId(item.id);
+    setDrawerStage(stageIdx ?? 0);
+  }
+
+  return (
+    <>
+      {/* Topbar */}
+      <div className="h-[52px] min-h-[52px] flex items-center px-5 border-b border-[var(--line)] bg-[var(--bg-1)] gap-3">
+        <span className="text-[15px] font-semibold">版本看板</span>
+        <span className="font-mono text-[11px] text-[var(--txt-2)] bg-[var(--bg-3)] px-2 py-0.5 rounded">
+          {items.length} 个版本
+        </span>
+        <div className="ml-auto flex items-center gap-1.5">
+          {["研发模块", "当前阶段", "交付时间线", "状态"].map(label => (
+            <button key={label} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-[var(--line-2)] bg-[var(--bg-1)] text-[var(--txt-1)] text-[12px] hover:border-[var(--accent)] hover:text-[var(--txt-0)] transition-colors">
+              {label}
+            </button>
+          ))}
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-[var(--line-2)] bg-[var(--bg-1)] text-[12px] w-[160px]">
+            <span className="text-[var(--txt-3)]">🔍</span>
+            <input type="text" placeholder="搜索版本 / 项目名" className="bg-transparent outline-none text-[12px] text-[var(--txt-0)] w-full placeholder:text-[var(--txt-3)]" />
+          </div>
+          <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[var(--accent)] text-white text-[12px] font-medium hover:opacity-85 transition-opacity">
+            + 新建版本
+          </button>
+        </div>
+      </div>
+
+      <AlertBar items={items} />
+
+      {/* Table */}
+      <div className="flex-1 overflow-auto px-5 py-4">
+        <table className="w-full min-w-[1240px] border-separate border-spacing-0 text-[12px]">
+          <thead>
+            <tr>
+              {["版本号", "项目名称", "研发模块", "责任人", "优先级"].map(h => (
+                <th key={h} className="px-3 py-2 text-left text-[11px] text-[var(--txt-2)] font-medium bg-[var(--bg-1)] border-b border-[var(--line-2)] sticky top-0 z-10 whitespace-nowrap">
+                  {h}
+                </th>
+              ))}
+              {STAGE_GROUPS.map(g => (
+                <th key={g.code} className="px-3 py-2 text-left text-[10px] text-[var(--txt-2)] font-medium bg-[var(--bg-1)] border-b border-[var(--line-2)] sticky top-0 z-10 font-mono tracking-wider uppercase whitespace-nowrap">
+                  {g.label}
+                </th>
+              ))}
+              <th className="px-3 py-2 text-left text-[11px] text-[var(--txt-2)] font-medium bg-[var(--bg-1)] border-b border-[var(--line-2)] sticky top-0 z-10">状态</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((item: Item) => (
+              <tr
+                key={item.id}
+                onClick={() => openDrawer(item)}
+                className={`cursor-pointer group ${selectedId === item.id ? "bg-blue-500/5" : ""}`}
+              >
+                <td className="px-3 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors sticky left-0 z-[3]">
+                  <span className="font-mono text-[12px] font-semibold">{item.versionNo}</span>
+                </td>
+                <td className="px-3 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
+                  <span className="text-[13px] font-medium max-w-[160px] truncate block">{item.title}</span>
+                </td>
+                <td className="px-3 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
+                  <div className="flex gap-1 flex-wrap">
+                    {item.modules?.map((im: any) => (
+                      <span key={im.id} className="px-2 py-0.5 rounded text-[11px] font-medium" style={{ background: im.module.color + "18", color: im.module.color }}>
+                        {im.module.name}
+                      </span>
+                    ))}
+                  </div>
+                </td>
+                <td className="px-3 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-[22px] h-[22px] rounded-full bg-gradient-to-br from-[#3b6ff0] to-[#7c3aed] flex items-center justify-center text-white text-[10px] font-semibold flex-shrink-0">
+                      {item.owner?.name?.[0] || "?"}
+                    </div>
+                    <span>{item.owner?.name || "—"}</span>
+                  </div>
+                </td>
+                <td className="px-3 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
+                  {priorityTag(item.priority)}
+                </td>
+                {STAGE_GROUPS.map((g, gi) => {
+                  const st = stageStatus(item, g.code);
+                  return (
+                    <td
+                      key={g.code}
+                      className="px-2 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors min-w-[130px]"
+                      onClick={(e) => { e.stopPropagation(); openDrawer(item, gi); }}
+                    >
+                      <div className={`flex flex-col gap-0.5 px-2 py-1.5 rounded-md ${st.cls}`}>
+                        <div className="flex items-center gap-1">
+                          <span className="w-[5px] h-[5px] rounded-full bg-current flex-shrink-0" />
+                          <span className="text-[11px] font-medium">{st.label}</span>
+                          {st.progress && <span className="font-mono text-[9px] text-[var(--txt-2)] bg-[var(--bg-3)] px-1 rounded ml-auto">{st.progress}</span>}
+                        </div>
+                        {st.sub && <span className="text-[10px] font-mono text-[var(--txt-2)] truncate">{st.sub}</span>}
+                        {st.hasParallel && <span className="text-[10px] text-blue-500">⇉ 并行</span>}
+                      </div>
+                    </td>
+                  );
+                })}
+                <td className="px-3 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
+                  {item.status && (
+                    <span className="px-2 py-1 rounded text-[11px] font-medium" style={{ background: item.status.color + "18", color: item.status.color }}>
+                      {item.status.label}
+                    </span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Drawer */}
+      {selectedItem && (
+        <Drawer
+          item={selectedItem}
+          initialStage={drawerStage}
+          onClose={() => setSelectedId(null)}
+        />
+      )}
+    </>
+  );
+}
