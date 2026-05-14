@@ -6,6 +6,7 @@ import { Drawer } from "./drawer";
 import { CreateModal } from "./create-modal";
 import { EditableCell } from "./editable-cell";
 import { ModuleCell } from "./module-cell";
+import { StagePopover } from "./stage-popover";
 
 type Item = any;
 
@@ -340,17 +341,24 @@ export function Board({ items, stageFilter = "" }: { items: Item[]; stageFilter?
                     <td
                       key={g.code}
                       className="px-2 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors"
-                      onClick={(e) => { e.stopPropagation(); openDrawer(item, gi); }}
                     >
-                      <div className={`flex flex-col gap-0.5 px-2 py-1.5 rounded-md ${st.cls}`}>
-                        <div className="flex items-center gap-1">
-                          <span className="w-[5px] h-[5px] rounded-full bg-current flex-shrink-0" />
-                          <span className="text-[11px] font-medium">{st.label}</span>
-                          {st.progress && <span className="font-mono text-[9px] text-[var(--txt-2)] bg-[var(--bg-3)] px-1 rounded ml-auto">{st.progress}</span>}
-                        </div>
-                        {st.sub && <span className="text-[10px] font-mono text-[var(--txt-2)] truncate">{st.sub}</span>}
-                        {st.hasParallel && <span className="text-[10px] text-blue-500">⇉ 并行</span>}
-                      </div>
+                      <StagePopover
+                        itemId={item.id}
+                        stageCode={g.code}
+                        children={item.children || []}
+                        onChanged={() => router.refresh()}
+                        triggerNode={
+                          <div className={`flex flex-col gap-0.5 px-2 py-1.5 rounded-md ${st.cls}`}>
+                            <div className="flex items-center gap-1">
+                              <span className="w-[5px] h-[5px] rounded-full bg-current flex-shrink-0" />
+                              <span className="text-[11px] font-medium">{st.label}</span>
+                              {st.progress && <span className="font-mono text-[9px] text-[var(--txt-2)] bg-[var(--bg-3)] px-1 rounded ml-auto">{st.progress}</span>}
+                            </div>
+                            {st.sub && <span className="text-[10px] font-mono text-[var(--txt-2)] truncate">{st.sub}</span>}
+                            {st.hasParallel && <span className="text-[10px] text-blue-500">⇉ 并行</span>}
+                          </div>
+                        }
+                      />
                     </td>
                   );
                 })}
