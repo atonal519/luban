@@ -54,23 +54,23 @@ export function ModuleCell({
     <div ref={ref} className="relative">
       <div
         onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
-        className="flex gap-1 flex-wrap items-center cursor-pointer group/mod"
+        className="flex gap-1 items-center cursor-pointer group/mod overflow-hidden"
       >
         {currentModules.length > 0 ? (
           <>
             {currentModules.slice(0, 2).map((im) => (
-              <span key={im.module.id} className="px-2 py-0.5 rounded text-[11px] font-medium" style={{ background: im.module.color + "18", color: im.module.color }}>
+              <span key={im.module.id} className="px-2 py-0.5 rounded text-[11px] font-medium whitespace-nowrap flex-shrink-0" style={{ background: im.module.color + "18", color: im.module.color }}>
                 {im.module.name}
               </span>
             ))}
             {currentModules.length > 2 && (
-              <span className="text-[10px] text-[var(--txt-2)]">+{currentModules.length - 2}</span>
+              <span className="text-[10px] text-[var(--txt-2)] flex-shrink-0">+{currentModules.length - 2}</span>
             )}
           </>
         ) : (
           <span className="text-[var(--txt-3)] text-[11px]">—</span>
         )}
-        <span className="text-[10px] text-[var(--txt-3)] opacity-0 group-hover/mod:opacity-100 transition-opacity">✎</span>
+        <span className="text-[10px] text-[var(--txt-3)] opacity-0 group-hover/mod:opacity-100 transition-opacity flex-shrink-0">✎</span>
       </div>
 
       {open && (
