@@ -224,13 +224,26 @@ function SubNodeList({ children, stageCode, options, onChanged, parentId }: { ch
     const [editingTitle, setEditingTitle] = useState(false);
     const [titleVal, setTitleVal] = useState(node.title);
 
-    const statusIcon = node.progress >= 100 ? "✓" : node.progress > 0 ? "●" : "○";
-    const statusColor = node.progress >= 100 ? "text-emerald-500" : node.progress > 0 ? "text-blue-500" : "text-[var(--txt-3)]";
+    // Node flow status: 0=未开始, 50=进行中, 100=通过, -1=打回
+    const flowStatus = node.progress === 100 ? "passed" : node.progress < 0 ? "rejected" : node.progress > 0 ? "active" : "idle";
+    const statusIcon = flowStatus === "passed" ? "✓" : flowStatus === "rejected" ? "!" : flowStatus === "active" ? "●" : "○";
+    const statusColor = flowStatus === "passed" ? "text-emerald-500" : flowStatus === "rejected" ? "text-red-500" : flowStatus === "active" ? "text-blue-500" : "text-[var(--txt-3)]";
+
     const apBadge = node.approval?.state === "WAITING_SUBMIT" ? { label: "待提交凭证", cls: "bg-amber-500/8 text-amber-600" }
       : node.approval?.state === "SUBMITTED" ? { label: "待PM审核", cls: "bg-blue-500/8 text-blue-600" }
       : node.approval?.state === "REJECTED" ? { label: "已驳回", cls: "bg-red-500/8 text-red-600" }
       : node.approval?.state === "APPROVED" ? { label: "已通过", cls: "bg-emerald-500/8 text-emerald-600" }
       : null;
+
+    async function changeFlowStatus(val: string) {
+      const progress = val === "passed" ? 100 : val === "rejected" ? -1 : val === "active" ? 50 : 0;
+      await fetch(`/api/versions/${parentId}/children/${node.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ progress }),
+      });
+      onChanged();
+    }
 
     return (
       <div>
@@ -248,9 +261,23 @@ function SubNodeList({ children, stageCode, options, onChanged, parentId }: { ch
           ) : (
             <span className="text-[13px] text-[var(--txt-0)] flex-1 cursor-pointer" onClick={(e) => { e.stopPropagation(); setTitleVal(node.title); setEditingTitle(true); }}>{node.title}</span>
           )}
-          <span className="text-[11px] text-[var(--txt-2)]">
-            {node.progress >= 100 ? "完成" : node.progress > 0 ? `${node.progress}%` : "未开始"}
-          </span>
+          {/* Flow status dropdown */}
+          <select
+            value={flowStatus}
+            onChange={(e) => changeFlowStatus(e.target.value)}
+            onClick={(e) => e.stopPropagation()}
+            className={`text-[10px] font-medium px-1.5 py-0.5 rounded-md border-0 outline-none cursor-pointer appearance-none ${
+              flowStatus === "passed" ? "bg-emerald-500/12 text-emerald-600"
+              : flowStatus === "rejected" ? "bg-red-500/12 text-red-600"
+              : flowStatus === "active" ? "bg-blue-500/12 text-blue-600"
+              : "bg-[var(--bg-3)] text-[var(--txt-2)]"
+            }`}
+          >
+            <option value="idle">未开始</option>
+            <option value="active">进行中</option>
+            <option value="passed">通过</option>
+            <option value="rejected">打回</option>
+          </select>
           {apBadge && (
             <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-medium ${apBadge.cls}`}>{apBadge.label}</span>
           )}
