@@ -238,21 +238,7 @@ export function Board({ items, stageFilter = "" }: { items: Item[]; stageFilter?
       {/* Table */}
       <div className="flex-1 overflow-auto px-5 py-4">
         <table className="w-full border-separate border-spacing-0 text-[12px] table-fixed" style={{ minWidth: '1400px' }}>
-          <colgroup>
-            <col style={{ width: '90px' }} />   {/* 版本号 */}
-            <col style={{ width: '200px' }} />  {/* 项目名称 */}
-            <col style={{ width: '120px' }} />  {/* 研发模块 */}
-            <col style={{ width: '80px' }} />   {/* 类型 */}
-            <col style={{ width: '80px' }} />   {/* 责任人 */}
-            <col style={{ width: '60px' }} />   {/* 优先级 */}
-            <col style={{ width: '130px' }} />  {/* 需求入口 */}
-            <col style={{ width: '130px' }} />  {/* 版本生成 */}
-            <col style={{ width: '130px' }} />  {/* 版本开发 */}
-            <col style={{ width: '130px' }} />  {/* 版本测试 */}
-            <col style={{ width: '130px' }} />  {/* 版本交付 */}
-            <col style={{ width: '80px' }} />   {/* 整体状态 */}
-            <col style={{ width: '50px' }} />   {/* 操作 */}
-          </colgroup>
+          <colgroup><col style={{ width: '90px' }} /><col style={{ width: '200px' }} /><col style={{ width: '120px' }} /><col style={{ width: '80px' }} /><col style={{ width: '80px' }} /><col style={{ width: '60px' }} /><col style={{ width: '130px' }} /><col style={{ width: '130px' }} /><col style={{ width: '130px' }} /><col style={{ width: '130px' }} /><col style={{ width: '130px' }} /><col style={{ width: '80px' }} /><col style={{ width: '50px' }} /></colgroup>
           <thead>
             <tr>
               {["版本号", "项目名称", "研发模块", "类型", "责任人", "优先级"].map(h => (
