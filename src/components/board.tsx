@@ -30,6 +30,27 @@ function priorityTag(p: string) {
   </span>;
 }
 
+function overallStatus(item: Item): { label: string; cls: string } {
+  // 完成：进度100或状态为DELIVERED
+  if (item.progress >= 100 || item.status?.code === "DELIVERED") {
+    return { label: "完成", cls: "bg-blue-500/12 text-blue-600" };
+  }
+  // 延期：有子节点被驳回，或有告警为LATE
+  const hasLate = (item.children || []).some((c: Item) => c.approval?.state === "REJECTED");
+  const hasLateAlert = (item.alerts || []).some((a: any) => a.level === "LATE");
+  if (hasLate || hasLateAlert) {
+    return { label: "延期", cls: "bg-red-500/12 text-red-600" };
+  }
+  // 风险：有告警为RISK，或有子节点有审核卡着
+  const hasRisk = (item.alerts || []).some((a: any) => a.level === "RISK");
+  const hasWaiting = (item.children || []).some((c: Item) => c.approval?.state === "WAITING_SUBMIT");
+  if (hasRisk || hasWaiting) {
+    return { label: "风险", cls: "bg-amber-500/12 text-amber-600" };
+  }
+  // 正常
+  return { label: "正常", cls: "bg-emerald-500/12 text-emerald-600" };
+}
+
 function stageStatus(item: Item, stageCode: string) {
   const children = (item.children || []) as Item[];
   const stageChildren = children.filter((c: Item) => {
@@ -262,11 +283,15 @@ export function Board({ items, stageFilter = "" }: { items: Item[]; stageFilter?
                   );
                 })}
                 <td className="px-3 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
-                  {item.status && (
-                    <span className="px-2 py-1 rounded text-[11px] font-medium" style={{ background: item.status.color + "18", color: item.status.color }}>
-                      {item.status.label}
-                    </span>
-                  )}
+                  {(() => {
+                    const os = overallStatus(item);
+                    return (
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium ${os.cls}`}>
+                        <span className="w-[6px] h-[6px] rounded-full bg-current" />
+                        {os.label}
+                      </span>
+                    );
+                  })()}
                 </td>
                 <td className="px-3 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
                   <button

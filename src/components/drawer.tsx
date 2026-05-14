@@ -194,13 +194,17 @@ export function Drawer({ item, initialStage, onClose }: { item: Item; initialSta
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto">
-          {/* Info Grid — only fields not already in table */}
+          {/* Info Grid — 3 cols × 2 rows */}
           <div className="px-5 py-4 border-b border-[var(--line)]">
             <div className="text-[11px] text-[var(--txt-2)] tracking-wider uppercase font-mono mb-3">基本信息</div>
-            <div className="grid grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-3 gap-x-4 gap-y-2.5">
               <div><div className="text-[11px] text-[var(--txt-2)]">创建日期</div><div className="text-[12px] font-mono mt-0.5">{item.createdAt?.slice(0, 10) || "—"}</div></div>
               <div><div className="text-[11px] text-[var(--txt-2)]">预计交付</div><div className="text-[12px] font-mono mt-0.5">{item.plannedEnd?.slice(0, 10) || "—"}</div></div>
               <div><div className="text-[11px] text-[var(--txt-2)]">计划起止</div><div className="text-[12px] font-mono mt-0.5 text-[var(--txt-3)]">待填写</div></div>
+              <div><div className="text-[11px] text-[var(--txt-2)]">责任人</div><div className="text-[13px] font-medium mt-0.5">{item.owner?.name || "—"}</div></div>
+              <div><div className="text-[11px] text-[var(--txt-2)]">研发模块</div><div className="text-[13px] font-medium mt-0.5 flex gap-1 flex-wrap">{item.modules?.map((im: any) => (
+                <span key={im.id} className="px-2 py-0.5 rounded text-[11px]" style={{ background: im.module.color + "18", color: im.module.color }}>{im.module.name}</span>
+              )) || "—"}</div></div>
               <div />
             </div>
           </div>
