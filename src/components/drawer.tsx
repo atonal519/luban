@@ -194,23 +194,22 @@ export function Drawer({ item, initialStage, onClose }: { item: Item; initialSta
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto">
-          {/* Info Grid */}
+          {/* Info Grid — only fields not already in table */}
           <div className="px-5 py-4 border-b border-[var(--line)]">
             <div className="text-[11px] text-[var(--txt-2)] tracking-wider uppercase font-mono mb-3">基本信息</div>
             <div className="grid grid-cols-2 gap-2.5">
-              <div><div className="text-[11px] text-[var(--txt-2)]">研发模块</div><div className="text-[13px] font-medium mt-0.5 flex gap-1">{item.modules?.map((im: any) => (
-                <span key={im.id} className="px-2 py-0.5 rounded text-[11px]" style={{ background: im.module.color + "18", color: im.module.color }}>{im.module.name}</span>
-              ))}</div></div>
-              <div><div className="text-[11px] text-[var(--txt-2)]">责任人</div><div className="text-[13px] font-medium mt-0.5 flex items-center gap-1.5">
-                <div className="w-5 h-5 rounded-full bg-gradient-to-br from-[#3b6ff0] to-[#7c3aed] flex items-center justify-center text-white text-[9px] font-semibold">{item.owner?.name?.[0]}</div>
-                {item.owner?.name}
-              </div></div>
-              <div><div className="text-[11px] text-[var(--txt-2)]">优先级</div><div className="mt-0.5">{
-                item.priority === "HIGH" ? <span className="text-[11px] text-red-600">高</span>
-                : item.priority === "MID" ? <span className="text-[11px] text-amber-600">中</span>
-                : <span className="text-[11px] text-slate-500">低</span>
-              }</div></div>
+              <div><div className="text-[11px] text-[var(--txt-2)]">版本号</div><div className="text-[13px] font-mono font-semibold mt-0.5">{item.versionNo || "—"}</div></div>
               <div><div className="text-[11px] text-[var(--txt-2)]">预计交付</div><div className="text-[12px] font-mono mt-0.5">{item.plannedEnd?.slice(0, 10) || "—"}</div></div>
+              <div><div className="text-[11px] text-[var(--txt-2)]">计划起止</div><div className="text-[12px] font-mono mt-0.5">{item.plannedStart?.slice(0, 10) || "—"} ~ {item.plannedEnd?.slice(0, 10) || "—"}</div></div>
+              <div><div className="text-[11px] text-[var(--txt-2)]">进度</div><div className="text-[13px] font-medium mt-0.5">{item.progress}%</div></div>
+            </div>
+          </div>
+
+          {/* 规格 */}
+          <div className="px-5 py-4 border-b border-[var(--line)]">
+            <div className="text-[11px] text-[var(--txt-2)] tracking-wider uppercase font-mono mb-3">规格</div>
+            <div className="text-[12px] text-[var(--txt-1)] leading-relaxed whitespace-pre-wrap">
+              {item.description || <span className="text-[var(--txt-3)]">暂无规格描述</span>}
             </div>
           </div>
 

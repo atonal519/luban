@@ -134,28 +134,51 @@ export function Board({ items, stageFilter = "" }: { items: Item[]; stageFilter?
 
   return (
     <>
-      {/* Topbar */}
+      {/* Topbar: 左=标题  中=快速新建  右=看板筛选+搜索 */}
       <div className="h-[52px] min-h-[52px] flex items-center px-5 border-b border-[var(--line)] bg-[var(--bg-1)] gap-3">
-        {/* Quick create */}
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] w-[320px] focus-within:border-[var(--accent)] transition-colors">
-          <span className="text-[var(--accent)] text-[14px] font-bold flex-shrink-0">+</span>
-          <input
-            type="text"
-            value={quickInput}
-            onChange={(e) => setQuickInput(e.target.value)}
-            onKeyDown={handleQuickCreate}
-            placeholder="输入项目名，回车快速新建版本…"
-            className="bg-transparent outline-none text-[13px] text-[var(--txt-0)] w-full placeholder:text-[var(--txt-3)]"
-          />
-        </div>
-
-        <span className="text-[15px] font-semibold">{boardTitle}</span>
-        <span className="font-mono text-[11px] text-[var(--txt-2)] bg-[var(--bg-3)] px-2 py-0.5 rounded">
+        {/* Left: title */}
+        <span className="text-[15px] font-semibold flex-shrink-0">{boardTitle}</span>
+        <span className="font-mono text-[11px] text-[var(--txt-2)] bg-[var(--bg-3)] px-2 py-0.5 rounded flex-shrink-0">
           {filteredItems.length} 个版本
         </span>
 
-        <div className="ml-auto flex items-center gap-1.5">
-          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-[var(--line-2)] bg-[var(--bg-1)] text-[12px] w-[180px]">
+        {/* Center: quick create */}
+        <div className="flex-1 flex justify-center">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] w-[360px] focus-within:border-[var(--accent)] transition-colors">
+            <span className="text-[var(--accent)] text-[14px] font-bold flex-shrink-0">+</span>
+            <input
+              type="text"
+              value={quickInput}
+              onChange={(e) => setQuickInput(e.target.value)}
+              onKeyDown={handleQuickCreate}
+              placeholder="输入项目名，回车快速新建版本…"
+              className="bg-transparent outline-none text-[13px] text-[var(--txt-0)] w-full placeholder:text-[var(--txt-3)]"
+            />
+          </div>
+        </div>
+
+        {/* Right: stage filter tabs + search */}
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          {[
+            { code: "", label: "全部" },
+            { code: "REQUIREMENT", label: "需求" },
+            { code: "DEVELOPMENT", label: "开发" },
+            { code: "TEST", label: "测试" },
+            { code: "DELIVERY", label: "交付" },
+          ].map(tab => (
+            <a
+              key={tab.code}
+              href={tab.code ? `/?stage=${tab.code}` : "/"}
+              className={`px-2.5 py-1.5 rounded-md text-[12px] transition-colors ${
+                stageFilter === tab.code
+                  ? "bg-[var(--accent)] text-white font-medium"
+                  : "border border-[var(--line-2)] bg-[var(--bg-1)] text-[var(--txt-1)] hover:border-[var(--accent)] hover:text-[var(--txt-0)]"
+              }`}
+            >
+              {tab.label}
+            </a>
+          ))}
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-[var(--line-2)] bg-[var(--bg-1)] text-[12px] w-[160px] ml-1">
             <span className="text-[var(--txt-3)]">🔍</span>
             <input type="text" placeholder="搜索版本 / 项目名" className="bg-transparent outline-none text-[12px] text-[var(--txt-0)] w-full placeholder:text-[var(--txt-3)]" />
           </div>
@@ -169,7 +192,7 @@ export function Board({ items, stageFilter = "" }: { items: Item[]; stageFilter?
         <table className="w-full min-w-[1240px] border-separate border-spacing-0 text-[12px]">
           <thead>
             <tr>
-              {["版本号", "项目名称", "研发模块", "责任人", "优先级"].map(h => (
+              {["版本号", "项目名称", "类型", "研发模块", "责任人", "优先级"].map(h => (
                 <th key={h} className="px-3 py-2 text-left text-[11px] text-[var(--txt-2)] font-medium bg-[var(--bg-1)] border-b border-[var(--line-2)] sticky top-0 z-10 whitespace-nowrap">
                   {h}
                 </th>
@@ -194,6 +217,13 @@ export function Board({ items, stageFilter = "" }: { items: Item[]; stageFilter?
                 </td>
                 <td className="px-3 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
                   <span className="text-[13px] font-medium max-w-[160px] truncate block">{item.title}</span>
+                </td>
+                <td className="px-3 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
+                  {item.nature && (
+                    <span className="px-2 py-0.5 rounded text-[11px] font-medium" style={{ background: item.nature.color + "18", color: item.nature.color }}>
+                      {item.nature.label}
+                    </span>
+                  )}
                 </td>
                 <td className="px-3 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
                   <div className="flex gap-1 flex-wrap">

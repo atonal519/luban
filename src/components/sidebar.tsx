@@ -1,21 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
 
 const NAV = [
-  { href: "/", stageParam: "", label: "全部版本", icon: "☰" },
-  { href: "/?stage=REQUIREMENT", stageParam: "REQUIREMENT", label: "需求看板", icon: "📋" },
-  { href: "/?stage=DEVELOPMENT", stageParam: "DEVELOPMENT", label: "开发看板", icon: "⚡" },
-  { href: "/?stage=TEST", stageParam: "TEST", label: "测试看板", icon: "🧪" },
-  { href: "/?stage=DELIVERY", stageParam: "DELIVERY", label: "交付看板", icon: "🚀" },
-  { href: "/alerts", stageParam: "__alerts", label: "告警中心", icon: "⚠", badge: true },
+  { href: "/", label: "总览", icon: "☰" },
+  { href: "/alerts", label: "告警中心", icon: "⚠", badge: true },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const currentStage = searchParams.get("stage") || "";
 
   return (
     <aside className="w-[220px] min-w-[220px] bg-[var(--bg-1)] border-r border-[var(--line)] flex flex-col h-full">
@@ -37,12 +31,10 @@ export function Sidebar() {
       {/* Nav */}
       <nav className="flex-1 px-2.5 py-3 flex flex-col gap-0.5">
         <div className="text-[10px] text-[var(--txt-3)] tracking-widest uppercase px-2 py-1 font-mono">
-          看板
+          导航
         </div>
         {NAV.map((item) => {
-          const active = item.stageParam === "__alerts"
-            ? pathname === "/alerts"
-            : pathname === "/" && currentStage === item.stageParam;
+          const active = pathname === item.href;
           return (
             <Link
               key={item.href}
