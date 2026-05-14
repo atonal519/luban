@@ -1,0 +1,201 @@
+// ═══════════════════════════════════════════════════════
+//  鲁班 (Luban) — 自动驾驶项目管理系统
+//  Prisma Schema
+// ═══════════════════════════════════════════════════════
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ── 用户 ─────────────────────────────────────────────
+model User {
+  id         String   @id @default(cuid())
+  name       String
+  email      String   @unique
+  password   String
+  role       String   @default("DEV") // PM / DEV / MANAGER
+  avatarSeed String   @default("")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  ownedItems      Item[]          @relation("ItemOwner")
+  createdItems    Item[]          @relation("ItemCreator")
+  approvalEvents  ApprovalEvent[]
+  dailyLogs       DailyLog[]
+}
+
+// ── 研发模块字典 ─────────────────────────────────────
+model Module {
+  id    String @id @default(cuid())
+  name  String @unique
+  color String @default("#6366f1")
+  order Int    @default(0)
+
+  items ItemModule[]
+}
+
+// ── 性质字典（可自定义）─────────────────────────────
+model Nature {
+  id    String @id @default(cuid())
+  code  String @unique   // FEATURE / BUG / HOTFIX / ...
+  label String           // "Feature" / "Bug" / "Hotfix"
+  color String @default("#6366f1")
+  order Int    @default(0)
+
+  items Item[]
+}
+
+// ── 状态字典（可自定义）─────────────────────────────
+model StatusDef {
+  id         String @id @default(cuid())
+  code       String @unique   // DEVELOPING / HIL / SIL / ...
+  label      String           // "开发/推进" / "HIL" / ...
+  stageGroup String @default("DEVELOPMENT") // 归属哪个大节点视图
+  color      String @default("#6366f1")
+  order      Int    @default(0)
+
+  items Item[]
+}
+
+// ── 阶段分组字典（5大节点可自定义）────────────────
+model StageGroup {
+  id    String @id @default(cuid())
+  code  String @unique   // REQUIREMENT / GENERATION / DEVELOPMENT / TEST / DELIVERY
+  label String           // "需求入口" / "版本生成" / ...
+  order Int    @default(0)
+}
+
+// ── Item 核心条目（树形自嵌套）───────────────────
+model Item {
+  id       String  @id @default(cuid())
+  parentId String?
+  parent   Item?   @relation("ItemTree", fields: [parentId], references: [id])
+  children Item[]  @relation("ItemTree")
+  order    Int     @default(0)
+  depth    Int     @default(0)
+
+  // 基本属性
+  title            String
+  description      String  @default("")
+  natureId         String?
+  nature           Nature? @relation(fields: [natureId], references: [id])
+  statusId         String?
+  status           StatusDef? @relation(fields: [statusId], references: [id])
+  ownerId          String?
+  owner            User?   @relation("ItemOwner", fields: [ownerId], references: [id])
+  createdById      String?
+  createdBy        User?   @relation("ItemCreator", fields: [createdById], references: [id])
+  priority         String  @default("MID") // HIGH / MID / LOW
+  versionNo        String  @default("")
+  applicationScope String  @default("")
+
+  // 模块（多选）
+  modules ItemModule[]
+
+  // 流水线视图用
+  stageType     String  @default("")  // REQUIREMENT / GENERATION / DEVELOPMENT / TEST / DELIVERY
+  isParallel    Boolean @default(false)
+  parallelGroup String  @default("")
+
+  // 时间卡口
+  plannedStart DateTime?
+  plannedEnd   DateTime?
+  actualStart  DateTime?
+  actualEnd    DateTime?
+
+  // 进度
+  progress Int @default(0) // 0~100
+
+  // MOKRA
+  mokraMotivation  String @default("")
+  mokraObjects     String @default("")
+  mokraKeyResults  String @default("")
+  mokraActions     String @default("")
+
+  // 审核
+  requiresApproval Boolean   @default(false)
+  approval         Approval?
+
+  // 日志与告警
+  dailyLogs DailyLog[]
+  alerts    Alert[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([parentId])
+  @@index([stageType])
+  @@index([versionNo])
+}
+
+// ── Item ↔ Module 多对多关联 ──────────────────────
+model ItemModule {
+  id       String @id @default(cuid())
+  itemId   String
+  item     Item   @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  moduleId String
+  module   Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([itemId, moduleId])
+}
+
+// ── 审核单 ───────────────────────────────────────
+model Approval {
+  id     String @id @default(cuid())
+  itemId String @unique
+  item   Item   @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  state  String @default("WAITING_SUBMIT") // WAITING_SUBMIT / SUBMITTED / APPROVED / REJECTED
+
+  events ApprovalEvent[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ── 审核流转事件 ─────────────────────────────────
+model ApprovalEvent {
+  id           String   @id @default(cuid())
+  approvalId   String
+  approval     Approval @relation(fields: [approvalId], references: [id], onDelete: Cascade)
+  type         String   // REQUEST / SUBMIT / APPROVE / REJECT / RESUBMIT
+  actorId      String
+  actor        User     @relation(fields: [actorId], references: [id])
+  note         String   @default("")
+  evidenceUrl  String   @default("")
+  evidenceText String   @default("")
+  createdAt    DateTime @default(now())
+
+  @@index([approvalId])
+}
+
+// ── 跟进日志 ─────────────────────────────────────
+model DailyLog {
+  id        String   @id @default(cuid())
+  itemId    String
+  item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  logDate   String   // "2026-05-13" 按天索引
+  content   String
+  createdAt DateTime @default(now())
+
+  @@index([itemId, logDate])
+}
+
+// ── 告警 ─────────────────────────────────────────
+model Alert {
+  id          String    @id @default(cuid())
+  itemId      String
+  item        Item      @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  level       String    // RISK / LATE
+  message     String
+  createdAt   DateTime  @default(now())
+  dismissedAt DateTime?
+
+  @@index([itemId])
+}
