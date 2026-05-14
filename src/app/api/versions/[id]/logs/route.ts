@@ -13,13 +13,18 @@ export async function POST(
     return NextResponse.json({ error: '日志内容不能为空' }, { status: 400 });
   }
 
-  const today = new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  const logDate = now.getFullYear() + '-'
+    + String(now.getMonth() + 1).padStart(2, '0') + '-'
+    + String(now.getDate()).padStart(2, '0') + ' '
+    + String(now.getHours()).padStart(2, '0') + ':'
+    + String(now.getMinutes()).padStart(2, '0');
 
   const log = await prisma.dailyLog.create({
     data: {
       itemId: id,
       authorId: authorId || '',
-      logDate: today,
+      logDate,
       content: content.trim(),
     },
     include: { author: true },
