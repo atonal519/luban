@@ -192,7 +192,7 @@ export function Board({ items, stageFilter = "" }: { items: Item[]; stageFilter?
         <table className="w-full min-w-[1240px] border-separate border-spacing-0 text-[12px]">
           <thead>
             <tr>
-              {["版本号", "项目名称", "类型", "研发模块", "责任人", "优先级"].map(h => (
+              {["版本号", "项目名称", "研发模块", "类型", "责任人", "优先级"].map(h => (
                 <th key={h} className="px-3 py-2 text-left text-[11px] text-[var(--txt-2)] font-medium bg-[var(--bg-1)] border-b border-[var(--line-2)] sticky top-0 z-10 whitespace-nowrap">
                   {h}
                 </th>
@@ -202,7 +202,8 @@ export function Board({ items, stageFilter = "" }: { items: Item[]; stageFilter?
                   {g.label}
                 </th>
               ))}
-              <th className="px-3 py-2 text-left text-[11px] text-[var(--txt-2)] font-medium bg-[var(--bg-1)] border-b border-[var(--line-2)] sticky top-0 z-10">状态</th>
+              <th className="px-3 py-2 text-left text-[11px] text-[var(--txt-2)] font-medium bg-[var(--bg-1)] border-b border-[var(--line-2)] sticky top-0 z-10 whitespace-nowrap">整体状态</th>
+              <th className="px-3 py-2 text-left text-[11px] text-[var(--txt-2)] font-medium bg-[var(--bg-1)] border-b border-[var(--line-2)] sticky top-0 z-10">操作</th>
             </tr>
           </thead>
           <tbody>
@@ -219,13 +220,6 @@ export function Board({ items, stageFilter = "" }: { items: Item[]; stageFilter?
                   <span className="text-[13px] font-medium max-w-[160px] truncate block">{item.title}</span>
                 </td>
                 <td className="px-3 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
-                  {item.nature && (
-                    <span className="px-2 py-0.5 rounded text-[11px] font-medium" style={{ background: item.nature.color + "18", color: item.nature.color }}>
-                      {item.nature.label}
-                    </span>
-                  )}
-                </td>
-                <td className="px-3 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
                   <div className="flex gap-1 flex-wrap">
                     {item.modules?.map((im: any) => (
                       <span key={im.id} className="px-2 py-0.5 rounded text-[11px] font-medium" style={{ background: im.module.color + "18", color: im.module.color }}>
@@ -235,12 +229,14 @@ export function Board({ items, stageFilter = "" }: { items: Item[]; stageFilter?
                   </div>
                 </td>
                 <td className="px-3 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-[22px] h-[22px] rounded-full bg-gradient-to-br from-[#3b6ff0] to-[#7c3aed] flex items-center justify-center text-white text-[10px] font-semibold flex-shrink-0">
-                      {item.owner?.name?.[0] || "?"}
-                    </div>
-                    <span>{item.owner?.name || "—"}</span>
-                  </div>
+                  {item.nature && (
+                    <span className="px-2 py-0.5 rounded text-[11px] font-medium" style={{ background: item.nature.color + "18", color: item.nature.color }}>
+                      {item.nature.label}
+                    </span>
+                  )}
+                </td>
+                <td className="px-3 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
+                  <span className="text-[12px]">{item.owner?.name || "—"}</span>
                 </td>
                 <td className="px-3 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
                   {priorityTag(item.priority)}
@@ -271,6 +267,14 @@ export function Board({ items, stageFilter = "" }: { items: Item[]; stageFilter?
                       {item.status.label}
                     </span>
                   )}
+                </td>
+                <td className="px-3 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); openDrawer(item); }}
+                    className="px-2.5 py-1 rounded-md border border-[var(--line-2)] text-[var(--txt-2)] text-[12px] hover:bg-[var(--bg-3)] hover:text-[var(--txt-0)] transition-colors"
+                  >
+                    ···
+                  </button>
                 </td>
               </tr>
             ))}

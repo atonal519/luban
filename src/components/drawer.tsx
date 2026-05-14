@@ -198,10 +198,10 @@ export function Drawer({ item, initialStage, onClose }: { item: Item; initialSta
           <div className="px-5 py-4 border-b border-[var(--line)]">
             <div className="text-[11px] text-[var(--txt-2)] tracking-wider uppercase font-mono mb-3">基本信息</div>
             <div className="grid grid-cols-2 gap-2.5">
-              <div><div className="text-[11px] text-[var(--txt-2)]">版本号</div><div className="text-[13px] font-mono font-semibold mt-0.5">{item.versionNo || "—"}</div></div>
+              <div><div className="text-[11px] text-[var(--txt-2)]">创建日期</div><div className="text-[12px] font-mono mt-0.5">{item.createdAt?.slice(0, 10) || "—"}</div></div>
               <div><div className="text-[11px] text-[var(--txt-2)]">预计交付</div><div className="text-[12px] font-mono mt-0.5">{item.plannedEnd?.slice(0, 10) || "—"}</div></div>
-              <div><div className="text-[11px] text-[var(--txt-2)]">计划起止</div><div className="text-[12px] font-mono mt-0.5">{item.plannedStart?.slice(0, 10) || "—"} ~ {item.plannedEnd?.slice(0, 10) || "—"}</div></div>
-              <div><div className="text-[11px] text-[var(--txt-2)]">进度</div><div className="text-[13px] font-medium mt-0.5">{item.progress}%</div></div>
+              <div><div className="text-[11px] text-[var(--txt-2)]">计划起止</div><div className="text-[12px] font-mono mt-0.5 text-[var(--txt-3)]">待填写</div></div>
+              <div />
             </div>
           </div>
 
