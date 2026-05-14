@@ -241,12 +241,12 @@ function EditableTextArea({ value, placeholder, onSave }: { value: string; place
         autoFocus
         value={text}
         onChange={(e) => setText(e.target.value)}
-        onKeyDown={(e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { onSave(text); setEditing(false); } }}
+        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); onSave(text); setEditing(false); } if (e.key === "Escape") setEditing(false); }}
         className="w-full px-3 py-2 rounded-lg border border-[var(--accent)] bg-[var(--bg-2)] text-[12px] text-[var(--txt-0)] outline-none resize-none min-h-[80px] leading-relaxed"
         placeholder={placeholder}
       />
       <div className="flex gap-1.5 justify-end items-center">
-        <span className="text-[10px] text-[var(--txt-3)] mr-auto">Ctrl+Enter 保存</span>
+        <span className="text-[10px] text-[var(--txt-3)] mr-auto">Enter 保存 · Esc 取消</span>
         <button onClick={() => setEditing(false)} className="px-3 py-1 rounded text-[11px] text-[var(--txt-1)] border border-[var(--line-2)] hover:bg-[var(--bg-3)]">取消</button>
         <button onClick={() => { onSave(text); setEditing(false); }} className="px-3 py-1 rounded text-[11px] text-white bg-[var(--accent)] hover:opacity-85">保存</button>
       </div>
@@ -281,12 +281,12 @@ function MokraField({ label, color, value, field, placeholder, onSave }: { label
           autoFocus
           value={text}
           onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { onSave(field, text); setEditing(false); } }}
+          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); onSave(field, text); setEditing(false); } if (e.key === "Escape") setEditing(false); }}
           className="w-full px-2 py-1.5 rounded border border-[var(--accent)] bg-[var(--bg-2)] text-[12px] text-[var(--txt-0)] outline-none resize-none min-h-[48px] leading-relaxed"
           placeholder={placeholder}
         />
         <div className="flex gap-1.5 justify-end items-center">
-          <span className="text-[10px] text-[var(--txt-3)] mr-auto">Ctrl+Enter</span>
+          <span className="text-[10px] text-[var(--txt-3)] mr-auto">Enter</span>
           <button onClick={() => setEditing(false)} className="px-2 py-0.5 rounded text-[10px] text-[var(--txt-1)] border border-[var(--line-2)]">取消</button>
           <button onClick={() => { onSave(field, text); setEditing(false); }} className="px-2 py-0.5 rounded text-[10px] text-white bg-[var(--accent)]">保存</button>
         </div>
@@ -598,8 +598,13 @@ export function Drawer({ item, initialStage, onClose }: { item: Item; initialSta
 
         {/* Log input */}
         <div className="px-5 py-3 border-t border-[var(--line)] flex gap-2 items-end flex-shrink-0">
-          <textarea className="flex-1 bg-[var(--bg-2)] border border-[var(--line-2)] rounded-lg px-3 py-2 text-[12px] text-[var(--txt-0)] outline-none resize-none min-h-[58px] focus:border-[var(--accent)] transition-colors placeholder:text-[var(--txt-3)]" placeholder="记录今日进展…" />
-          <button className="px-3.5 rounded-lg bg-[var(--accent)] text-white text-[12px] font-medium h-[58px] hover:opacity-85 transition-opacity">提交日志</button>
+          <textarea
+            id="logInput"
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); document.getElementById("logSubmitBtn")?.click(); } }}
+            className="flex-1 bg-[var(--bg-2)] border border-[var(--line-2)] rounded-lg px-3 py-2 text-[12px] text-[var(--txt-0)] outline-none resize-none min-h-[40px] focus:border-[var(--accent)] transition-colors placeholder:text-[var(--txt-3)]"
+            placeholder="记录今日进展… (Enter 提交)"
+          />
+          <button id="logSubmitBtn" className="px-3.5 rounded-lg bg-[var(--accent)] text-white text-[12px] font-medium h-[40px] hover:opacity-85 transition-opacity">提交</button>
         </div>
       </div>
 
