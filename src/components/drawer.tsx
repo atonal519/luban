@@ -615,7 +615,7 @@ export function Drawer({ item, initialStage, onClose }: { item: Item; initialSta
             <div className="grid grid-cols-3 gap-x-4 gap-y-3">
               <div>
                 <div className="text-[11px] text-[var(--txt-2)] mb-1">创建日期</div>
-                <div className="text-[12px] font-mono bg-[var(--bg-2)] border border-[var(--line-2)] rounded-md px-2 py-0.5 leading-[22px] text-[var(--txt-1)]">{item.createdAt?.slice(0, 10) || "—"}</div>
+                <div className="text-[12px] font-mono bg-[var(--bg-2)] border border-[var(--line-2)] rounded-md px-2 py-0.5 leading-[22px] text-[var(--txt-1)] w-fit">{item.createdAt?.slice(0, 10) || "—"}</div>
               </div>
               <div>
                 <div className="text-[11px] text-[var(--txt-2)] mb-1">预计交付</div>
@@ -629,7 +629,7 @@ export function Drawer({ item, initialStage, onClose }: { item: Item; initialSta
               </div>
               <div>
                 <div className="text-[11px] text-[var(--txt-2)] mb-1">计划起止</div>
-                <div className="text-[12px] font-mono leading-[22px] text-[var(--txt-1)]">
+                <div className="text-[12px] font-mono bg-[var(--bg-2)] border border-[var(--line-2)] rounded-md px-2 py-0.5 leading-[22px] text-[var(--txt-1)]">
                   {item.actualStart ? item.actualStart.slice(0, 10) : <span className="text-[var(--txt-3)]">未开始</span>}
                   {" ~ "}
                   {item.actualEnd ? item.actualEnd.slice(0, 10) : <span className="text-[var(--txt-3)]">进行中</span>}
