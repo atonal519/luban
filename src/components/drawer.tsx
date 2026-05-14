@@ -435,6 +435,77 @@ function DrawerModuleSelect({ currentModules, allModules, onSave }: { currentMod
   );
 }
 
+function RejectionItem({ rejection: r, index, itemId, options, onChanged }: { rejection: any; index: number; itemId: string; options: any; onChanged: () => void }) {
+  const [editing, setEditing] = useState(false);
+  const [reason, setReason] = useState(r.reason);
+  const [docLink, setDocLink] = useState(r.docLink || "");
+
+  async function saveEdit() {
+    await fetch(`/api/versions/${itemId}/rejections/${r.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reason: reason.trim(), docLink: docLink.trim() }),
+    });
+    setEditing(false);
+    onChanged();
+  }
+
+  async function handleDelete() {
+    await fetch(`/api/versions/${itemId}/rejections/${r.id}`, { method: "DELETE" });
+    onChanged();
+  }
+
+  return (
+    <div className="flex gap-2.5 p-2.5 rounded-lg bg-red-500/5 border border-red-500/10 group/rej">
+      <div className="flex flex-col items-center flex-shrink-0">
+        <span className="w-5 h-5 rounded-full bg-[var(--late)] text-white text-[10px] font-mono font-semibold flex items-center justify-center">{index}</span>
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 text-[11px] mb-1">
+          <span className="font-medium text-[var(--late)]">{r.rejectedBy?.name}</span>
+          <span className="text-[var(--txt-2)] font-mono">{r.createdAt?.slice(0, 10)}</span>
+          <span className="flex gap-1 opacity-0 group-hover/rej:opacity-100 transition-opacity ml-auto">
+            <button onClick={() => { setReason(r.reason); setDocLink(r.docLink || ""); setEditing(true); }} className="text-[10px] text-[var(--txt-3)] hover:text-[var(--accent)]">✎</button>
+            <button onClick={handleDelete} className="text-[10px] text-[var(--txt-3)] hover:text-[var(--late)]">✕</button>
+          </span>
+        </div>
+        {editing ? (
+          <div className="flex flex-col gap-1.5">
+            <textarea
+              autoFocus
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); saveEdit(); } if (e.key === "Escape") setEditing(false); }}
+              className="w-full px-2 py-1 rounded border border-[var(--accent)] bg-[var(--bg-2)] text-[12px] text-[var(--txt-0)] outline-none resize-none min-h-[36px]"
+            />
+            <input
+              type="text"
+              value={docLink}
+              onChange={(e) => setDocLink(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") saveEdit(); }}
+              placeholder="文档链接…"
+              className="w-full px-2 py-1 rounded border border-[var(--line-2)] bg-[var(--bg-2)] text-[11px] text-[var(--txt-0)] outline-none"
+            />
+            <div className="flex gap-1 justify-end">
+              <button onClick={() => setEditing(false)} className="px-2 py-0.5 rounded text-[10px] text-[var(--txt-1)] border border-[var(--line-2)]">取消</button>
+              <button onClick={saveEdit} className="px-2 py-0.5 rounded text-[10px] text-white bg-[var(--accent)]">保存</button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="text-[12px] text-[var(--txt-1)] leading-relaxed">{r.reason}</div>
+            {r.docLink && (
+              <a href={r.docLink} target="_blank" rel="noopener noreferrer" className="text-[11px] text-[var(--accent)] hover:underline mt-1 block truncate">
+                📎 {r.docLink}
+              </a>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function RejectionSection({ item, options, onSaved }: { item: Item; options: any; onSaved: () => void }) {
   const [showForm, setShowForm] = useState(false);
   const [reason, setReason] = useState("");
@@ -529,30 +600,65 @@ function RejectionSection({ item, options, onSaved }: { item: Item; options: any
       {rejections.length > 0 ? (
         <div className="flex flex-col gap-2">
           {rejections.map((r: any, idx: number) => (
-            <div key={r.id} className="flex gap-2.5 p-2.5 rounded-lg bg-red-500/5 border border-red-500/10">
-              <div className="flex flex-col items-center flex-shrink-0">
-                <span className="w-5 h-5 rounded-full bg-[var(--late)] text-white text-[10px] font-mono font-semibold flex items-center justify-center">
-                  {rejections.length - idx}
-                </span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 text-[11px] mb-1">
-                  <span className="font-medium text-[var(--late)]">{r.rejectedBy?.name}</span>
-                  <span className="text-[var(--txt-2)] font-mono">{r.createdAt?.slice(0, 10)}</span>
-                </div>
-                <div className="text-[12px] text-[var(--txt-1)] leading-relaxed">{r.reason}</div>
-                {r.docLink && (
-                  <a href={r.docLink} target="_blank" rel="noopener noreferrer" className="text-[11px] text-[var(--accent)] hover:underline mt-1 block truncate">
-                    📎 {r.docLink}
-                  </a>
-                )}
-              </div>
-            </div>
+            <RejectionItem key={r.id} rejection={r} index={rejections.length - idx} itemId={item.id} options={options} onChanged={onSaved} />
           ))}
         </div>
       ) : (
         <div className="text-[12px] text-[var(--txt-3)] text-center py-2">暂无打回记录</div>
       )}
+    </div>
+  );
+}
+
+function LogItem({ log, itemId, onChanged }: { log: any; itemId: string; onChanged: () => void }) {
+  const [editing, setEditing] = useState(false);
+  const [text, setText] = useState(log.content);
+
+  async function saveEdit() {
+    if (!text.trim() || text === log.content) { setEditing(false); return; }
+    await fetch(`/api/versions/${itemId}/logs/${log.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: text.trim() }),
+    });
+    setEditing(false);
+    onChanged();
+  }
+
+  async function handleDelete() {
+    await fetch(`/api/versions/${itemId}/logs/${log.id}`, { method: "DELETE" });
+    onChanged();
+  }
+
+  return (
+    <div className="flex gap-2.5 group/log">
+      <div className="font-mono text-[11px] text-[var(--txt-2)] min-w-[100px] pt-0.5 flex-shrink-0">{log.logDate}</div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-0.5">
+          <span className="text-[11px] text-blue-500 font-medium">{log.author?.name}</span>
+          <span className="flex gap-1 opacity-0 group-hover/log:opacity-100 transition-opacity">
+            <button onClick={() => { setText(log.content); setEditing(true); }} className="text-[10px] text-[var(--txt-3)] hover:text-[var(--accent)]">✎</button>
+            <button onClick={handleDelete} className="text-[10px] text-[var(--txt-3)] hover:text-[var(--late)]">✕</button>
+          </span>
+        </div>
+        {editing ? (
+          <div className="flex flex-col gap-1">
+            <textarea
+              autoFocus
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); saveEdit(); } if (e.key === "Escape") setEditing(false); }}
+              className="w-full px-2 py-1 rounded border border-[var(--accent)] bg-[var(--bg-2)] text-[12px] text-[var(--txt-0)] outline-none resize-none min-h-[36px]"
+            />
+            <div className="flex gap-1 justify-end">
+              <button onClick={() => setEditing(false)} className="px-2 py-0.5 rounded text-[10px] text-[var(--txt-1)] border border-[var(--line-2)]">取消</button>
+              <button onClick={saveEdit} className="px-2 py-0.5 rounded text-[10px] text-white bg-[var(--accent)]">保存</button>
+            </div>
+          </div>
+        ) : (
+          <div className="text-[12px] text-[var(--txt-1)] leading-relaxed whitespace-pre-wrap">{log.content}</div>
+        )}
+      </div>
     </div>
   );
 }
@@ -724,13 +830,7 @@ export function Drawer({ item, initialStage, onClose }: { item: Item; initialSta
             <div className="text-[11px] text-[var(--txt-2)] tracking-wider uppercase font-mono mb-3">跟进日志</div>
             <div className="flex flex-col gap-3">
               {(item.dailyLogs || []).map((log: any) => (
-                <div key={log.id} className="flex gap-2.5">
-                  <div className="font-mono text-[11px] text-[var(--txt-2)] min-w-[60px] pt-0.5 flex-shrink-0">{log.logDate}</div>
-                  <div>
-                    <div className="text-[11px] text-blue-500 font-medium mb-0.5">{log.author?.name}</div>
-                    <div className="text-[12px] text-[var(--txt-1)] leading-relaxed">{log.content}</div>
-                  </div>
-                </div>
+                <LogItem key={log.id} log={log} itemId={item.id} onChanged={() => router.refresh()} />
               ))}
               {(!item.dailyLogs || item.dailyLogs.length === 0) && (
                 <div className="text-[12px] text-[var(--txt-3)] text-center py-3">暂无日志</div>
