@@ -241,12 +241,12 @@ function EditableTextArea({ value, placeholder, onSave }: { value: string; place
         autoFocus
         value={text}
         onChange={(e) => setText(e.target.value)}
-        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); onSave(text); setEditing(false); } if (e.key === "Escape") setEditing(false); }}
+        onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); onSave(text); setEditing(false); } if (e.key === "Escape") setEditing(false); }}
         className="w-full px-3 py-2 rounded-lg border border-[var(--accent)] bg-[var(--bg-2)] text-[12px] text-[var(--txt-0)] outline-none resize-none min-h-[80px] leading-relaxed"
         placeholder={placeholder}
       />
       <div className="flex gap-1.5 justify-end items-center">
-        <span className="text-[10px] text-[var(--txt-3)] mr-auto">Enter 保存 · Esc 取消</span>
+        <span className="text-[10px] text-[var(--txt-3)] mr-auto">Enter 保存 · Shift+Enter 换行</span>
         <button onClick={() => setEditing(false)} className="px-3 py-1 rounded text-[11px] text-[var(--txt-1)] border border-[var(--line-2)] hover:bg-[var(--bg-3)]">取消</button>
         <button onClick={() => { onSave(text); setEditing(false); }} className="px-3 py-1 rounded text-[11px] text-white bg-[var(--accent)] hover:opacity-85">保存</button>
       </div>
@@ -281,12 +281,12 @@ function MokraField({ label, color, value, field, placeholder, onSave }: { label
           autoFocus
           value={text}
           onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); onSave(field, text); setEditing(false); } if (e.key === "Escape") setEditing(false); }}
+          onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); onSave(field, text); setEditing(false); } if (e.key === "Escape") setEditing(false); }}
           className="w-full px-2 py-1.5 rounded border border-[var(--accent)] bg-[var(--bg-2)] text-[12px] text-[var(--txt-0)] outline-none resize-none min-h-[48px] leading-relaxed"
           placeholder={placeholder}
         />
         <div className="flex gap-1.5 justify-end items-center">
-          <span className="text-[10px] text-[var(--txt-3)] mr-auto">Enter</span>
+          <span className="text-[10px] text-[var(--txt-3)] mr-auto">Enter · Shift+Enter 换行</span>
           <button onClick={() => setEditing(false)} className="px-2 py-0.5 rounded text-[10px] text-[var(--txt-1)] border border-[var(--line-2)]">取消</button>
           <button onClick={() => { onSave(field, text); setEditing(false); }} className="px-2 py-0.5 rounded text-[10px] text-white bg-[var(--accent)]">保存</button>
         </div>
@@ -437,6 +437,128 @@ function DrawerModuleSelect({ currentModules, allModules, onSave }: { currentMod
   );
 }
 
+function RejectionSection({ item, options, onSaved }: { item: Item; options: any; onSaved: () => void }) {
+  const [showForm, setShowForm] = useState(false);
+  const [reason, setReason] = useState("");
+  const [docLink, setDocLink] = useState("");
+  const [rejectedById, setRejectedById] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const rejections = item.rejections || [];
+
+  async function handleSubmit() {
+    if (!reason.trim() || !rejectedById) return;
+    setSubmitting(true);
+    await fetch(`/api/versions/${item.id}/rejections`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reason: reason.trim(), docLink: docLink.trim(), rejectedById }),
+    });
+    setReason(""); setDocLink(""); setRejectedById(""); setShowForm(false);
+    setSubmitting(false);
+    onSaved();
+  }
+
+  return (
+    <div className="px-5 py-4 border-t border-[var(--line)]">
+      <div className="flex items-center justify-between mb-3">
+        <div className="text-[11px] text-[var(--txt-2)] tracking-wider uppercase font-mono">
+          版本打回 {rejections.length > 0 && <span className="text-[var(--late)]">({rejections.length})</span>}
+        </div>
+        {!showForm && (
+          <button
+            onClick={() => setShowForm(true)}
+            className="text-[11px] text-[var(--accent)] hover:text-[var(--txt-0)] transition-colors"
+          >
+            + 记录打回
+          </button>
+        )}
+      </div>
+
+      {/* 新增打回表单 */}
+      {showForm && (
+        <div className="mb-3 p-3 bg-[var(--bg-2)] rounded-lg border border-[var(--line-2)]">
+          <div className="flex flex-col gap-2">
+            <div>
+              <label className="text-[10px] text-[var(--txt-2)] block mb-0.5">打回人 <span className="text-red-500">*</span></label>
+              <select
+                value={rejectedById}
+                onChange={(e) => setRejectedById(e.target.value)}
+                className="w-full px-2 py-1 rounded-md border border-[var(--line-2)] bg-[var(--bg-1)] text-[12px] text-[var(--txt-0)] outline-none focus:border-[var(--accent)]"
+              >
+                <option value="">选择打回人</option>
+                {options?.users?.map((u: any) => (
+                  <option key={u.id} value={u.id}>{u.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-[10px] text-[var(--txt-2)] block mb-0.5">打回理由 <span className="text-red-500">*</span></label>
+              <textarea
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSubmit(); } }}
+                className="w-full px-2 py-1.5 rounded-md border border-[var(--line-2)] bg-[var(--bg-1)] text-[12px] text-[var(--txt-0)] outline-none resize-none min-h-[40px] focus:border-[var(--accent)]"
+                placeholder="打回理由…"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] text-[var(--txt-2)] block mb-0.5">文档链接（钉钉）</label>
+              <input
+                type="text"
+                value={docLink}
+                onChange={(e) => setDocLink(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") handleSubmit(); }}
+                className="w-full px-2 py-1 rounded-md border border-[var(--line-2)] bg-[var(--bg-1)] text-[12px] text-[var(--txt-0)] outline-none focus:border-[var(--accent)]"
+                placeholder="https://..."
+              />
+            </div>
+            <div className="flex gap-1.5 justify-end">
+              <button onClick={() => setShowForm(false)} className="px-3 py-1 rounded-md text-[11px] text-[var(--txt-1)] border border-[var(--line-2)] hover:bg-[var(--bg-3)]">取消</button>
+              <button
+                onClick={handleSubmit}
+                disabled={submitting || !reason.trim() || !rejectedById}
+                className="px-3 py-1 rounded-md text-[11px] text-white bg-[var(--late)] hover:opacity-85 disabled:opacity-50"
+              >
+                {submitting ? "提交中…" : "确认打回"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 打回历史列表 */}
+      {rejections.length > 0 ? (
+        <div className="flex flex-col gap-2">
+          {rejections.map((r: any, idx: number) => (
+            <div key={r.id} className="flex gap-2.5 p-2.5 rounded-lg bg-red-500/5 border border-red-500/10">
+              <div className="flex flex-col items-center flex-shrink-0">
+                <span className="w-5 h-5 rounded-full bg-[var(--late)] text-white text-[10px] font-mono font-semibold flex items-center justify-center">
+                  {rejections.length - idx}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 text-[11px] mb-1">
+                  <span className="font-medium text-[var(--late)]">{r.rejectedBy?.name}</span>
+                  <span className="text-[var(--txt-2)] font-mono">{r.createdAt?.slice(0, 10)}</span>
+                </div>
+                <div className="text-[12px] text-[var(--txt-1)] leading-relaxed">{r.reason}</div>
+                {r.docLink && (
+                  <a href={r.docLink} target="_blank" rel="noopener noreferrer" className="text-[11px] text-[var(--accent)] hover:underline mt-1 block truncate">
+                    📎 {r.docLink}
+                  </a>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-[12px] text-[var(--txt-3)] text-center py-2">暂无打回记录</div>
+      )}
+    </div>
+  );
+}
+
 export function Drawer({ item, initialStage, onClose }: { item: Item; initialStage: number; onClose: () => void }) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState(initialStage);
@@ -528,7 +650,15 @@ export function Drawer({ item, initialStage, onClose }: { item: Item; initialSta
                 allModules={options?.modules || []}
                 onSave={saveModules}
               />
-              <div />
+              <div>
+                <div className="text-[11px] text-[var(--txt-2)] mb-1">回溯历史</div>
+                <div className="text-[12px] font-mono bg-[var(--bg-2)] border border-[var(--line-2)] rounded-md px-2 py-0.5 leading-[22px] text-[var(--txt-1)]">
+                  {(item.rejections?.length || 0) > 0
+                    ? <span className="text-[var(--late)]">打回 {item.rejections.length} 次</span>
+                    : <span className="text-[var(--txt-3)]">0 次</span>
+                  }
+                </div>
+              </div>
             </div>
           </div>
 
@@ -594,15 +724,18 @@ export function Drawer({ item, initialStage, onClose }: { item: Item; initialSta
               )}
             </div>
           </div>
+
+          {/* 版本打回记录 */}
+          <RejectionSection item={item} options={options} onSaved={() => router.refresh()} />
         </div>
 
         {/* Log input */}
         <div className="px-5 py-3 border-t border-[var(--line)] flex gap-2 items-end flex-shrink-0">
           <textarea
             id="logInput"
-            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); document.getElementById("logSubmitBtn")?.click(); } }}
+            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); document.getElementById("logSubmitBtn")?.click(); } }}
             className="flex-1 bg-[var(--bg-2)] border border-[var(--line-2)] rounded-lg px-3 py-2 text-[12px] text-[var(--txt-0)] outline-none resize-none min-h-[40px] focus:border-[var(--accent)] transition-colors placeholder:text-[var(--txt-3)]"
-            placeholder="记录今日进展… (Enter 提交)"
+            placeholder="记录今日进展… (Enter 提交, Shift+Enter 换行)"
           />
           <button id="logSubmitBtn" className="px-3.5 rounded-lg bg-[var(--accent)] text-white text-[12px] font-medium h-[40px] hover:opacity-85 transition-opacity">提交</button>
         </div>
