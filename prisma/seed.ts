@@ -56,12 +56,25 @@ async function main() {
   const statusMap = Object.fromEntries(statuses.map(s => [s.code, s]));
 
   // ── 研发模块 ──
-  const [modPerception, modControl, modLocation, modSystem] = await Promise.all([
-    prisma.module.create({ data: { name: '感知', color: '#7c3aed', order: 1 } }),
-    prisma.module.create({ data: { name: '规控', color: '#3b6ff0', order: 2 } }),
-    prisma.module.create({ data: { name: '定位', color: '#0891b2', order: 3 } }),
+  const modules = await Promise.all([
+    prisma.module.create({ data: { name: '融合感知', color: '#7c3aed', order: 1 } }),
+    prisma.module.create({ data: { name: '定位与标定', color: '#0891b2', order: 2 } }),
+    prisma.module.create({ data: { name: '车云调度与决策', color: '#3b6ff0', order: 3 } }),
     prisma.module.create({ data: { name: '系统', color: '#64748b', order: 4 } }),
+    prisma.module.create({ data: { name: '车辆与控制', color: '#059669', order: 5 } }),
+    prisma.module.create({ data: { name: '监管云', color: '#d97706', order: 6 } }),
+    prisma.module.create({ data: { name: '规划', color: '#2563eb', order: 7 } }),
+    prisma.module.create({ data: { name: '硬件', color: '#dc2626', order: 8 } }),
+    prisma.module.create({ data: { name: 'AiLab', color: '#7c3aed', order: 9 } }),
+    prisma.module.create({ data: { name: '质量', color: '#0d9488', order: 10 } }),
+    prisma.module.create({ data: { name: '解决方案', color: '#4f46e5', order: 11 } }),
+    prisma.module.create({ data: { name: 'GTS', color: '#be123c', order: 12 } }),
+    prisma.module.create({ data: { name: '地图云', color: '#0369a1', order: 13 } }),
   ]);
+  const modPerception = modules[0];
+  const modControl = modules[2];
+  const modLocation = modules[1];
+  const modSystem = modules[3];
 
   // ── 用户 ──
   const [pm, zhangwei, liming, wangfang, chenhao, liuyang] = await Promise.all([

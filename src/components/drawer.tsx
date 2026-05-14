@@ -166,15 +166,41 @@ function ApprovalChain({ approval, nodeId, options, onChanged }: { approval: any
   );
 }
 
-function SubNodeList({ children, stageCode, options, onChanged }: { children: Item[]; stageCode: string; options: any; onChanged: () => void }) {
+function SubNodeList({ children, stageCode, options, onChanged, parentId }: { children: Item[]; stageCode: string; options: any; onChanged: () => void; parentId: string }) {
+  const [showAdd, setShowAdd] = useState(false);
+  const [addTitle, setAddTitle] = useState("");
+  const [addSubmitting, setAddSubmitting] = useState(false);
+
   const stageChildren = children.filter((c: Item) => {
     if (c.stageType === stageCode) return true;
     if (c.status?.code && STAGE_GROUP_MAP[c.status.code] === stageCode) return true;
     return false;
   });
 
-  if (stageChildren.length === 0) {
-    return <div className="text-[12px] text-[var(--txt-3)] py-4 text-center">暂无子节点</div>;
+  async function handleAdd() {
+    if (!addTitle.trim() || addSubmitting) return;
+    setAddSubmitting(true);
+    await fetch(`/api/versions/${parentId}/children`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: addTitle.trim(), stageType: stageCode }),
+    });
+    setAddTitle(""); setShowAdd(false); setAddSubmitting(false);
+    onChanged();
+  }
+
+  async function deleteNode(childId: string) {
+    await fetch(`/api/versions/${parentId}/children/${childId}`, { method: "DELETE" });
+    onChanged();
+  }
+
+  async function editNodeTitle(childId: string, newTitle: string) {
+    await fetch(`/api/versions/${parentId}/children/${childId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: newTitle }),
+    });
+    onChanged();
   }
 
   // Group parallel items
@@ -196,6 +222,9 @@ function SubNodeList({ children, stageCode, options, onChanged }: { children: It
   }
 
   function NodeRow({ node }: { node: Item }) {
+    const [editingTitle, setEditingTitle] = useState(false);
+    const [titleVal, setTitleVal] = useState(node.title);
+
     const statusIcon = node.progress >= 100 ? "✓" : node.progress > 0 ? "●" : "○";
     const statusColor = node.progress >= 100 ? "text-emerald-500" : node.progress > 0 ? "text-blue-500" : "text-[var(--txt-3)]";
     const apBadge = node.approval?.state === "WAITING_SUBMIT" ? { label: "待提交凭证", cls: "bg-amber-500/8 text-amber-600" }
@@ -206,18 +235,32 @@ function SubNodeList({ children, stageCode, options, onChanged }: { children: It
 
     return (
       <div>
-        <div className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-[var(--bg-2)] transition-colors">
+        <div className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-[var(--bg-2)] transition-colors group/node">
           <span className={`w-4 text-center text-[12px] ${statusColor}`}>{statusIcon}</span>
-          <span className="text-[13px] text-[var(--txt-0)] flex-1">{node.title}</span>
+          {editingTitle ? (
+            <input
+              autoFocus
+              value={titleVal}
+              onChange={(e) => setTitleVal(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") { editNodeTitle(node.id, titleVal); setEditingTitle(false); } if (e.key === "Escape") setEditingTitle(false); }}
+              onBlur={() => { if (titleVal !== node.title) editNodeTitle(node.id, titleVal); setEditingTitle(false); }}
+              className="flex-1 px-1.5 py-0.5 rounded border border-[var(--accent)] bg-[var(--bg-2)] text-[12px] outline-none"
+            />
+          ) : (
+            <span className="text-[13px] text-[var(--txt-0)] flex-1 cursor-pointer" onClick={(e) => { e.stopPropagation(); setTitleVal(node.title); setEditingTitle(true); }}>{node.title}</span>
+          )}
           <span className="text-[11px] text-[var(--txt-2)]">
             {node.progress >= 100 ? "完成" : node.progress > 0 ? `${node.progress}%` : "未开始"}
           </span>
           {apBadge && (
             <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-medium ${apBadge.cls}`}>{apBadge.label}</span>
           )}
+          <span className="flex gap-1 opacity-0 group-hover/node:opacity-100 transition-opacity">
+            <button onClick={(e) => { e.stopPropagation(); setTitleVal(node.title); setEditingTitle(true); }} className="text-[10px] text-[var(--txt-3)] hover:text-[var(--accent)]">✎</button>
+            <button onClick={(e) => { e.stopPropagation(); deleteNode(node.id); }} className="text-[10px] text-[var(--txt-3)] hover:text-[var(--late)]">✕</button>
+          </span>
         </div>
         <ApprovalChain approval={node.approval} nodeId={node.id} options={options} onChanged={onChanged} />
-        {/* Sub-sub items */}
         {node.children?.length > 0 && (
           <div className="ml-6 border-l border-[var(--line)] pl-3">
             {node.children.map((sub: Item) => (
@@ -248,6 +291,33 @@ function SubNodeList({ children, stageCode, options, onChanged }: { children: It
         }
         return <NodeRow key={r.node.id} node={r.node} />;
       })}
+
+      {stageChildren.length === 0 && !showAdd && (
+        <div className="text-[12px] text-[var(--txt-3)] py-3 text-center">暂无子节点</div>
+      )}
+
+      {/* 添加节点 */}
+      {showAdd ? (
+        <div className="mt-2 p-2.5 bg-[var(--bg-2)] rounded-lg border border-[var(--line-2)] flex flex-col gap-2">
+          <input
+            autoFocus
+            type="text"
+            value={addTitle}
+            onChange={(e) => setAddTitle(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); if (e.key === "Escape") setShowAdd(false); }}
+            placeholder="节点名称，如：HIL测试、代码集成…"
+            className="w-full px-2.5 py-1.5 rounded-md border border-[var(--line-2)] bg-[var(--bg-1)] text-[12px] outline-none focus:border-[var(--accent)]"
+          />
+          <div className="flex gap-1.5 justify-end">
+            <button onClick={() => setShowAdd(false)} className="px-3 py-1 rounded-md text-[11px] text-[var(--txt-1)] border border-[var(--line-2)]">取消</button>
+            <button onClick={handleAdd} disabled={!addTitle.trim() || addSubmitting} className="px-3 py-1 rounded-md text-[11px] text-white bg-[var(--accent)] disabled:opacity-50">{addSubmitting ? "…" : "添加"}</button>
+          </div>
+        </div>
+      ) : (
+        <button onClick={() => setShowAdd(true)} className="mt-2 text-[11px] text-[var(--accent)] hover:underline self-start">
+          + 添加节点
+        </button>
+      )}
     </div>
   );
 }
@@ -907,7 +977,7 @@ export function Drawer({ item, initialStage, onClose }: { item: Item; initialSta
 
           {/* Sub nodes */}
           <div className="px-5 py-4 border-b border-[var(--line)]">
-            <SubNodeList children={item.children || []} stageCode={STAGE_GROUPS[activeTab].code} options={options} onChanged={() => router.refresh()} />
+            <SubNodeList children={item.children || []} stageCode={STAGE_GROUPS[activeTab].code} options={options} onChanged={() => router.refresh()} parentId={item.id} />
           </div>
 
           {/* Logs */}
