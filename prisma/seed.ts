@@ -16,13 +16,34 @@ async function main() {
   await prisma.statusDef.deleteMany();
   await prisma.stageGroup.deleteMany();
 
-  // ── 阶段分组（5大节点）──
-  const stageGroups = await Promise.all([
+  // ── 阶段分组（4大节点，版本生成已删）──
+  const [sgRequirement, sgDevelopment, sgTest, sgDelivery] = await Promise.all([
     prisma.stageGroup.create({ data: { code: 'REQUIREMENT', label: '需求入口', order: 1 } }),
-    prisma.stageGroup.create({ data: { code: 'GENERATION', label: '版本生成', order: 2 } }),
-    prisma.stageGroup.create({ data: { code: 'DEVELOPMENT', label: '版本开发', order: 3 } }),
-    prisma.stageGroup.create({ data: { code: 'TEST', label: '版本测试', order: 4 } }),
-    prisma.stageGroup.create({ data: { code: 'DELIVERY', label: '版本交付', order: 5 } }),
+    prisma.stageGroup.create({ data: { code: 'DEVELOPMENT', label: '版本开发', order: 2 } }),
+    prisma.stageGroup.create({ data: { code: 'TEST', label: '版本测试', order: 3 } }),
+    prisma.stageGroup.create({ data: { code: 'DELIVERY', label: '版本交付', order: 4 } }),
+  ]);
+
+  // ── 阶段默认节点模板 ──
+  await Promise.all([
+    // 需求入口
+    prisma.stageTemplate.create({ data: { stageGroupId: sgRequirement.id, name: '需求评审', order: 1 } }),
+    // 版本开发
+    prisma.stageTemplate.create({ data: { stageGroupId: sgDevelopment.id, name: '待排期', order: 1 } }),
+    prisma.stageTemplate.create({ data: { stageGroupId: sgDevelopment.id, name: '开发', order: 2 } }),
+    prisma.stageTemplate.create({ data: { stageGroupId: sgDevelopment.id, name: '自测', order: 3 } }),
+    // 版本测试
+    prisma.stageTemplate.create({ data: { stageGroupId: sgTest.id, name: 'SIL集成测试', order: 1 } }),
+    prisma.stageTemplate.create({ data: { stageGroupId: sgTest.id, name: 'HIL测试', order: 2, isParallel: true, parallelGroup: 'TEST_A' } }),
+    prisma.stageTemplate.create({ data: { stageGroupId: sgTest.id, name: '功能测试', order: 3, isParallel: true, parallelGroup: 'TEST_A' } }),
+    prisma.stageTemplate.create({ data: { stageGroupId: sgTest.id, name: '性能测试', order: 4, isParallel: true, parallelGroup: 'TEST_A' } }),
+    prisma.stageTemplate.create({ data: { stageGroupId: sgTest.id, name: '集成测试', order: 5 } }),
+    prisma.stageTemplate.create({ data: { stageGroupId: sgTest.id, name: '实车测试', order: 6 } }),
+    prisma.stageTemplate.create({ data: { stageGroupId: sgTest.id, name: '道路测试', order: 7 } }),
+    // 版本交付
+    prisma.stageTemplate.create({ data: { stageGroupId: sgDelivery.id, name: '交付审核', order: 1 } }),
+    prisma.stageTemplate.create({ data: { stageGroupId: sgDelivery.id, name: '预生产', order: 2 } }),
+    prisma.stageTemplate.create({ data: { stageGroupId: sgDelivery.id, name: '正式交付', order: 3 } }),
   ]);
 
   // ── 性质标签 ──
@@ -37,7 +58,7 @@ async function main() {
     prisma.statusDef.create({ data: { code: 'PENDING_SCHEDULE', label: '待排期', stageGroup: 'REQUIREMENT', color: '#94a3b8', order: 1 } }),
     prisma.statusDef.create({ data: { code: 'SPEC', label: '规格', stageGroup: 'REQUIREMENT', color: '#8b5cf6', order: 2 } }),
     prisma.statusDef.create({ data: { code: 'DESIGN', label: '设计', stageGroup: 'REQUIREMENT', color: '#7c3aed', order: 3 } }),
-    prisma.statusDef.create({ data: { code: 'TMG', label: 'TMG', stageGroup: 'GENERATION', color: '#0891b2', order: 4 } }),
+    prisma.statusDef.create({ data: { code: 'TMG', label: 'TMG', stageGroup: 'DEVELOPMENT', color: '#0891b2', order: 4 } }),
     prisma.statusDef.create({ data: { code: 'DEVELOPING', label: '开发/推进', stageGroup: 'DEVELOPMENT', color: '#3b6ff0', order: 5 } }),
     prisma.statusDef.create({ data: { code: 'SELF_TEST', label: '自测', stageGroup: 'DEVELOPMENT', color: '#6366f1', order: 6 } }),
     prisma.statusDef.create({ data: { code: 'REJECTED', label: '打回', stageGroup: 'DEVELOPMENT', color: '#dc3535', order: 7 } }),

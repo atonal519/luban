@@ -11,7 +11,6 @@ type Item = any;
 
 const STAGE_GROUPS = [
   { code: "REQUIREMENT", label: "需求入口" },
-  { code: "GENERATION", label: "版本生成" },
   { code: "DEVELOPMENT", label: "版本开发" },
   { code: "TEST", label: "版本测试" },
   { code: "DELIVERY", label: "版本交付" },
@@ -19,7 +18,7 @@ const STAGE_GROUPS = [
 
 const STAGE_GROUP_MAP: Record<string, string> = {
   PENDING_SCHEDULE: "REQUIREMENT", SPEC: "REQUIREMENT", DESIGN: "REQUIREMENT",
-  TMG: "GENERATION",
+  TMG: "DEVELOPMENT",
   DEVELOPING: "DEVELOPMENT", SELF_TEST: "DEVELOPMENT", REJECTED: "DEVELOPMENT",
   SUBMIT_TEST: "TEST", HIL: "TEST", SIL: "TEST", INTEGRATION: "TEST",
   REAL_CAR: "TEST", PRE_TEST: "TEST", PRE_PRODUCTION: "TEST",
@@ -238,7 +237,7 @@ export function Board({ items, stageFilter = "" }: { items: Item[]; stageFilter?
       {/* Table */}
       <div className="flex-1 overflow-auto px-5 py-4">
         <table className="w-full border-separate border-spacing-0 text-[12px] table-fixed" style={{ minWidth: '1400px' }}>
-          <colgroup><col style={{ width: '90px' }} /><col style={{ width: '200px' }} /><col style={{ width: '120px' }} /><col style={{ width: '80px' }} /><col style={{ width: '80px' }} /><col style={{ width: '60px' }} /><col style={{ width: '130px' }} /><col style={{ width: '130px' }} /><col style={{ width: '130px' }} /><col style={{ width: '130px' }} /><col style={{ width: '130px' }} /><col style={{ width: '80px' }} /><col style={{ width: '50px' }} /></colgroup>
+          <colgroup><col style={{ width: '90px' }} /><col style={{ width: '200px' }} /><col style={{ width: '120px' }} /><col style={{ width: '80px' }} /><col style={{ width: '80px' }} /><col style={{ width: '60px' }} /><col style={{ width: '140px' }} /><col style={{ width: '140px' }} /><col style={{ width: '140px' }} /><col style={{ width: '140px' }} /><col style={{ width: '80px' }} /><col style={{ width: '50px' }} /></colgroup>
           <thead>
             <tr>
               {["版本号", "项目名称", "研发模块", "类型", "责任人", "优先级"].map(h => (

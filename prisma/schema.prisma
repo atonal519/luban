@@ -65,10 +65,24 @@ model StatusDef {
 
 // ── 阶段分组字典（5大节点可自定义）────────────────
 model StageGroup {
-  id    String @id @default(cuid())
-  code  String @unique   // REQUIREMENT / GENERATION / DEVELOPMENT / TEST / DELIVERY
-  label String           // "需求入口" / "版本生成" / ...
-  order Int    @default(0)
+  id         String          @id @default(cuid())
+  code       String          @unique
+  label      String
+  order      Int             @default(0)
+  templates  StageTemplate[]
+}
+
+// ── 阶段默认节点模板 ─────────────────────────────
+model StageTemplate {
+  id             String     @id @default(cuid())
+  stageGroupId   String
+  stageGroup     StageGroup @relation(fields: [stageGroupId], references: [id])
+  name           String                  // 默认节点名，如"HIL测试"
+  order          Int        @default(0)  // 同阶段内排序
+  isParallel     Boolean    @default(false)
+  parallelGroup  String     @default("")
+
+  @@index([stageGroupId])
 }
 
 // ── Item 核心条目（树形自嵌套）───────────────────

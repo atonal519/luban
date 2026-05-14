@@ -28,5 +28,27 @@ export async function POST(req: NextRequest) {
     });
   }
 
+  // Auto-generate child nodes from stage templates
+  const templates = await prisma.stageTemplate.findMany({
+    include: { stageGroup: true },
+    orderBy: [{ stageGroup: { order: 'asc' } }, { order: 'asc' }],
+  });
+
+  if (templates.length > 0) {
+    let globalOrder = 0;
+    await prisma.item.createMany({
+      data: templates.map((t) => ({
+        parentId: item.id,
+        title: t.name,
+        stageType: t.stageGroup.code,
+        isParallel: t.isParallel,
+        parallelGroup: t.parallelGroup,
+        order: globalOrder++,
+        depth: 1,
+        versionNo: item.versionNo,
+      })),
+    });
+  }
+
   return NextResponse.json(item, { status: 201 });
 }

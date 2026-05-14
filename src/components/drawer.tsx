@@ -7,7 +7,6 @@ type Item = any;
 
 const STAGE_GROUPS = [
   { code: "REQUIREMENT", label: "需求入口" },
-  { code: "GENERATION", label: "版本生成" },
   { code: "DEVELOPMENT", label: "版本开发" },
   { code: "TEST", label: "版本测试" },
   { code: "DELIVERY", label: "版本交付" },
@@ -15,7 +14,7 @@ const STAGE_GROUPS = [
 
 const STAGE_GROUP_MAP: Record<string, string> = {
   PENDING_SCHEDULE: "REQUIREMENT", SPEC: "REQUIREMENT", DESIGN: "REQUIREMENT",
-  TMG: "GENERATION",
+  TMG: "DEVELOPMENT",
   DEVELOPING: "DEVELOPMENT", SELF_TEST: "DEVELOPMENT", REJECTED: "DEVELOPMENT",
   SUBMIT_TEST: "TEST", HIL: "TEST", SIL: "TEST", INTEGRATION: "TEST",
   REAL_CAR: "TEST", PRE_TEST: "TEST", PRE_PRODUCTION: "TEST",
