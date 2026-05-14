@@ -258,12 +258,13 @@ function MokraField({ label, color, value, field, placeholder, onSave }: { label
 
   useEffect(() => { setText(value); }, [value]);
 
-  const tagCls = `text-[10px] font-mono text-${color}-500 bg-${color}-500/8 px-1.5 py-0.5 rounded flex-shrink-0`;
+  const colorMap: Record<string, string> = { blue: "#3b82f6", emerald: "#10b981", amber: "#f59e0b", purple: "#a855f7" };
+  const c = colorMap[color] || "#6366f1";
 
   if (!editing) {
     return (
       <div className="flex items-start gap-2 cursor-pointer group/mokra" onClick={() => { setText(value); setEditing(true); }}>
-        <span className={tagCls}>{label}</span>
+        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded flex-shrink-0" style={{ color: c, background: c + "18" }}>{label}</span>
         <span className="text-[12px] text-[var(--txt-1)] flex-1">{value || <span className="text-[var(--txt-3)]">{placeholder}</span>}</span>
         <span className="text-[10px] text-[var(--txt-3)] opacity-0 group-hover/mokra:opacity-100 transition-opacity mt-0.5">✎</span>
       </div>
@@ -272,7 +273,7 @@ function MokraField({ label, color, value, field, placeholder, onSave }: { label
 
   return (
     <div className="flex items-start gap-2">
-      <span className={tagCls}>{label}</span>
+      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded flex-shrink-0" style={{ color: c, background: c + "18" }}>{label}</span>
       <div className="flex-1 flex flex-col gap-1">
         <textarea
           autoFocus
@@ -490,14 +491,18 @@ export function Drawer({ item, initialStage, onClose }: { item: Item; initialSta
             <div className="grid grid-cols-3 gap-x-4 gap-y-3">
               <div>
                 <div className="text-[11px] text-[var(--txt-2)] mb-1">创建日期</div>
-                <div className="text-[12px] font-mono leading-[22px]">{item.createdAt?.slice(0, 10) || "—"}</div>
+                <div className="text-[12px] font-mono bg-[var(--bg-2)] border border-[var(--line-2)] rounded-md px-2 py-0.5 leading-[22px] text-[var(--txt-1)]">{item.createdAt?.slice(0, 10) || "—"}</div>
               </div>
               <div>
                 <div className="text-[11px] text-[var(--txt-2)] mb-1">预计交付</div>
                 <input
-                  type="date"
+                  type="text"
                   defaultValue={item.plannedEnd?.slice(0, 10) || ""}
-                  onBlur={(e) => save("plannedEnd", e.target.value || null)}
+                  placeholder="YYYY-MM-DD"
+                  onBlur={(e) => {
+                    const v = e.target.value.trim();
+                    if (!v || /^\d{4}-\d{2}-\d{2}$/.test(v)) save("plannedEnd", v || null);
+                  }}
                   className="text-[12px] font-mono bg-[var(--bg-2)] border border-[var(--line-2)] rounded-md px-2 py-0.5 outline-none w-full focus:border-[var(--accent)] transition-colors leading-[22px]"
                 />
               </div>
