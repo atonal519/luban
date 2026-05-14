@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Drawer } from "./drawer";
+import { CreateModal } from "./create-modal";
 
 type Item = any;
 
@@ -118,9 +120,11 @@ const STAGE_LABELS: Record<string, string> = {
 };
 
 export function Board({ items, stageFilter = "" }: { items: Item[]; stageFilter?: string }) {
+  const router = useRouter();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [drawerStage, setDrawerStage] = useState(0);
   const [quickInput, setQuickInput] = useState("");
+  const [showCreate, setShowCreate] = useState(false);
   const selectedItem = items.find((i: Item) => i.id === selectedId);
 
   // Stage filter: only show versions that have children in the selected stage
@@ -147,9 +151,7 @@ export function Board({ items, stageFilter = "" }: { items: Item[]; stageFilter?
 
   function handleQuickCreate(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter" && quickInput.trim()) {
-      // TODO Phase 2: 弹出创建弹窗填写模块/责任人等
-      alert(`[Phase 2] 将创建版本：${quickInput.trim()}\n后续会弹出弹窗填写详细信息`);
-      setQuickInput("");
+      setShowCreate(true);
     }
   }
 
@@ -313,6 +315,19 @@ export function Board({ items, stageFilter = "" }: { items: Item[]; stageFilter?
           item={selectedItem}
           initialStage={drawerStage}
           onClose={() => setSelectedId(null)}
+        />
+      )}
+
+      {/* Create Modal */}
+      {showCreate && (
+        <CreateModal
+          initialTitle={quickInput}
+          onClose={() => setShowCreate(false)}
+          onCreated={() => {
+            setShowCreate(false);
+            setQuickInput("");
+            router.refresh();
+          }}
         />
       )}
     </>
