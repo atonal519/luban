@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Drawer } from "./drawer";
 import { CreateModal } from "./create-modal";
+import { EditableCell } from "./editable-cell";
 
 type Item = any;
 
@@ -125,7 +126,21 @@ export function Board({ items, stageFilter = "" }: { items: Item[]; stageFilter?
   const [drawerStage, setDrawerStage] = useState(0);
   const [quickInput, setQuickInput] = useState("");
   const [showCreate, setShowCreate] = useState(false);
+  const [options, setOptions] = useState<any>(null);
   const selectedItem = items.find((i: Item) => i.id === selectedId);
+
+  useEffect(() => {
+    fetch("/api/options").then(r => r.json()).then(setOptions);
+  }, []);
+
+  async function saveField(itemId: string, field: string, value: string) {
+    await fetch(`/api/versions/${itemId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ [field]: value || null }),
+    });
+    router.refresh();
+  }
 
   // Stage filter: only show versions that have children in the selected stage
   const filteredItems = stageFilter
@@ -236,12 +251,27 @@ export function Board({ items, stageFilter = "" }: { items: Item[]; stageFilter?
                 onClick={() => openDrawer(item)}
                 className={`cursor-pointer group ${selectedId === item.id ? "bg-blue-500/5" : ""}`}
               >
+                {/* 版本号 - editable text */}
                 <td className="px-3 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors sticky left-0 z-[3]">
-                  <span className="font-mono text-[12px] font-semibold">{item.versionNo}</span>
+                  <EditableCell
+                    value={item.versionNo || ""}
+                    itemId={item.id}
+                    field="versionNo"
+                    onSave={saveField}
+                    displayNode={<span className="font-mono text-[12px] font-semibold">{item.versionNo || "—"}</span>}
+                  />
                 </td>
+                {/* 项目名称 - editable text */}
                 <td className="px-3 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
-                  <span className="text-[13px] font-medium max-w-[160px] truncate block">{item.title}</span>
+                  <EditableCell
+                    value={item.title || ""}
+                    itemId={item.id}
+                    field="title"
+                    onSave={saveField}
+                    displayNode={<span className="text-[13px] font-medium max-w-[160px] truncate block">{item.title}</span>}
+                  />
                 </td>
+                {/* 研发模块 - display only (多选太复杂，走抽屉改) */}
                 <td className="px-3 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
                   <div className="flex gap-1 flex-wrap">
                     {item.modules?.map((im: any) => (
@@ -249,20 +279,52 @@ export function Board({ items, stageFilter = "" }: { items: Item[]; stageFilter?
                         {im.module.name}
                       </span>
                     ))}
+                    {(!item.modules || item.modules.length === 0) && <span className="text-[var(--txt-3)] text-[11px]">—</span>}
                   </div>
                 </td>
+                {/* 类型 - editable select */}
                 <td className="px-3 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
-                  {item.nature && (
-                    <span className="px-2 py-0.5 rounded text-[11px] font-medium" style={{ background: item.nature.color + "18", color: item.nature.color }}>
-                      {item.nature.label}
-                    </span>
-                  )}
+                  <EditableCell
+                    value={item.natureId || ""}
+                    itemId={item.id}
+                    field="natureId"
+                    type="select"
+                    options={options?.natures?.map((n: any) => ({ value: n.id, label: n.label, color: n.color })) || []}
+                    onSave={saveField}
+                    displayNode={item.nature ? (
+                      <span className="px-2 py-0.5 rounded text-[11px] font-medium" style={{ background: item.nature.color + "18", color: item.nature.color }}>
+                        {item.nature.label}
+                      </span>
+                    ) : <span className="text-[var(--txt-3)] text-[11px]">—</span>}
+                  />
                 </td>
+                {/* 责任人 - editable select */}
                 <td className="px-3 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
-                  <span className="text-[12px]">{item.owner?.name || "—"}</span>
+                  <EditableCell
+                    value={item.ownerId || ""}
+                    itemId={item.id}
+                    field="ownerId"
+                    type="select"
+                    options={options?.users?.map((u: any) => ({ value: u.id, label: u.name })) || []}
+                    onSave={saveField}
+                    displayNode={<span className="text-[12px]">{item.owner?.name || "—"}</span>}
+                  />
                 </td>
+                {/* 优先级 - editable select */}
                 <td className="px-3 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
-                  {priorityTag(item.priority)}
+                  <EditableCell
+                    value={item.priority || "MID"}
+                    itemId={item.id}
+                    field="priority"
+                    type="select"
+                    options={[
+                      { value: "HIGH", label: "高" },
+                      { value: "MID", label: "中" },
+                      { value: "LOW", label: "低" },
+                    ]}
+                    onSave={saveField}
+                    displayNode={priorityTag(item.priority)}
+                  />
                 </td>
                 {STAGE_GROUPS.map((g, gi) => {
                   const st = stageStatus(item, g.code);
