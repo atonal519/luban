@@ -67,10 +67,10 @@ export function EditableCell({
     return (
       <div
         onClick={startEdit}
-        className="cursor-pointer min-h-[20px] rounded px-1 -mx-1 hover:bg-[var(--bg-3)] transition-colors"
-        title="点击编辑"
+        className="cursor-pointer min-h-[20px] flex items-center gap-1 group/cell"
       >
         {displayNode || <span className="text-[12px]">{value || "—"}</span>}
+        <span className="text-[10px] text-[var(--txt-3)] opacity-0 group-hover/cell:opacity-100 transition-opacity flex-shrink-0">✎</span>
       </div>
     );
   }
