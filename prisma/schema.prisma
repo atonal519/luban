@@ -27,6 +27,7 @@ model User {
   createdItems    Item[]          @relation("ItemCreator")
   approvalEvents  ApprovalEvent[]
   dailyLogs       DailyLog[]
+  rejections      Rejection[]
 }
 
 // ── 研发模块字典 ─────────────────────────────────────
@@ -122,8 +123,9 @@ model Item {
   approval         Approval?
 
   // 日志与告警
-  dailyLogs DailyLog[]
-  alerts    Alert[]
+  dailyLogs  DailyLog[]
+  alerts     Alert[]
+  rejections Rejection[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -196,6 +198,20 @@ model Alert {
   message     String
   createdAt   DateTime  @default(now())
   dismissedAt DateTime?
+
+  @@index([itemId])
+}
+
+// ── 版本打回记录 ─────────────────────────────────
+model Rejection {
+  id          String   @id @default(cuid())
+  itemId      String
+  item        Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  reason      String                   // 打回理由
+  docLink     String   @default("")    // 钉钉文档链接
+  rejectedById String                  // 谁打回的
+  rejectedBy  User     @relation(fields: [rejectedById], references: [id])
+  createdAt   DateTime @default(now()) // 打回时间
 
   @@index([itemId])
 }

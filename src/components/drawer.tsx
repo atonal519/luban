@@ -290,6 +290,75 @@ function MokraField({ label, color, value, field, placeholder, onSave }: { label
   );
 }
 
+function DrawerPersonSelect({ currentOwners, allUsers, onSave }: { currentOwners: any[]; allUsers: any[]; onSave: (ids: string[]) => void }) {
+  const [selected, setSelected] = useState<string[]>(currentOwners.map((u: any) => u.id));
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => { setSelected(currentOwners.map((u: any) => u.id)); }, [currentOwners]);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+        const prev = currentOwners.map((u: any) => u.id).sort().join(",");
+        const next = [...selected].sort().join(",");
+        if (prev !== next) onSave(selected);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open, selected]);
+
+  function toggle(id: string) {
+    setSelected(prev => prev.includes(id) ? prev.filter(u => u !== id) : [...prev, id]);
+  }
+
+  const filtered = allUsers.filter((u: any) => u.name.toLowerCase().includes(query.toLowerCase()));
+  const selectedUsers = allUsers.filter((u: any) => selected.includes(u.id));
+
+  return (
+    <div ref={ref} className="relative">
+      <div className="flex gap-1 items-center cursor-pointer" onClick={() => { setQuery(""); setOpen(!open); }}>
+        {selectedUsers.length > 0 ? (
+          <>
+            {selectedUsers.slice(0, 2).map((u: any) => (
+              <span key={u.id} className="text-[12px] font-medium">{u.name}</span>
+            ))}
+            {selectedUsers.length > 2 && <span className="text-[10px] text-[var(--txt-2)]">+{selectedUsers.length - 2}</span>}
+          </>
+        ) : (
+          <span className="text-[12px] text-[var(--txt-3)]">—</span>
+        )}
+        <span className="text-[10px] text-[var(--txt-3)] ml-1">✎</span>
+      </div>
+      {open && (
+        <div className="absolute z-50 mt-1 bg-[var(--bg-1)] border border-[var(--line-2)] rounded-lg shadow-lg w-[160px] p-1.5">
+          <input
+            autoFocus
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="搜索责任人…"
+            className="w-full px-2 py-1 rounded-md border border-[var(--line-2)] bg-[var(--bg-2)] text-[11px] text-[var(--txt-0)] outline-none mb-1"
+          />
+          <div className="max-h-[140px] overflow-y-auto">
+            {filtered.map((u: any) => (
+              <label key={u.id} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-[var(--bg-2)] cursor-pointer text-[12px]">
+                <input type="checkbox" checked={selected.includes(u.id)} onChange={() => toggle(u.id)} className="accent-[var(--accent)]" />
+                {u.name}
+              </label>
+            ))}
+            {filtered.length === 0 && <div className="text-[11px] text-[var(--txt-3)] px-2 py-1">无匹配</div>}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function DrawerModuleSelect({ currentModules, allModules, onSave }: { currentModules: any[]; allModules: any[]; onSave: (ids: string[]) => Promise<void> }) {
   const [selected, setSelected] = useState<string[]>(currentModules.map((m: any) => m.module.id));
   const [open, setOpen] = useState(false);
@@ -418,41 +487,35 @@ export function Drawer({ item, initialStage, onClose }: { item: Item; initialSta
           {/* Info Grid — 3 cols × 2 rows, editable */}
           <div className="px-5 py-4 border-b border-[var(--line)]">
             <div className="text-[11px] text-[var(--txt-2)] tracking-wider uppercase font-mono mb-3">基本信息</div>
-            <div className="grid grid-cols-3 gap-x-4 gap-y-2.5">
+            <div className="grid grid-cols-3 gap-x-4 gap-y-3">
               <div>
-                <div className="text-[11px] text-[var(--txt-2)]">创建日期</div>
-                <div className="text-[12px] font-mono mt-1">{item.createdAt?.slice(0, 10) || "—"}</div>
+                <div className="text-[11px] text-[var(--txt-2)] mb-1">创建日期</div>
+                <div className="text-[12px] font-mono leading-[22px]">{item.createdAt?.slice(0, 10) || "—"}</div>
               </div>
               <div>
-                <div className="text-[11px] text-[var(--txt-2)]">预计交付</div>
-                <div className="mt-1">
-                  <input
-                    type="date"
-                    defaultValue={item.plannedEnd?.slice(0, 10) || ""}
-                    onBlur={(e) => save("plannedEnd", e.target.value || null)}
-                    className="text-[12px] font-mono bg-transparent border-b border-transparent hover:border-[var(--line-2)] focus:border-[var(--accent)] outline-none w-full transition-colors h-[18px]"
-                  />
-                </div>
+                <div className="text-[11px] text-[var(--txt-2)] mb-1">预计交付</div>
+                <input
+                  type="date"
+                  defaultValue={item.plannedEnd?.slice(0, 10) || ""}
+                  onBlur={(e) => save("plannedEnd", e.target.value || null)}
+                  className="text-[12px] font-mono bg-[var(--bg-2)] border border-[var(--line-2)] rounded-md px-2 py-0.5 outline-none w-full focus:border-[var(--accent)] transition-colors leading-[22px]"
+                />
               </div>
               <div>
-                <div className="text-[11px] text-[var(--txt-2)]">计划起止</div>
-                <div className="text-[12px] font-mono mt-1 text-[var(--txt-1)]">
+                <div className="text-[11px] text-[var(--txt-2)] mb-1">计划起止</div>
+                <div className="text-[12px] font-mono leading-[22px] text-[var(--txt-1)]">
                   {item.actualStart ? item.actualStart.slice(0, 10) : <span className="text-[var(--txt-3)]">未开始</span>}
                   {" ~ "}
                   {item.actualEnd ? item.actualEnd.slice(0, 10) : <span className="text-[var(--txt-3)]">进行中</span>}
                 </div>
               </div>
               <div>
-                <div className="text-[11px] text-[var(--txt-2)]">责任人</div>
-                <div className="mt-1">
-                  <SearchSelect
-                    value={item.ownerId || ""}
-                    displayText={item.owner?.name || "—"}
-                    options={options?.users?.map((u: any) => ({ value: u.id, label: u.name })) || []}
-                    placeholder="搜索责任人…"
-                    onSelect={(v) => save("ownerId", v || null)}
-                  />
-                </div>
+                <div className="text-[11px] text-[var(--txt-2)] mb-1">责任人</div>
+                <DrawerPersonSelect
+                  currentOwners={item.owner ? [item.owner] : []}
+                  allUsers={options?.users || []}
+                  onSave={(ids) => save("ownerId", ids[0] || null)}
+                />
               </div>
               <DrawerModuleSelect
                 currentModules={item.modules || []}

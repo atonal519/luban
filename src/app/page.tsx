@@ -37,6 +37,10 @@ export default async function Home({
         where: { dismissedAt: null },
         orderBy: { createdAt: "desc" },
       },
+      rejections: {
+        include: { rejectedBy: true },
+        orderBy: { createdAt: "desc" },
+      },
     },
     orderBy: { createdAt: "desc" },
   });
