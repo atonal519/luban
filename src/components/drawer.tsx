@@ -22,11 +22,69 @@ const STAGE_GROUP_MAP: Record<string, string> = {
   PENDING_RELEASE: "DELIVERY", DELIVERED: "DELIVERY", ABORTED: "DELIVERY",
 };
 
-function ApprovalChain({ approval }: { approval: any }) {
-  if (!approval) return null;
+function ApprovalChain({ approval, nodeId, options, onChanged }: { approval: any; nodeId: string; options: any; onChanged: () => void }) {
+  const [actionForm, setActionForm] = useState<string | null>(null); // "initiate"|"submit"|"approve"|"reject"|"resubmit"
+  const [actorId, setActorId] = useState("");
+  const [note, setNote] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [imageUrl, setImageUrl] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await fetch("/api/upload", { method: "POST", body: fd });
+    const data = await res.json();
+    setImageUrl(data.url || "");
+    setUploading(false);
+  }
+
+  async function doAction() {
+    if (!actorId || submitting) return;
+    setSubmitting(true);
+    await fetch(`/api/versions/${nodeId}/approval`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: actionForm, actorId, note: note.trim(), evidenceUrl: imageUrl }),
+    });
+    setActionForm(null); setActorId(""); setNote(""); setImageUrl("");
+    setSubmitting(false);
+    onChanged();
+  }
+
+  const users = options?.users || [];
+
+  // No approval yet — show initiate button
+  if (!approval) {
+    return (
+      <div className="ml-6 mt-2">
+        {actionForm === "initiate" ? (
+          <div className="p-3 bg-[var(--bg-2)] rounded-lg border border-[var(--line-2)] flex flex-col gap-2">
+            <select value={actorId} onChange={(e) => setActorId(e.target.value)} className="px-2 py-1 rounded-md border border-[var(--line-2)] bg-[var(--bg-1)] text-[12px] outline-none">
+              <option value="">发起人</option>
+              {users.map((u: any) => <option key={u.id} value={u.id}>{u.name}</option>)}
+            </select>
+            <textarea value={note} onChange={(e) => setNote(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); doAction(); } }} placeholder="审核要求…" className="px-2 py-1 rounded-md border border-[var(--line-2)] bg-[var(--bg-1)] text-[12px] outline-none resize-none min-h-[32px]" />
+            <div className="flex gap-1 justify-end">
+              <button onClick={() => setActionForm(null)} className="px-2 py-0.5 rounded text-[10px] text-[var(--txt-1)] border border-[var(--line-2)]">取消</button>
+              <button onClick={doAction} disabled={!actorId || submitting} className="px-2 py-0.5 rounded text-[10px] text-white bg-[var(--accent)] disabled:opacity-50">{submitting ? "…" : "发起"}</button>
+            </div>
+          </div>
+        ) : (
+          <button onClick={() => setActionForm("initiate")} className="text-[11px] text-[var(--accent)] hover:underline">+ 发起审核</button>
+        )}
+      </div>
+    );
+  }
+
   const events = approval.events || [];
+
   return (
     <div className="ml-6 mt-2 p-3 bg-[var(--bg-2)] rounded-lg border border-[var(--line-2)]">
+      {/* Event chain */}
       <div className="flex flex-col gap-2.5">
         {events.map((ev: any, idx: number) => {
           const isLast = idx === events.length - 1;
@@ -34,8 +92,8 @@ function ApprovalChain({ approval }: { approval: any }) {
             : ev.type === "REJECT" ? "bg-red-500 border-red-500"
             : isLast ? "bg-blue-500 border-blue-500 shadow-[0_0_0_3px_rgba(59,111,240,0.15)]"
             : "bg-emerald-500 border-emerald-500";
-          const label = ev.type === "REQUEST" ? "PM发起请求" : ev.type === "SUBMIT" ? "研发提交凭证"
-            : ev.type === "APPROVE" ? "PM审核通过" : ev.type === "REJECT" ? "PM驳回" : "重新提交";
+          const label = ev.type === "REQUEST" ? "发起审核" : ev.type === "SUBMIT" ? "提交凭证"
+            : ev.type === "APPROVE" ? "审核通过" : ev.type === "REJECT" ? "驳回" : "重新提交";
           return (
             <div key={ev.id} className="flex gap-2.5 items-start">
               <div className="flex flex-col items-center">
@@ -45,43 +103,70 @@ function ApprovalChain({ approval }: { approval: any }) {
               <div className="flex-1 pb-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-[12px] font-medium text-[var(--txt-0)]">{label}</span>
-                  <span className="text-[10px] text-[var(--txt-2)] font-mono">{ev.createdAt?.slice(0, 10)}</span>
+                  <span className="text-[10px] text-[var(--txt-2)] font-mono">{ev.createdAt?.slice(0, 16).replace('T', ' ')}</span>
                   {ev.actor && <span className="text-[10px] text-blue-500">{ev.actor.name}</span>}
                 </div>
                 {ev.note && (
-                  <div className={`mt-1 text-[11px] p-2 rounded ${ev.type === "REJECT" ? "bg-red-500/8 text-red-600 border border-red-500/15" : ev.type === "REQUEST" && isLast ? "bg-blue-500/8 text-blue-600 border border-blue-500/15" : "bg-[var(--bg-3)] text-[var(--txt-1)]"}`}>
+                  <div className={`mt-1 text-[11px] p-2 rounded ${ev.type === "REJECT" ? "bg-red-500/8 text-red-600 border border-red-500/15" : "bg-[var(--bg-3)] text-[var(--txt-1)]"}`}>
                     {ev.note}
                   </div>
                 )}
                 {ev.evidenceUrl && (
-                  <div className="mt-1 text-[11px] text-[var(--txt-2)]">📎 {ev.evidenceUrl}</div>
+                  <div className="mt-1">
+                    <img src={ev.evidenceUrl} alt="凭证" className="max-w-[200px] max-h-[150px] rounded border border-[var(--line-2)] cursor-pointer" onClick={() => window.open(ev.evidenceUrl, '_blank')} />
+                  </div>
                 )}
               </div>
             </div>
           );
         })}
       </div>
-      {approval.state === "WAITING_SUBMIT" && (
-        <div className="flex gap-1.5 mt-3">
-          <button className="px-3 py-1.5 rounded-md text-[11px] font-medium bg-blue-500/8 text-blue-600 border border-blue-500/15">📎 上传凭证</button>
+
+      {/* Action form */}
+      {actionForm ? (
+        <div className="mt-3 p-2.5 bg-[var(--bg-3)] rounded-lg flex flex-col gap-2">
+          <select value={actorId} onChange={(e) => setActorId(e.target.value)} className="px-2 py-1 rounded-md border border-[var(--line-2)] bg-[var(--bg-1)] text-[12px] outline-none">
+            <option value="">操作人</option>
+            {users.map((u: any) => <option key={u.id} value={u.id}>{u.name}</option>)}
+          </select>
+          {(actionForm === "submit" || actionForm === "resubmit") && (
+            <div>
+              <label className="text-[10px] text-[var(--txt-2)] block mb-1">上传凭证图片</label>
+              <input type="file" accept="image/*" onChange={handleUpload} className="text-[11px] text-[var(--txt-1)]" />
+              {uploading && <span className="text-[10px] text-[var(--txt-3)]">上传中…</span>}
+              {imageUrl && <img src={imageUrl} alt="preview" className="mt-1 max-w-[150px] max-h-[100px] rounded border border-[var(--line-2)]" />}
+            </div>
+          )}
+          <textarea value={note} onChange={(e) => setNote(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); doAction(); } }} placeholder={actionForm === "reject" ? "驳回理由…" : "备注（可选）…"} className="px-2 py-1 rounded-md border border-[var(--line-2)] bg-[var(--bg-1)] text-[12px] outline-none resize-none min-h-[32px]" />
+          <div className="flex gap-1 justify-end">
+            <button onClick={() => { setActionForm(null); setImageUrl(""); }} className="px-2 py-0.5 rounded text-[10px] text-[var(--txt-1)] border border-[var(--line-2)]">取消</button>
+            <button onClick={doAction} disabled={!actorId || submitting} className="px-2 py-0.5 rounded text-[10px] text-white bg-[var(--accent)] disabled:opacity-50">{submitting ? "…" : "确认"}</button>
+          </div>
         </div>
-      )}
-      {approval.state === "SUBMITTED" && (
+      ) : (
         <div className="flex gap-1.5 mt-3">
-          <button className="px-3 py-1.5 rounded-md text-[11px] font-medium bg-emerald-500/8 text-emerald-600 border border-emerald-500/15">✓ 审核通过</button>
-          <button className="px-3 py-1.5 rounded-md text-[11px] font-medium bg-red-500/8 text-red-600 border border-red-500/15">✗ 驳回</button>
-        </div>
-      )}
-      {approval.state === "REJECTED" && (
-        <div className="flex gap-1.5 mt-3">
-          <button className="px-3 py-1.5 rounded-md text-[11px] font-medium bg-amber-500/8 text-amber-600 border border-amber-500/15">↻ 重新提交</button>
+          {approval.state === "WAITING_SUBMIT" && (
+            <button onClick={() => setActionForm("submit")} className="px-3 py-1.5 rounded-md text-[11px] font-medium bg-blue-500/8 text-blue-600 border border-blue-500/15">📎 提交凭证</button>
+          )}
+          {approval.state === "SUBMITTED" && (
+            <>
+              <button onClick={() => setActionForm("approve")} className="px-3 py-1.5 rounded-md text-[11px] font-medium bg-emerald-500/8 text-emerald-600 border border-emerald-500/15">✓ 通过</button>
+              <button onClick={() => setActionForm("reject")} className="px-3 py-1.5 rounded-md text-[11px] font-medium bg-red-500/8 text-red-600 border border-red-500/15">✗ 驳回</button>
+            </>
+          )}
+          {approval.state === "REJECTED" && (
+            <button onClick={() => setActionForm("resubmit")} className="px-3 py-1.5 rounded-md text-[11px] font-medium bg-amber-500/8 text-amber-600 border border-amber-500/15">↻ 重新提交</button>
+          )}
+          {approval.state === "APPROVED" && (
+            <span className="px-3 py-1.5 rounded-md text-[11px] font-medium bg-emerald-500/8 text-emerald-600">✓ 已通过</span>
+          )}
         </div>
       )}
     </div>
   );
 }
 
-function SubNodeList({ children, stageCode }: { children: Item[]; stageCode: string }) {
+function SubNodeList({ children, stageCode, options, onChanged }: { children: Item[]; stageCode: string; options: any; onChanged: () => void }) {
   const stageChildren = children.filter((c: Item) => {
     if (c.stageType === stageCode) return true;
     if (c.status?.code && STAGE_GROUP_MAP[c.status.code] === stageCode) return true;
@@ -131,7 +216,7 @@ function SubNodeList({ children, stageCode }: { children: Item[]; stageCode: str
             <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-medium ${apBadge.cls}`}>{apBadge.label}</span>
           )}
         </div>
-        <ApprovalChain approval={node.approval} />
+        <ApprovalChain approval={node.approval} nodeId={node.id} options={options} onChanged={onChanged} />
         {/* Sub-sub items */}
         {node.children?.length > 0 && (
           <div className="ml-6 border-l border-[var(--line)] pl-3">
@@ -822,7 +907,7 @@ export function Drawer({ item, initialStage, onClose }: { item: Item; initialSta
 
           {/* Sub nodes */}
           <div className="px-5 py-4 border-b border-[var(--line)]">
-            <SubNodeList children={item.children || []} stageCode={STAGE_GROUPS[activeTab].code} />
+            <SubNodeList children={item.children || []} stageCode={STAGE_GROUPS[activeTab].code} options={options} onChanged={() => router.refresh()} />
           </div>
 
           {/* Logs */}

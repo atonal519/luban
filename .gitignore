@@ -39,6 +39,10 @@ prisma/dev.db-journal
 *.db
 *.db-journal
 
+# uploads
+public/uploads/*
+!public/uploads/.gitkeep
+
 # vercel
 .vercel
 
