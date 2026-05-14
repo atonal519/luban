@@ -268,7 +268,7 @@ export function Board({ items, stageFilter = "" }: { items: Item[]; stageFilter?
                     itemId={item.id}
                     field="title"
                     onSave={saveField}
-                    displayNode={<span className="text-[13px] font-medium max-w-[200px] block leading-tight" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{item.title}</span>}
+                    displayNode={<span className="text-[13px] font-medium max-w-[200px] block leading-tight" title={item.title} style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{item.title}</span>}
                   />
                 </td>
                 {/* 研发模块 - display only (多选太复杂，走抽屉改) */}
