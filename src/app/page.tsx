@@ -1,7 +1,13 @@
 import { prisma } from "@/lib/prisma";
 import { Board } from "@/components/board";
 
-export default async function Home() {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ stage?: string }>;
+}) {
+  const { stage } = await searchParams;
+
   const items = await prisma.item.findMany({
     where: { parentId: null },
     include: {
@@ -35,5 +41,5 @@ export default async function Home() {
     orderBy: { createdAt: "desc" },
   });
 
-  return <Board items={JSON.parse(JSON.stringify(items))} />;
+  return <Board items={JSON.parse(JSON.stringify(items))} stageFilter={stage || ""} />;
 }

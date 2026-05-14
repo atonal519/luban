@@ -89,41 +89,80 @@ function AlertBar({ items }: { items: Item[] }) {
   );
 }
 
-export function Board({ items }: { items: Item[] }) {
+const STAGE_LABELS: Record<string, string> = {
+  REQUIREMENT: "需求看板",
+  DEVELOPMENT: "开发看板",
+  TEST: "测试看板",
+  DELIVERY: "交付看板",
+};
+
+export function Board({ items, stageFilter = "" }: { items: Item[]; stageFilter?: string }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [drawerStage, setDrawerStage] = useState(0);
+  const [quickInput, setQuickInput] = useState("");
   const selectedItem = items.find((i: Item) => i.id === selectedId);
+
+  // Stage filter: only show versions that have children in the selected stage
+  const filteredItems = stageFilter
+    ? items.filter((item: Item) => {
+        // Check if item itself belongs to this stage
+        const itemStageGroup = item.status?.code ? STAGE_GROUP_MAP[item.status.code] : item.stageType;
+        if (itemStageGroup === stageFilter) return true;
+        // Check if any child belongs to this stage
+        return (item.children || []).some((c: Item) => {
+          if (c.stageType === stageFilter) return true;
+          if (c.status?.code && STAGE_GROUP_MAP[c.status.code] === stageFilter) return true;
+          return false;
+        });
+      })
+    : items;
+
+  const boardTitle = stageFilter ? (STAGE_LABELS[stageFilter] || "版本看板") : "全部版本";
 
   function openDrawer(item: Item, stageIdx?: number) {
     setSelectedId(item.id);
     setDrawerStage(stageIdx ?? 0);
   }
 
+  function handleQuickCreate(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter" && quickInput.trim()) {
+      // TODO Phase 2: 弹出创建弹窗填写模块/责任人等
+      alert(`[Phase 2] 将创建版本：${quickInput.trim()}\n后续会弹出弹窗填写详细信息`);
+      setQuickInput("");
+    }
+  }
+
   return (
     <>
       {/* Topbar */}
       <div className="h-[52px] min-h-[52px] flex items-center px-5 border-b border-[var(--line)] bg-[var(--bg-1)] gap-3">
-        <span className="text-[15px] font-semibold">版本看板</span>
+        {/* Quick create */}
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] w-[320px] focus-within:border-[var(--accent)] transition-colors">
+          <span className="text-[var(--accent)] text-[14px] font-bold flex-shrink-0">+</span>
+          <input
+            type="text"
+            value={quickInput}
+            onChange={(e) => setQuickInput(e.target.value)}
+            onKeyDown={handleQuickCreate}
+            placeholder="输入项目名，回车快速新建版本…"
+            className="bg-transparent outline-none text-[13px] text-[var(--txt-0)] w-full placeholder:text-[var(--txt-3)]"
+          />
+        </div>
+
+        <span className="text-[15px] font-semibold">{boardTitle}</span>
         <span className="font-mono text-[11px] text-[var(--txt-2)] bg-[var(--bg-3)] px-2 py-0.5 rounded">
-          {items.length} 个版本
+          {filteredItems.length} 个版本
         </span>
+
         <div className="ml-auto flex items-center gap-1.5">
-          {["研发模块", "当前阶段", "交付时间线", "状态"].map(label => (
-            <button key={label} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-[var(--line-2)] bg-[var(--bg-1)] text-[var(--txt-1)] text-[12px] hover:border-[var(--accent)] hover:text-[var(--txt-0)] transition-colors">
-              {label}
-            </button>
-          ))}
-          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-[var(--line-2)] bg-[var(--bg-1)] text-[12px] w-[160px]">
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-[var(--line-2)] bg-[var(--bg-1)] text-[12px] w-[180px]">
             <span className="text-[var(--txt-3)]">🔍</span>
             <input type="text" placeholder="搜索版本 / 项目名" className="bg-transparent outline-none text-[12px] text-[var(--txt-0)] w-full placeholder:text-[var(--txt-3)]" />
           </div>
-          <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[var(--accent)] text-white text-[12px] font-medium hover:opacity-85 transition-opacity">
-            + 新建版本
-          </button>
         </div>
       </div>
 
-      <AlertBar items={items} />
+      <AlertBar items={filteredItems} />
 
       {/* Table */}
       <div className="flex-1 overflow-auto px-5 py-4">
@@ -144,7 +183,7 @@ export function Board({ items }: { items: Item[] }) {
             </tr>
           </thead>
           <tbody>
-            {items.map((item: Item) => (
+            {filteredItems.map((item: Item) => (
               <tr
                 key={item.id}
                 onClick={() => openDrawer(item)}
