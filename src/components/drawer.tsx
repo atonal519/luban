@@ -241,10 +241,12 @@ function EditableTextArea({ value, placeholder, onSave }: { value: string; place
         autoFocus
         value={text}
         onChange={(e) => setText(e.target.value)}
+        onKeyDown={(e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { onSave(text); setEditing(false); } }}
         className="w-full px-3 py-2 rounded-lg border border-[var(--accent)] bg-[var(--bg-2)] text-[12px] text-[var(--txt-0)] outline-none resize-none min-h-[80px] leading-relaxed"
         placeholder={placeholder}
       />
-      <div className="flex gap-1.5 justify-end">
+      <div className="flex gap-1.5 justify-end items-center">
+        <span className="text-[10px] text-[var(--txt-3)] mr-auto">Ctrl+Enter 保存</span>
         <button onClick={() => setEditing(false)} className="px-3 py-1 rounded text-[11px] text-[var(--txt-1)] border border-[var(--line-2)] hover:bg-[var(--bg-3)]">取消</button>
         <button onClick={() => { onSave(text); setEditing(false); }} className="px-3 py-1 rounded text-[11px] text-white bg-[var(--accent)] hover:opacity-85">保存</button>
       </div>
@@ -279,10 +281,12 @@ function MokraField({ label, color, value, field, placeholder, onSave }: { label
           autoFocus
           value={text}
           onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { onSave(field, text); setEditing(false); } }}
           className="w-full px-2 py-1.5 rounded border border-[var(--accent)] bg-[var(--bg-2)] text-[12px] text-[var(--txt-0)] outline-none resize-none min-h-[48px] leading-relaxed"
           placeholder={placeholder}
         />
-        <div className="flex gap-1.5 justify-end">
+        <div className="flex gap-1.5 justify-end items-center">
+          <span className="text-[10px] text-[var(--txt-3)] mr-auto">Ctrl+Enter</span>
           <button onClick={() => setEditing(false)} className="px-2 py-0.5 rounded text-[10px] text-[var(--txt-1)] border border-[var(--line-2)]">取消</button>
           <button onClick={() => { onSave(field, text); setEditing(false); }} className="px-2 py-0.5 rounded text-[10px] text-white bg-[var(--accent)]">保存</button>
         </div>
@@ -496,13 +500,10 @@ export function Drawer({ item, initialStage, onClose }: { item: Item; initialSta
               <div>
                 <div className="text-[11px] text-[var(--txt-2)] mb-1">预计交付</div>
                 <input
-                  type="text"
+                  type="date"
                   defaultValue={item.plannedEnd?.slice(0, 10) || ""}
-                  placeholder="YYYY-MM-DD"
-                  onBlur={(e) => {
-                    const v = e.target.value.trim();
-                    if (!v || /^\d{4}-\d{2}-\d{2}$/.test(v)) save("plannedEnd", v || null);
-                  }}
+                  onBlur={(e) => save("plannedEnd", e.target.value || null)}
+                  onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
                   className="text-[12px] font-mono bg-[var(--bg-2)] border border-[var(--line-2)] rounded-md px-2 py-0.5 outline-none w-full focus:border-[var(--accent)] transition-colors leading-[22px]"
                 />
               </div>
