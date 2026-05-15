@@ -10,6 +10,8 @@ const MODELS: Record<string, any> = {
   users: prisma.user,
 };
 
+const HAS_ORDER = new Set(['modules', 'natures', 'statuses', 'stageGroups', 'stageTemplates']);
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ type: string }> }
@@ -19,7 +21,7 @@ export async function GET(
   if (!model) return NextResponse.json({ error: 'Invalid type' }, { status: 400 });
 
   const items = await model.findMany({
-    orderBy: 'order' in (model.fields || {}) ? { order: 'asc' } : { createdAt: 'desc' },
+    orderBy: HAS_ORDER.has(type) ? { order: 'asc' } : { createdAt: 'desc' },
     ...(type === 'stageTemplates' ? { include: { stageGroup: true } } : {}),
   });
 

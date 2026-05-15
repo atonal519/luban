@@ -72,12 +72,22 @@ export default function SettingsPage() {
   }
 
   async function handleMove(id: string, direction: "up" | "down") {
-    const idx = items.findIndex((i: any) => i.id === id);
+    // For grouped tabs, find neighbors within the same visible list
+    const visibleItems = (tab as any).grouped
+      ? items.filter((i: any) => {
+          const groupId = items.find((x: any) => x.id === id)?.stageGroup?.id || items.find((x: any) => x.id === id)?.stageGroupId;
+          return (i.stageGroup?.id || i.stageGroupId) === groupId;
+        })
+      : items;
+
+    const idx = visibleItems.findIndex((i: any) => i.id === id);
     if (idx < 0) return;
     const swapIdx = direction === "up" ? idx - 1 : idx + 1;
-    if (swapIdx < 0 || swapIdx >= items.length) return;
-    const a = items[idx], b = items[swapIdx];
+    if (swapIdx < 0 || swapIdx >= visibleItems.length) return;
+
+    const a = visibleItems[idx], b = visibleItems[swapIdx];
     const orderA = a.order ?? idx, orderB = b.order ?? swapIdx;
+
     await Promise.all([
       fetch(`/api/settings/${activeTab}/${a.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ order: orderB }) }),
       fetch(`/api/settings/${activeTab}/${b.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ order: orderA }) }),
