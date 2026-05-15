@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 
 const NAV = [
   { href: "/", label: "总览", icon: "☰" },
@@ -11,6 +12,17 @@ const NAV = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    fetch("/api/auth/me").then(r => r.json()).then(setUser);
+  }, []);
+
+  async function handleLogout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/login");
+  }
 
   return (
     <aside className="w-[220px] min-w-[220px] bg-[var(--bg-1)] border-r border-[var(--line)] flex flex-col h-full">
@@ -64,12 +76,15 @@ export function Sidebar() {
       {/* User */}
       <div className="px-3.5 py-3 border-t border-[var(--line)] flex items-center gap-2.5">
         <div className="w-[30px] h-[30px] rounded-full bg-gradient-to-br from-[#3b6ff0] to-[#7c3aed] flex items-center justify-center text-white text-xs font-semibold">
-          PM
+          {user?.name?.[0] || "?"}
         </div>
-        <div>
-          <div className="text-[13px] font-medium text-[var(--txt-0)]">项目管理员</div>
-          <div className="text-[11px] text-[var(--txt-2)]">Project Manager</div>
+        <div className="flex-1 min-w-0">
+          <div className="text-[13px] font-medium text-[var(--txt-0)]">{user?.name || "未登录"}</div>
+          <div className="text-[11px] text-[var(--txt-2)]">{user?.role || ""}</div>
         </div>
+        <button onClick={handleLogout} className="text-[10px] text-[var(--txt-3)] hover:text-[var(--late)] transition-colors" title="退出登录">
+          退出
+        </button>
       </div>
     </aside>
   );
