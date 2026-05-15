@@ -20,7 +20,7 @@ export function CreateModal({
   const [options, setOptions] = useState<Options | null>(null);
   const [title, setTitle] = useState(initialTitle);
   const [versionNo, setVersionNo] = useState("");
-  const [priority, setPriority] = useState("MID");
+  const [priority, setPriority] = useState("T1");
   const [natureId, setNatureId] = useState("");
   const [ownerId, setOwnerId] = useState("");
   const [moduleIds, setModuleIds] = useState<string[]>([]);
@@ -149,9 +149,10 @@ export function CreateModal({
                 onChange={(e) => setPriority(e.target.value)}
                 className="w-full px-3 py-2 rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] text-[13px] text-[var(--txt-0)] outline-none focus:border-[var(--accent)]"
               >
-                <option value="HIGH">高</option>
-                <option value="MID">中</option>
-                <option value="LOW">低</option>
+                <option value="FATAL">致命</option>
+                <option value="T0">T0</option>
+                <option value="T1">T1</option>
+                <option value="T2">T2</option>
               </select>
             </div>
           </div>

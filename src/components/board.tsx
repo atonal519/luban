@@ -27,8 +27,8 @@ const STAGE_GROUP_MAP: Record<string, string> = {
 };
 
 function priorityTag(p: string) {
-  const cls = p === "HIGH" ? "bg-red-500/8 text-red-600" : p === "MID" ? "bg-amber-500/8 text-amber-600" : "bg-slate-500/8 text-slate-500";
-  const label = p === "HIGH" ? "高" : p === "MID" ? "中" : "低";
+  const cls = p === "FATAL" ? "bg-red-700/10 text-red-700" : p === "T0" ? "bg-red-500/8 text-red-600" : p === "T1" ? "bg-amber-500/8 text-amber-600" : "bg-slate-500/8 text-slate-500";
+  const label = p === "FATAL" ? "致命" : p === "T0" ? "T0" : p === "T1" ? "T1" : "T2";
   return <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-medium ${cls}`}>
     <span className="w-[5px] h-[5px] rounded-full bg-current" />{label}
   </span>;
@@ -333,14 +333,15 @@ export function Board({ items, stageFilter = "" }: { items: Item[]; stageFilter?
                 {/* 优先级 - editable select */}
                 <td className="px-3 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
                   <EditableCell
-                    value={item.priority || "MID"}
+                    value={item.priority || "T1"}
                     itemId={item.id}
                     field="priority"
                     type="select"
                     options={[
-                      { value: "HIGH", label: "高" },
-                      { value: "MID", label: "中" },
-                      { value: "LOW", label: "低" },
+                      { value: "FATAL", label: "致命" },
+                      { value: "T0", label: "T0" },
+                      { value: "T1", label: "T1" },
+                      { value: "T2", label: "T2" },
                     ]}
                     onSave={saveField}
                     displayNode={priorityTag(item.priority)}

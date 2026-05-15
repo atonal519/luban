@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     data: {
       title: title.trim(),
       versionNo: versionNo?.trim() || '',
-      priority: priority || 'MID',
+      priority: priority || 'T1',
       natureId: natureId || null,
       ownerId: ownerId || null,
       createdById: ownerId || null,
