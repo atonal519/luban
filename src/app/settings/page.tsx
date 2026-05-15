@@ -5,10 +5,10 @@ import { useState, useEffect } from "react";
 const TABS = [
   { key: "modules", label: "研发模块", fields: ["name", "color", "order"] },
   { key: "users", label: "人员", fields: ["name", "email", "role"] },
-  { key: "stageGroups", label: "大节点", fields: ["code", "label", "order"] },
+  { key: "stageGroups", label: "大节点", fields: ["label", "order"] },
   { key: "stageTemplates", label: "子节点模板", fields: ["name", "order", "isParallel", "parallelGroup"] },
-  { key: "natures", label: "类型", fields: ["code", "label", "color", "order"] },
-  { key: "statuses", label: "节点状态", fields: ["code", "label", "stageGroup", "color", "order"] },
+  { key: "natures", label: "类型", fields: ["label", "color", "order"] },
+  { key: "statuses", label: "节点状态", fields: ["label", "stageGroup", "color", "order"] },
 ];
 
 export default function SettingsPage() {
@@ -38,10 +38,15 @@ export default function SettingsPage() {
   }
 
   async function handleAdd() {
+    const data = { ...addData };
+    // Auto-generate code from label for types that need it
+    if ((activeTab === "natures" || activeTab === "statuses" || activeTab === "stageGroups") && data.label && !data.code) {
+      data.code = data.label.toUpperCase().replace(/[^A-Z0-9\u4e00-\u9fff]/g, '_').replace(/_+/g, '_');
+    }
     await fetch(`/api/settings/${activeTab}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(addData),
+      body: JSON.stringify(data),
     });
     setShowAdd(false); setAddData({});
     loadItems();
