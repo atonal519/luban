@@ -105,7 +105,17 @@ export default function SettingsPage() {
       );
     }
     if (field === "isParallel") {
-      return <input type="checkbox" checked={!!value} onChange={(e) => onChange(e.target.checked)} style={{ width: '18px', height: '18px' }} className="accent-[var(--accent)] cursor-pointer" />;
+      return (
+        <button
+          type="button"
+          onClick={() => onChange(!value)}
+          className={`px-3 py-1 rounded-md border text-[12px] font-medium transition-colors ${
+            value ? "bg-blue-500/10 text-blue-600 border-blue-500/20" : "bg-[var(--bg-2)] text-[var(--txt-3)] border-[var(--line-2)]"
+          }`}
+        >
+          {value ? "是" : "否"}
+        </button>
+      );
     }
     if (field === "order") {
       return <input type="number" value={value || 0} onChange={(e) => onChange(Number(e.target.value))} className="w-14 px-1.5 py-0.5 rounded border border-[var(--line-2)] bg-[var(--bg-2)] text-[12px] outline-none focus:border-[var(--accent)]" />;
