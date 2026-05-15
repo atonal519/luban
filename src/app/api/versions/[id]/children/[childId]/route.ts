@@ -15,6 +15,8 @@ export async function PATCH(
   if ('isParallel' in body) data.isParallel = !!body.isParallel;
   if ('parallelGroup' in body) data.parallelGroup = body.parallelGroup || '';
   if ('progress' in body) data.progress = Number(body.progress) || 0;
+  if ('plannedStart' in body) data.plannedStart = body.plannedStart ? new Date(body.plannedStart) : null;
+  if ('plannedEnd' in body) data.plannedEnd = body.plannedEnd ? new Date(body.plannedEnd) : null;
 
   const updated = await prisma.item.update({
     where: { id: childId },

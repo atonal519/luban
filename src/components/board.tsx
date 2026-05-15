@@ -246,7 +246,7 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
       {/* Table */}
       <div className="flex-1 overflow-auto px-5 py-4">
         <table className="w-full border-separate border-spacing-0 text-[12px] table-fixed" style={{ minWidth: '1400px' }}>
-          <colgroup><col style={{ width: '90px' }} /><col style={{ width: '200px' }} /><col style={{ width: '120px' }} /><col style={{ width: '80px' }} /><col style={{ width: '80px' }} /><col style={{ width: '60px' }} /><col style={{ width: '140px' }} /><col style={{ width: '140px' }} /><col style={{ width: '140px' }} /><col style={{ width: '140px' }} /><col style={{ width: '80px' }} /><col style={{ width: '50px' }} /></colgroup>
+          <colgroup><col style={{ width: '90px' }} /><col style={{ width: '200px' }} /><col style={{ width: '120px' }} /><col style={{ width: '80px' }} /><col style={{ width: '80px' }} /><col style={{ width: '75px' }} /><col style={{ width: '140px' }} /><col style={{ width: '140px' }} /><col style={{ width: '140px' }} /><col style={{ width: '140px' }} /><col style={{ width: '80px' }} /><col style={{ width: '50px' }} /></colgroup>
           <thead>
             <tr>
               {["版本号", "项目名称", "研发模块", "类型", "责任人", "优先级"].map(h => (

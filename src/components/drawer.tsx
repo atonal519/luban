@@ -327,6 +327,23 @@ function SubNodeList({ children, stageCode, options, onChanged, parentId }: { ch
             <button onClick={(e) => { e.stopPropagation(); deleteNode(node.id); }} className="text-[10px] text-[var(--txt-3)] hover:text-[var(--late)]">✕</button>
           </span>
         </div>
+        {/* Date range */}
+        <div className="flex items-center gap-1.5 px-2 ml-6 text-[10px]">
+          <span className="text-[var(--txt-3)]">计划</span>
+          <input
+            type="date"
+            defaultValue={node.plannedStart?.slice(0, 10) || ""}
+            onBlur={(e) => { fetch(`/api/versions/${parentId}/children/${node.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plannedStart: e.target.value || null }) }).then(() => onChanged()); }}
+            className="font-mono text-[10px] bg-[var(--bg-2)] border border-[var(--line-2)] rounded px-1 py-0.5 outline-none focus:border-[var(--accent)] w-[100px]"
+          />
+          <span className="text-[var(--txt-3)]">~</span>
+          <input
+            type="date"
+            defaultValue={node.plannedEnd?.slice(0, 10) || ""}
+            onBlur={(e) => { fetch(`/api/versions/${parentId}/children/${node.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plannedEnd: e.target.value || null }) }).then(() => onChanged()); }}
+            className="font-mono text-[10px] bg-[var(--bg-2)] border border-[var(--line-2)] rounded px-1 py-0.5 outline-none focus:border-[var(--accent)] w-[100px]"
+          />
+        </div>
         <ApprovalChain approval={node.approval} nodeId={node.id} options={options} onChanged={onChanged} />
         {node.children?.length > 0 && (
           <div className="ml-6 border-l border-[var(--line)] pl-3">
