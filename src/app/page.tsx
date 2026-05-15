@@ -15,6 +15,7 @@ export default async function Home({
         nature: true,
         status: true,
         owner: true,
+        priority: true,
         modules: { include: { module: true } },
         children: {
           include: {

@@ -5,12 +5,13 @@ const MODELS: Record<string, any> = {
   modules: prisma.module,
   natures: prisma.nature,
   statuses: prisma.statusDef,
+  priorities: prisma.priorityDef,
   stageGroups: prisma.stageGroup,
   stageTemplates: prisma.stageTemplate,
   users: prisma.user,
 };
 
-const HAS_ORDER = new Set(['modules', 'natures', 'statuses', 'stageGroups', 'stageTemplates']);
+const HAS_ORDER = new Set(['modules', 'natures', 'statuses', 'priorities', 'stageGroups', 'stageTemplates']);
 
 export async function GET(
   req: NextRequest,

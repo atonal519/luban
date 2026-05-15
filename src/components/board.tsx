@@ -24,11 +24,10 @@ const DEFAULT_STAGE_GROUP_MAP: Record<string, string> = {
   ABORTED: "DELIVERY", DELIVERED: "DELIVERY",
 };
 
-function priorityTag(p: string) {
-  const cls = p === "FATAL" ? "bg-red-700/10 text-red-700" : p === "T0" ? "bg-red-500/8 text-red-600" : p === "T1" ? "bg-amber-500/8 text-amber-600" : "bg-slate-500/8 text-slate-500";
-  const label = p === "FATAL" ? "致命" : p === "T0" ? "T0" : p === "T1" ? "T1" : "T2";
-  return <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-medium ${cls}`}>
-    <span className="w-[5px] h-[5px] rounded-full bg-current" />{label}
+function priorityTag(p: any) {
+  if (!p) return <span className="text-[11px] text-[var(--txt-3)]">—</span>;
+  return <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-medium" style={{ background: p.color + "18", color: p.color }}>
+    <span className="w-[5px] h-[5px] rounded-full bg-current" />{p.label}
   </span>;
 }
 
@@ -348,19 +347,14 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
                     displayNode={<span className="text-[12px]">{item.owner?.name || "—"}</span>}
                   />
                 </td>
-                {/* 优先级 - editable select */}
+                {/* 优先级 - editable select from DB */}
                 <td className="px-3 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
                   <EditableCell
-                    value={item.priority || "T1"}
+                    value={item.priorityId || ""}
                     itemId={item.id}
-                    field="priority"
+                    field="priorityId"
                     type="select"
-                    options={[
-                      { value: "FATAL", label: "致命" },
-                      { value: "T0", label: "T0" },
-                      { value: "T1", label: "T1" },
-                      { value: "T2", label: "T2" },
-                    ]}
+                    options={options?.priorities?.map((p: any) => ({ value: p.id, label: p.label })) || []}
                     onSave={saveField}
                     displayNode={priorityTag(item.priority)}
                   />

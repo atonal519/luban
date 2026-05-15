@@ -5,6 +5,7 @@ const MODELS: Record<string, any> = {
   modules: prisma.module,
   natures: prisma.nature,
   statuses: prisma.statusDef,
+  priorities: prisma.priorityDef,
   stageGroups: prisma.stageGroup,
   stageTemplates: prisma.stageTemplate,
   users: prisma.user,

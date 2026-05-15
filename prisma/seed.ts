@@ -17,6 +17,7 @@ async function main() {
   await prisma.module.deleteMany();
   await prisma.nature.deleteMany();
   await prisma.statusDef.deleteMany();
+  await prisma.priorityDef.deleteMany();
 
   // ── 阶段分组（4大节点）──
   const [sgRequirement, sgDevelopment, sgTest, sgDelivery] = await Promise.all([
@@ -49,6 +50,14 @@ async function main() {
     prisma.nature.create({ data: { code: 'FEATURE', label: 'Feature', color: '#3b6ff0', order: 1 } }),
     prisma.nature.create({ data: { code: 'BUG', label: 'Bug', color: '#dc3535', order: 2 } }),
     prisma.nature.create({ data: { code: 'HOTFIX', label: 'Hotfix', color: '#d97706', order: 3 } }),
+  ]);
+
+  // ── 优先级字典 ──
+  const [priFatal, priT0, priT1, priT2] = await Promise.all([
+    prisma.priorityDef.create({ data: { code: 'FATAL', label: '致命', color: '#991b1b', order: 1 } }),
+    prisma.priorityDef.create({ data: { code: 'T0', label: 'T0', color: '#dc2626', order: 2 } }),
+    prisma.priorityDef.create({ data: { code: 'T1', label: 'T1', color: '#d97706', order: 3 } }),
+    prisma.priorityDef.create({ data: { code: 'T2', label: 'T2', color: '#64748b', order: 4 } }),
   ]);
 
   // ── 状态字典（5个通用状态）──
@@ -97,7 +106,7 @@ async function main() {
     data: {
       title: '感知融合重构',
       versionNo: 'V3.0.0',
-      priority: 'T0',
+      priorityId: priT0.id,
       ownerId: dev1.id,
       createdById: pm.id,
       natureId: ntFeature.id,
@@ -128,7 +137,7 @@ async function main() {
     data: {
       title: '定位精度提升',
       versionNo: 'V2.9.1',
-      priority: 'T1',
+      priorityId: priT1.id,
       ownerId: dev2.id,
       createdById: pm.id,
       natureId: ntFeature.id,

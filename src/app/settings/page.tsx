@@ -7,6 +7,7 @@ const TABS = [
   { key: "users", label: "人员", fields: ["name", "email", "role"] },
   { key: "stageGroups", label: "大节点", fields: ["label"] },
   { key: "stageTemplates", label: "子节点模板", fields: ["name", "isParallel", "parallelGroup"], grouped: true },
+  { key: "priorities", label: "优先级", fields: ["label", "color"] },
   { key: "natures", label: "类型", fields: ["label", "color"] },
   { key: "statuses", label: "节点状态", fields: ["label", "color"] },
 ];

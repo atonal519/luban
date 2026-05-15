@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { title, versionNo, priority, natureId, ownerId, moduleIds } = body;
+  const { title, versionNo, priorityId, natureId, ownerId, moduleIds } = body;
 
   if (!title?.trim()) {
     return NextResponse.json({ error: '项目名称不能为空' }, { status: 400 });
@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     data: {
       title: title.trim(),
       versionNo: versionNo?.trim() || '',
-      priority: priority || 'T1',
+      priorityId: priorityId || null,
       natureId: natureId || null,
       ownerId: ownerId || null,
       createdById: ownerId || null,

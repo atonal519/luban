@@ -10,7 +10,7 @@ export async function PATCH(
 
   // Only allow updating specific fields
   const allowed = [
-    'title', 'versionNo', 'priority', 'natureId', 'statusId',
+    'title', 'versionNo', 'priorityId', 'natureId', 'statusId',
     'ownerId', 'description', 'stageType', 'progress',
     'plannedStart', 'plannedEnd', 'actualStart', 'actualEnd',
     'mokraMotivation', 'mokraObjects', 'mokraKeyResults', 'mokraActions',
