@@ -172,8 +172,11 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
   const [searchQuery, setSearchQuery] = useState("");
   const selectedItem = items.find((i: Item) => i.id === selectedId);
 
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
   useEffect(() => {
     fetch("/api/options").then(r => r.json()).then(setOptions);
+    fetch("/api/auth/me").then(r => r.json()).then(setCurrentUser);
   }, []);
 
   async function saveField(itemId: string, field: string, value: string) {
@@ -448,6 +451,7 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
           item={selectedItem}
           initialStage={drawerStage}
           onClose={() => setSelectedId(null)}
+          currentUser={currentUser}
         />
       )}
 

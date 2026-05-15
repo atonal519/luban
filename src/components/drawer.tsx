@@ -745,11 +745,11 @@ function RejectionItem({ rejection: r, index, itemId, options, onChanged }: { re
   );
 }
 
-function RejectionSection({ item, options, onSaved }: { item: Item; options: any; onSaved: () => void }) {
+function RejectionSection({ item, options, onSaved, currentUser }: { item: Item; options: any; onSaved: () => void; currentUser?: any }) {
   const [showForm, setShowForm] = useState(false);
   const [reason, setReason] = useState("");
   const [docLink, setDocLink] = useState("");
-  const [rejectedById, setRejectedById] = useState("");
+  const [rejectedById, setRejectedById] = useState(currentUser?.id || "");
   const [submitting, setSubmitting] = useState(false);
 
   const rejections = item.rejections || [];
@@ -902,7 +902,7 @@ function LogItem({ log, itemId, onChanged }: { log: any; itemId: string; onChang
   );
 }
 
-export function Drawer({ item, initialStage, onClose }: { item: Item; initialStage: number; onClose: () => void }) {
+export function Drawer({ item, initialStage, onClose, currentUser }: { item: Item; initialStage: number; onClose: () => void; currentUser?: any }) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState(initialStage);
   const [options, setOptions] = useState<any>(null);
@@ -937,7 +937,7 @@ export function Drawer({ item, initialStage, onClose }: { item: Item; initialSta
     await fetch(`/api/versions/${item.id}/logs`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content: logContent.trim(), authorId: item.ownerId || "" }),
+      body: JSON.stringify({ content: logContent.trim(), authorId: currentUser?.id || item.ownerId || "" }),
     });
     setLogContent("");
     setLogSubmitting(false);
@@ -1078,7 +1078,7 @@ export function Drawer({ item, initialStage, onClose }: { item: Item; initialSta
           </div>
 
           {/* 版本打回记录 */}
-          <RejectionSection item={item} options={options} onSaved={() => router.refresh()} />
+          <RejectionSection item={item} options={options} onSaved={() => router.refresh()} currentUser={currentUser} />
         </div>
 
         {/* Log input */}
