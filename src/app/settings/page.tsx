@@ -109,7 +109,7 @@ export default function SettingsPage() {
         <button
           type="button"
           onClick={() => onChange(!value)}
-          className={`px-3 py-1 rounded-md border text-[12px] font-medium transition-colors ${
+          className={`px-2.5 py-0.5 rounded-md border text-[12px] font-medium transition-colors leading-[20px] ${
             value ? "bg-blue-500/10 text-blue-600 border-blue-500/20" : "bg-[var(--bg-2)] text-[var(--txt-3)] border-[var(--line-2)]"
           }`}
         >
