@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Drawer } from "./drawer";
 import { CreateModal } from "./create-modal";
@@ -103,6 +103,37 @@ function stageStatus(item: Item, stageCode: string, STAGE_GROUPS: {code:string;l
     return { label: "进行中", cls: "text-blue-600 bg-blue-500/8", progress: `${done}/${stageChildren.length}`, sub: subLabel, isParallelRunning, dates };
   }
   return { label: "未开始", cls: "text-slate-400 bg-transparent", progress: `${done}/${stageChildren.length}`, sub: "", isParallelRunning: false, dates };
+}
+
+function ActionMenu({ onDetail, onDelete }: { onDetail: () => void; onDelete: () => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
+        className="px-2 py-0.5 rounded-md text-[14px] text-[var(--txt-2)] hover:bg-[var(--bg-3)] transition-colors"
+      >
+        ···
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-1 z-50 bg-[var(--bg-1)] border border-[var(--line-2)] rounded-lg shadow-lg py-1 min-w-[80px]" onClick={(e) => e.stopPropagation()}>
+          <button onClick={() => { onDetail(); setOpen(false); }} className="w-full text-left px-3 py-1.5 text-[12px] text-[var(--txt-0)] hover:bg-[var(--bg-2)]">详情</button>
+          <button onClick={() => { onDelete(); setOpen(false); }} className="w-full text-left px-3 py-1.5 text-[12px] text-[var(--late)] hover:bg-red-500/5">删除</button>
+        </div>
+      )}
+    </div>
+  );
 }
 
 function AlertBar({ items }: { items: Item[] }) {
@@ -220,7 +251,7 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
 
         {/* Center: quick create */}
         <div className="flex-1 flex justify-center">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] w-[360px] focus-within:border-[var(--accent)] transition-colors">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] w-[420px] focus-within:border-[var(--accent)] transition-colors">
             <span className="text-[var(--accent)] text-[14px] font-bold flex-shrink-0">+</span>
             <input
               type="text"
@@ -254,7 +285,7 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
               {tab.label}
             </a>
           ))}
-          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-[var(--line-2)] bg-[var(--bg-1)] text-[12px] w-[160px] ml-1">
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-[var(--line-2)] bg-[var(--bg-1)] text-[12px] w-[220px] ml-1">
             <span className="text-[var(--txt-3)]">🔍</span>
             <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="搜索版本 / 项目名 / 责任人" className="bg-transparent outline-none text-[12px] text-[var(--txt-0)] w-full placeholder:text-[var(--txt-3)]" />
           </div>
@@ -399,21 +430,11 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
                     );
                   })()}
                 </td>
-                <td className="px-3 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
-                  <div className="flex gap-1.5">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); openDrawer(item); }}
-                      className="px-2 py-0.5 rounded-md text-[11px] text-[var(--txt-2)] hover:text-[var(--accent)] transition-colors"
-                    >
-                      详情
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); deleteVersion(item.id); }}
-                      className="px-2 py-0.5 rounded-md text-[11px] text-[var(--txt-3)] hover:text-[var(--late)] transition-colors"
-                    >
-                      删除
-                    </button>
-                  </div>
+                <td className="px-3 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors relative">
+                  <ActionMenu
+                    onDetail={() => openDrawer(item)}
+                    onDelete={() => deleteVersion(item.id)}
+                  />
                 </td>
               </tr>
             ))}
