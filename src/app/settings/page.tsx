@@ -112,7 +112,7 @@ export default function SettingsPage() {
   }
 
   // For stageTemplates, add stageGroupId field
-  const displayFields = activeTab === "stageTemplates" ? ["name", "stageGroupId", "order", "isParallel", "parallelGroup"] : tab.fields;
+  const displayFields = activeTab === "stageTemplates" ? ["name", "isParallel", "parallelGroup"] : tab.fields;
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
@@ -170,6 +170,14 @@ export default function SettingsPage() {
                 <div key={g.id}>
                   <div className="text-[12px] font-medium text-[var(--txt-0)] px-2 py-1.5 bg-[var(--bg-3)] rounded-md mb-1">{g.label}（{groupItems.length}）</div>
                   <table className="w-full text-[12px] border-collapse">
+                    <thead>
+                      <tr>
+                        {displayFields.map(f => (
+                          <th key={f} className="text-left px-2 py-1 text-[10px] text-[var(--txt-3)] font-medium">{f === "name" ? "名称" : f === "isParallel" ? "并行" : f === "parallelGroup" ? "并行组" : f}</th>
+                        ))}
+                        <th className="text-left px-2 py-1 text-[10px] text-[var(--txt-3)] font-medium">操作</th>
+                      </tr>
+                    </thead>
                     <tbody>
                       {groupItems.map((item: any) => (
                         <tr key={item.id} className="hover:bg-[var(--bg-2)]">
