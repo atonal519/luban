@@ -167,6 +167,16 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [drawerStage, setDrawerStage] = useState(0);
   const [quickInput, setQuickInput] = useState("");
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+
+  function toggleExpand(id: string, e: React.MouseEvent) {
+    e.stopPropagation();
+    setExpandedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
   const [showCreate, setShowCreate] = useState(false);
   const [options, setOptions] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -318,22 +328,39 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
             </tr>
           </thead>
           <tbody>
-            {searchedItems.map((item: Item) => (
-              <tr
-                key={item.id}
-                onClick={() => openDrawer(item)}
-                className={`cursor-pointer group ${selectedId === item.id ? "bg-blue-500/5" : ""}`}
-              >
-                {/* 版本号 - editable text */}
-                <td className="px-3 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors sticky left-0 z-[3]">
-                  <EditableCell
-                    value={item.versionNo || ""}
-                    itemId={item.id}
-                    field="versionNo"
-                    onSave={saveField}
-                    displayNode={<span className="font-mono text-[12px] font-semibold">{item.versionNo || "—"}</span>}
-                  />
-                </td>
+            {searchedItems.flatMap((item: Item) => {
+              const isExpanded = expandedIds.has(item.id);
+              const children = (item.children || []) as Item[];
+              const hasChildren = children.length > 0;
+
+              const mainRow = (
+                <tr
+                  key={item.id}
+                  onClick={() => openDrawer(item)}
+                  className={`cursor-pointer group ${selectedId === item.id ? "bg-blue-500/5" : ""}`}
+                >
+                  {/* 版本号 - with expand toggle */}
+                  <td className="px-3 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors sticky left-0 z-[3]">
+                    <div className="flex items-center gap-1.5">
+                      {hasChildren ? (
+                        <button
+                          onClick={(e) => toggleExpand(item.id, e)}
+                          className="text-[10px] text-[var(--txt-3)] hover:text-[var(--accent)] transition-colors flex-shrink-0 w-3"
+                        >
+                          {isExpanded ? "▼" : "▶"}
+                        </button>
+                      ) : (
+                        <span className="w-3 flex-shrink-0" />
+                      )}
+                      <EditableCell
+                        value={item.versionNo || ""}
+                        itemId={item.id}
+                        field="versionNo"
+                        onSave={saveField}
+                        displayNode={<span className="font-mono text-[12px] font-semibold">{item.versionNo || "—"}</span>}
+                      />
+                    </div>
+                  </td>
                 {/* 项目名称 - editable text */}
                 <td className="px-3 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
                   <EditableCell
@@ -440,7 +467,57 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
                   />
                 </td>
               </tr>
-            ))}
+            );
+
+            // Expanded children rows
+            const childRows = isExpanded ? [
+              <tr key={`${item.id}-children`}>
+                <td colSpan={12} className="px-0 pb-0 border-b border-[var(--line)] bg-[var(--bg-base)]">
+                  <div className="ml-10 py-2 pr-4">
+                    {/* Group by stageType */}
+                    {STAGE_GROUPS.map(sg => {
+                      const stageChildren = children.filter(c => c.stageType === sg.code);
+                      if (stageChildren.length === 0) return null;
+                      return (
+                        <div key={sg.code} className="mb-2 last:mb-0">
+                          <div className="text-[10px] font-mono text-[var(--txt-3)] uppercase tracking-wider mb-1 px-2">{sg.label}</div>
+                          <div className="border-l-2 border-[var(--line-2)] ml-2 pl-3 flex flex-col gap-0.5">
+                            {stageChildren.map((child: Item) => {
+                              const sc = child.status?.code || "";
+                              const iconCls = sc === "DELIVERED" ? "text-emerald-500" : sc === "REJECTED" ? "text-red-500" : sc === "DEVELOPING" ? "text-blue-500" : sc === "DESIGN" ? "text-purple-500" : sc === "ABORTED" ? "text-slate-400" : "text-[var(--txt-3)]";
+                              const icon = sc === "DELIVERED" ? "✓" : sc === "REJECTED" ? "!" : sc === "DEVELOPING" ? "●" : sc === "DESIGN" ? "◐" : sc === "ABORTED" ? "✕" : "○";
+                              return (
+                                <div key={child.id} className="flex items-center gap-2 px-2 py-1 rounded-md hover:bg-[var(--bg-2)] transition-colors">
+                                  <span className={`text-[11px] w-3 text-center flex-shrink-0 ${iconCls}`}>{icon}</span>
+                                  <span className="text-[12px] text-[var(--txt-0)] flex-1 truncate">{child.title}</span>
+                                  {child.status && (
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded font-medium flex-shrink-0" style={{ background: child.status.color + "18", color: child.status.color }}>
+                                      {child.status.label}
+                                    </span>
+                                  )}
+                                  {(child.plannedStart || child.plannedEnd) && (
+                                    <span className="font-mono text-[9px] text-[var(--txt-3)] flex-shrink-0">
+                                      {child.plannedStart?.slice(5, 10)?.replace("-", "/")}
+                                      {child.plannedEnd ? `→${child.plannedEnd.slice(5, 10)?.replace("-", "/")}` : ""}
+                                    </span>
+                                  )}
+                                  {child.isParallel && (
+                                    <span className="text-[9px] text-blue-500 flex-shrink-0">⇉</span>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </td>
+              </tr>
+            ] : [];
+
+            return [mainRow, ...childRows];
+          })}
           </tbody>
         </table>
       </div>
