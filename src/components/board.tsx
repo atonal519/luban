@@ -81,9 +81,9 @@ function stageStatus(item: Item, stageCode: string, STAGE_GROUPS: {code:string;l
     return { label: "未开始", cls: "text-slate-400 bg-transparent", progress: "", sub: "", dates: "" };
   }
 
-  const done = stageChildren.filter((c: Item) => c.progress >= 100 || c.status?.code === "DELIVERED").length;
-  const hasLate = stageChildren.some((c: Item) => c.approval?.state === "REJECTED" || c.progress < 0);
-  const activeNodes = stageChildren.filter((c: Item) => c.progress > 0 && c.progress < 100);
+  const done = stageChildren.filter((c: Item) => c.status?.code === "DELIVERED").length;
+  const hasLate = stageChildren.some((c: Item) => c.status?.code === "REJECTED" || c.approval?.state === "REJECTED");
+  const activeNodes = stageChildren.filter((c: Item) => c.status?.code && c.status.code !== "DELIVERED" && c.status.code !== "REJECTED" && c.status.code !== "ABORTED");
   const hasActive = activeNodes.length > 0;
   const dates = dateRange(stageChildren);
 
@@ -98,7 +98,7 @@ function stageStatus(item: Item, stageCode: string, STAGE_GROUPS: {code:string;l
     return { label: "完成", cls: "text-emerald-600 bg-emerald-500/8", progress: `${done}/${stageChildren.length}`, sub: "", isParallelRunning, dates };
   }
   if (hasLate) {
-    const lateNode = stageChildren.find((c: Item) => c.approval?.state === "REJECTED" || c.progress < 0);
+    const lateNode = stageChildren.find((c: Item) => c.status?.code === "REJECTED" || c.approval?.state === "REJECTED");
     return { label: "驳回", cls: "text-red-600 bg-red-500/8", progress: `${done}/${stageChildren.length}`, sub: lateNode?.title || subLabel, isParallelRunning, dates };
   }
   if (hasActive) {
@@ -360,6 +360,7 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
                         stageCode={g.code}
                         children={item.children || []}
                         onChanged={() => router.refresh()}
+                        statuses={options?.statuses}
                         triggerNode={
                           <div className={`flex flex-col gap-0.5 px-2 py-1.5 rounded-md ${st.cls}`}>
                             {st.dates && <span className="font-mono text-[9px] text-[var(--txt-2)]">计划 {st.dates}</span>}

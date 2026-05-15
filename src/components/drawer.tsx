@@ -261,10 +261,11 @@ function SubNodeList({ children, stageCode, options, onChanged, parentId }: { ch
     const [editingTitle, setEditingTitle] = useState(false);
     const [titleVal, setTitleVal] = useState(node.title);
 
-    // Node flow status: 0=未开始, 50=进行中, 100=通过, -1=打回
-    const flowStatus = node.progress === 100 ? "passed" : node.progress < 0 ? "rejected" : node.progress > 0 ? "active" : "idle";
-    const statusIcon = flowStatus === "passed" ? "✓" : flowStatus === "rejected" ? "!" : flowStatus === "active" ? "●" : "○";
-    const statusColor = flowStatus === "passed" ? "text-emerald-500" : flowStatus === "rejected" ? "text-red-500" : flowStatus === "active" ? "text-blue-500" : "text-[var(--txt-3)]";
+    // Node status from DB
+    const statusCode = node.status?.code || "";
+    const statusLabel = node.status?.label || "未开始";
+    const statusIcon = statusCode === "DELIVERED" ? "✓" : statusCode === "REJECTED" ? "!" : statusCode === "ABORTED" ? "✕" : statusCode === "DEVELOPING" ? "●" : statusCode === "DESIGN" ? "◐" : "○";
+    const statusColor = statusCode === "DELIVERED" ? "text-emerald-500" : statusCode === "REJECTED" ? "text-red-500" : statusCode === "ABORTED" ? "text-slate-400" : statusCode === "DEVELOPING" ? "text-blue-500" : statusCode === "DESIGN" ? "text-purple-500" : "text-[var(--txt-3)]";
 
     const apBadge = node.approval?.state === "WAITING_SUBMIT" ? { label: "待提交凭证", cls: "bg-amber-500/8 text-amber-600" }
       : node.approval?.state === "SUBMITTED" ? { label: "待PM审核", cls: "bg-blue-500/8 text-blue-600" }
@@ -272,12 +273,13 @@ function SubNodeList({ children, stageCode, options, onChanged, parentId }: { ch
       : node.approval?.state === "APPROVED" ? { label: "已通过", cls: "bg-emerald-500/8 text-emerald-600" }
       : null;
 
-    async function changeFlowStatus(val: string) {
-      const progress = val === "passed" ? 100 : val === "rejected" ? -1 : val === "active" ? 50 : 0;
+    const statuses = options?.statuses || [];
+
+    async function changeNodeStatus(statusId: string) {
       await fetch(`/api/versions/${parentId}/children/${node.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ progress }),
+        body: JSON.stringify({ statusId: statusId || null }),
       });
       onChanged();
     }
@@ -298,23 +300,25 @@ function SubNodeList({ children, stageCode, options, onChanged, parentId }: { ch
           ) : (
             <span className="text-[13px] text-[var(--txt-0)] flex-1 cursor-pointer" onClick={(e) => { e.stopPropagation(); setTitleVal(node.title); setEditingTitle(true); }}>{node.title}</span>
           )}
-          {/* Flow status dropdown */}
+          {/* Status dropdown from DB */}
           <select
-            value={flowStatus}
-            onChange={(e) => changeFlowStatus(e.target.value)}
+            value={node.statusId || ""}
+            onChange={(e) => changeNodeStatus(e.target.value)}
             onClick={(e) => e.stopPropagation()}
             className={`text-[10px] font-medium pl-1.5 pr-4 py-0.5 rounded-md border outline-none cursor-pointer ${
-              flowStatus === "passed" ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
-              : flowStatus === "rejected" ? "bg-red-500/10 text-red-600 border-red-500/20"
-              : flowStatus === "active" ? "bg-blue-500/10 text-blue-600 border-blue-500/20"
+              statusCode === "DELIVERED" ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+              : statusCode === "REJECTED" ? "bg-red-500/10 text-red-600 border-red-500/20"
+              : statusCode === "DEVELOPING" ? "bg-blue-500/10 text-blue-600 border-blue-500/20"
+              : statusCode === "DESIGN" ? "bg-purple-500/10 text-purple-600 border-purple-500/20"
+              : statusCode === "ABORTED" ? "bg-slate-500/10 text-slate-500 border-slate-500/20"
               : "bg-[var(--bg-3)] text-[var(--txt-2)] border-[var(--line-2)]"
             }`}
             style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Cpath d='M1.5 3L4 5.5 6.5 3' stroke='%237e8da8' stroke-width='1.2' fill='none'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 4px center' }}
           >
-            <option value="idle">未开始</option>
-            <option value="active">进行中</option>
-            <option value="passed">通过</option>
-            <option value="rejected">打回</option>
+            <option value="">未开始</option>
+            {statuses.map((s: any) => (
+              <option key={s.id} value={s.id}>{s.label}</option>
+            ))}
           </select>
           {apBadge && (
             <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-medium ${apBadge.cls}`}>{apBadge.label}</span>
