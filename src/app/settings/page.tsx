@@ -109,7 +109,7 @@ export default function SettingsPage() {
         <button
           type="button"
           onClick={() => onChange(!value)}
-          className={`px-2.5 py-0.5 rounded-md border text-[12px] font-medium transition-colors leading-[20px] ${
+          className={`px-2.5 h-[26px] rounded-md border text-[12px] font-medium transition-colors leading-[20px] ${
             value ? "bg-blue-500/10 text-blue-600 border-blue-500/20" : "bg-[var(--bg-2)] text-[var(--txt-3)] border-[var(--line-2)]"
           }`}
         >
@@ -118,11 +118,11 @@ export default function SettingsPage() {
       );
     }
     if (field === "order") {
-      return <input type="number" value={value || 0} onChange={(e) => onChange(Number(e.target.value))} className="w-14 px-1.5 py-0.5 rounded border border-[var(--line-2)] bg-[var(--bg-2)] text-[12px] outline-none focus:border-[var(--accent)]" />;
+      return <input type="number" value={value || 0} onChange={(e) => onChange(Number(e.target.value))} className="w-14 px-1.5 h-[26px] rounded border border-[var(--line-2)] bg-[var(--bg-2)] text-[12px] outline-none focus:border-[var(--accent)]" />;
     }
     if (field === "role") {
       return (
-        <select value={value || "DEV"} onChange={(e) => onChange(e.target.value)} className="px-1.5 py-0.5 rounded border border-[var(--line-2)] bg-[var(--bg-2)] text-[12px] outline-none">
+        <select value={value || "DEV"} onChange={(e) => onChange(e.target.value)} className="px-1.5 h-[26px] rounded border border-[var(--line-2)] bg-[var(--bg-2)] text-[12px] outline-none">
           <option value="PM">PM</option>
           <option value="DEV">DEV</option>
           <option value="MANAGER">MANAGER</option>
@@ -131,7 +131,7 @@ export default function SettingsPage() {
     }
     if (field === "stageGroup" && (activeTab === "statuses" || activeTab === "stageTemplates")) {
       return (
-        <select value={value || ""} onChange={(e) => onChange(e.target.value)} className="px-1.5 py-0.5 rounded border border-[var(--line-2)] bg-[var(--bg-2)] text-[12px] outline-none">
+        <select value={value || ""} onChange={(e) => onChange(e.target.value)} className="px-1.5 h-[26px] rounded border border-[var(--line-2)] bg-[var(--bg-2)] text-[12px] outline-none">
           <option value="">选择阶段</option>
           {stageGroups.map((g: any) => <option key={g.id} value={activeTab === "stageTemplates" ? g.id : g.code}>{g.label}</option>)}
         </select>
@@ -139,13 +139,13 @@ export default function SettingsPage() {
     }
     if (field === "stageGroupId") {
       return (
-        <select value={value || ""} onChange={(e) => onChange(e.target.value)} className="px-1.5 py-0.5 rounded border border-[var(--line-2)] bg-[var(--bg-2)] text-[12px] outline-none">
+        <select value={value || ""} onChange={(e) => onChange(e.target.value)} className="px-1.5 h-[26px] rounded border border-[var(--line-2)] bg-[var(--bg-2)] text-[12px] outline-none">
           <option value="">选择阶段</option>
           {stageGroups.map((g: any) => <option key={g.id} value={g.id}>{g.label}</option>)}
         </select>
       );
     }
-    return <input type="text" value={value || ""} onChange={(e) => onChange(e.target.value)} className="px-1.5 py-0.5 rounded border border-[var(--line-2)] bg-[var(--bg-2)] text-[12px] outline-none focus:border-[var(--accent)] w-full" />;
+    return <input type="text" value={value || ""} onChange={(e) => onChange(e.target.value)} className="px-1.5 h-[26px] rounded border border-[var(--line-2)] bg-[var(--bg-2)] text-[12px] outline-none focus:border-[var(--accent)] w-full" />;
   }
 
   // For stageTemplates, add stageGroupId field
