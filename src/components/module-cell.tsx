@@ -58,13 +58,13 @@ export function ModuleCell({
       >
         {currentModules.length > 0 ? (
           <>
-            {currentModules.slice(0, 2).map((im) => (
+            {currentModules.slice(0, 1).map((im) => (
               <span key={im.module.id} className="px-2 py-0.5 rounded text-[11px] font-medium whitespace-nowrap flex-shrink-0" style={{ background: im.module.color + "18", color: im.module.color }}>
                 {im.module.name}
               </span>
             ))}
-            {currentModules.length > 2 && (
-              <span className="text-[10px] text-[var(--txt-2)] flex-shrink-0">+{currentModules.length - 2}</span>
+            {currentModules.length > 1 && (
+              <span className="text-[10px] text-[var(--txt-2)] flex-shrink-0">+{currentModules.length - 1}</span>
             )}
           </>
         ) : (
