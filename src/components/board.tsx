@@ -85,22 +85,29 @@ function stageStatus(item: Item, stageCode: string, STAGE_GROUPS: {code:string;l
   }
 
   const done = stageChildren.filter((c: Item) => c.progress >= 100 || c.status?.code === "DELIVERED").length;
-  const hasLate = stageChildren.some((c: Item) => c.approval?.state === "REJECTED");
-  const hasActive = stageChildren.some((c: Item) => c.progress > 0 && c.progress < 100);
-  const activeChild = stageChildren.find((c: Item) => c.progress > 0 && c.progress < 100);
-  const hasParallel = stageChildren.some((c: Item) => c.isParallel);
+  const hasLate = stageChildren.some((c: Item) => c.approval?.state === "REJECTED" || c.progress < 0);
+  const activeNodes = stageChildren.filter((c: Item) => c.progress > 0 && c.progress < 100);
+  const hasActive = activeNodes.length > 0;
   const dates = dateRange(stageChildren);
 
+  // Build sub label: show active node names, joined with /
+  const parallelActive = activeNodes.filter((c: Item) => c.isParallel);
+  const isParallelRunning = parallelActive.length > 1;
+  const subLabel = activeNodes.length > 0
+    ? activeNodes.map((c: Item) => c.title).join("/")
+    : "";
+
   if (done === stageChildren.length) {
-    return { label: "完成", cls: "text-emerald-600 bg-emerald-500/8", progress: `${done}/${stageChildren.length}`, sub: "", dates };
+    return { label: "完成", cls: "text-emerald-600 bg-emerald-500/8", progress: `${done}/${stageChildren.length}`, sub: "", isParallelRunning, dates };
   }
   if (hasLate) {
-    return { label: "驳回", cls: "text-red-600 bg-red-500/8", progress: `${done}/${stageChildren.length}`, sub: activeChild?.title || "", hasParallel, dates };
+    const lateNode = stageChildren.find((c: Item) => c.approval?.state === "REJECTED" || c.progress < 0);
+    return { label: "驳回", cls: "text-red-600 bg-red-500/8", progress: `${done}/${stageChildren.length}`, sub: lateNode?.title || subLabel, isParallelRunning, dates };
   }
   if (hasActive) {
-    return { label: "进行中", cls: "text-blue-600 bg-blue-500/8", progress: `${done}/${stageChildren.length}`, sub: activeChild?.title || "", hasParallel, dates };
+    return { label: "进行中", cls: "text-blue-600 bg-blue-500/8", progress: `${done}/${stageChildren.length}`, sub: subLabel, isParallelRunning, dates };
   }
-  return { label: "未开始", cls: "text-slate-400 bg-transparent", progress: `${done}/${stageChildren.length}`, sub: "", dates };
+  return { label: "未开始", cls: "text-slate-400 bg-transparent", progress: `${done}/${stageChildren.length}`, sub: "", isParallelRunning: false, dates };
 }
 
 function AlertBar({ items }: { items: Item[] }) {
@@ -365,7 +372,7 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
                               {st.progress && <span className="font-mono text-[9px] text-[var(--txt-2)] bg-[var(--bg-3)] px-1 rounded ml-auto">{st.progress}</span>}
                             </div>
                             {st.sub && <span className="text-[10px] font-mono text-[var(--txt-2)] truncate">{st.sub}</span>}
-                            {st.hasParallel && <span className="text-[10px] text-blue-500">⇉ 并行</span>}
+                            {st.isParallelRunning && <span className="text-[9px] text-blue-500 font-mono">⇉ 并行中</span>}
                           </div>
                         }
                       />
