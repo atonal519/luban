@@ -39,15 +39,18 @@ export default function SettingsPage() {
 
   async function handleAdd() {
     const data = { ...addData };
-    // Auto-generate code from label for types that need it
     if ((activeTab === "natures" || activeTab === "statuses" || activeTab === "stageGroups") && data.label && !data.code) {
       data.code = data.label.toUpperCase().replace(/[^A-Z0-9\u4e00-\u9fff]/g, '_').replace(/_+/g, '_');
     }
-    await fetch(`/api/settings/${activeTab}`, {
+    const res = await fetch(`/api/settings/${activeTab}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
+    if (!res.ok) {
+      alert("新增失败，请检查必填字段");
+      return;
+    }
     setShowAdd(false); setAddData({});
     loadItems();
   }
@@ -113,6 +116,7 @@ export default function SettingsPage() {
 
   // For stageTemplates, add stageGroupId field
   const displayFields = activeTab === "stageTemplates" ? ["name", "isParallel", "parallelGroup"] : tab.fields;
+  const addFields = activeTab === "stageTemplates" ? ["name", "stageGroupId", "isParallel", "parallelGroup"] : tab.fields;
 
   const fieldLabels: Record<string, string> = {
     name: "名称", label: "名称", color: "颜色", order: "排序",
@@ -154,7 +158,7 @@ export default function SettingsPage() {
         {/* Add form */}
         {showAdd && (
           <div className="mb-3 p-3 bg-[var(--bg-2)] rounded-lg border border-[var(--line-2)] flex gap-2 items-end flex-wrap">
-            {displayFields.map(f => (
+            {addFields.map(f => (
               <div key={f} className="flex flex-col gap-0.5">
                 <span className="text-[10px] text-[var(--txt-2)]">{fieldLabels[f] || f}</span>
                 {renderField(f, addData[f], (v) => setAddData({ ...addData, [f]: v }))}
