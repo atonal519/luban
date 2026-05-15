@@ -8,7 +8,7 @@ const TABS = [
   { key: "stageGroups", label: "大节点", fields: ["label"] },
   { key: "stageTemplates", label: "子节点模板", fields: ["name", "isParallel", "parallelGroup"], grouped: true },
   { key: "natures", label: "类型", fields: ["label", "color"] },
-  { key: "statuses", label: "节点状态", fields: ["label", "stageGroup", "color"] },
+  { key: "statuses", label: "节点状态", fields: ["label", "color"] },
 ];
 
 export default function SettingsPage() {
