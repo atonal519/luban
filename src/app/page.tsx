@@ -1,6 +1,20 @@
 import { prisma } from "@/lib/prisma";
 import { Board } from "@/components/board";
 
+// Build nested children include up to maxDepth levels
+function buildChildrenInclude(depth: number): any {
+  if (depth === 0) return { include: { status: true, owner: true, priority: true, nature: true, modules: { include: { module: true } } }, orderBy: { order: "asc" } };
+  return {
+    include: {
+      status: true, owner: true, priority: true, nature: true,
+      modules: { include: { module: true } },
+      approval: { include: { events: { include: { actor: true }, orderBy: { createdAt: "asc" } } } },
+      children: buildChildrenInclude(depth - 1),
+    },
+    orderBy: { order: "asc" },
+  };
+}
+
 export default async function Home({
   searchParams,
 }: {
@@ -17,19 +31,7 @@ export default async function Home({
         owner: true,
         priority: true,
         modules: { include: { module: true } },
-        children: {
-          include: {
-            nature: true,
-            status: true,
-            owner: true,
-            approval: { include: { events: { include: { actor: true }, orderBy: { createdAt: "asc" } } } },
-            children: {
-              include: { status: true, owner: true },
-              orderBy: { order: "asc" },
-            },
-          },
-          orderBy: { order: "asc" },
-        },
+        children: buildChildrenInclude(4), // up to depth 5
         dailyLogs: {
           include: { author: true },
           orderBy: { logDate: "desc" },

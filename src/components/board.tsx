@@ -105,7 +105,7 @@ function stageStatus(item: Item, stageCode: string, STAGE_GROUPS: {code:string;l
   return { label: "未开始", cls: "text-slate-400 bg-transparent", progress: `${done}/${stageChildren.length}`, sub: "", isParallelRunning: false, dates };
 }
 
-function ActionMenu({ onDetail, onDelete }: { onDetail: () => void; onDelete: () => void }) {
+function ActionMenu({ onDetail, onDelete, onAddChild }: { onDetail: () => void; onDelete: () => void; onAddChild?: () => void }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -127,8 +127,9 @@ function ActionMenu({ onDetail, onDelete }: { onDetail: () => void; onDelete: ()
         ···
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1 z-50 bg-[var(--bg-1)] border border-[var(--line-2)] rounded-lg shadow-lg py-1 min-w-[80px]" onClick={(e) => e.stopPropagation()}>
+        <div className="absolute right-0 top-full mt-1 z-50 bg-[var(--bg-1)] border border-[var(--line-2)] rounded-lg shadow-lg py-1 min-w-[100px]" onClick={(e) => e.stopPropagation()}>
           <button onClick={() => { onDetail(); setOpen(false); }} className="w-full text-left px-3 py-1.5 text-[12px] text-[var(--txt-0)] hover:bg-[var(--bg-2)]">详情</button>
+          {onAddChild && <button onClick={() => { onAddChild(); setOpen(false); }} className="w-full text-left px-3 py-1.5 text-[12px] text-[var(--accent)] hover:bg-[var(--bg-2)]">+ 添加子项目</button>}
           <button onClick={() => { onDelete(); setOpen(false); }} className="w-full text-left px-3 py-1.5 text-[12px] text-[var(--late)] hover:bg-red-500/5">删除</button>
         </div>
       )}
@@ -208,9 +209,21 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
   }
 
   async function deleteVersion(itemId: string) {
-    if (!confirm("确认删除该版本？所有子节点、日志、审核记录将一并删除。")) return;
+    if (!confirm("确认删除？所有子项目、日志、审核记录将一并删除。")) return;
     await fetch(`/api/versions/${itemId}`, { method: "DELETE" });
     setSelectedId(null);
+    router.refresh();
+  }
+
+  async function addChildItem(parentId: string, parentDepth: number) {
+    const title = prompt("子项目名称：");
+    if (!title?.trim()) return;
+    await fetch("/api/versions/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: title.trim(), parentId, depth: parentDepth + 1 }),
+    });
+    setExpandedIds(prev => new Set(prev).add(parentId));
     router.refresh();
   }
 
@@ -328,196 +341,132 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
             </tr>
           </thead>
           <tbody>
-            {searchedItems.flatMap((item: Item) => {
-              const isExpanded = expandedIds.has(item.id);
-              const children = (item.children || []) as Item[];
-              const hasChildren = children.length > 0;
+            {(() => {
+              // Recursive row renderer — renders item + its children if expanded
+              function renderItemRows(item: Item, indentLevel: number): React.ReactNode[] {
+                const isExpanded = expandedIds.has(item.id);
+                // Only top-level items have "sub-version" children (depth=0 children that aren't stageType nodes)
+                const subItems = (item.children || []).filter((c: Item) => !c.stageType || c.stageType === "");
+                const hasSubItems = subItems.length > 0;
+                const indentPx = indentLevel * 20;
 
-              const mainRow = (
-                <tr
-                  key={item.id}
-                  onClick={() => openDrawer(item)}
-                  className={`cursor-pointer group ${selectedId === item.id ? "bg-blue-500/5" : ""}`}
-                >
-                  {/* 版本号 - with expand toggle */}
-                  <td className="px-3 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors sticky left-0 z-[3]">
-                    <div className="flex items-center gap-1.5">
-                      {hasChildren ? (
-                        <button
-                          onClick={(e) => toggleExpand(item.id, e)}
-                          className="text-[10px] text-[var(--txt-3)] hover:text-[var(--accent)] transition-colors flex-shrink-0 w-3"
-                        >
-                          {isExpanded ? "▼" : "▶"}
-                        </button>
-                      ) : (
-                        <span className="w-3 flex-shrink-0" />
-                      )}
-                      <EditableCell
-                        value={item.versionNo || ""}
-                        itemId={item.id}
-                        field="versionNo"
-                        onSave={saveField}
-                        displayNode={<span className="font-mono text-[12px] font-semibold">{item.versionNo || "—"}</span>}
-                      />
-                    </div>
-                  </td>
-                {/* 项目名称 - editable text */}
-                <td className="px-3 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
-                  <EditableCell
-                    value={item.title || ""}
-                    itemId={item.id}
-                    field="title"
-                    onSave={saveField}
-                    displayNode={<span className="text-[13px] font-medium block leading-tight" title={item.title} style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{item.title}</span>}
-                  />
-                </td>
-                {/* 研发模块 - multi-select popover */}
-                <td className="px-3 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
-                  <ModuleCell
-                    itemId={item.id}
-                    currentModules={item.modules || []}
-                    allModules={options?.modules || []}
-                    onSave={saveModules}
-                  />
-                </td>
-                {/* 类型 - editable select */}
-                <td className="px-3 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
-                  <EditableCell
-                    value={item.natureId || ""}
-                    itemId={item.id}
-                    field="natureId"
-                    type="select"
-                    options={options?.natures?.map((n: any) => ({ value: n.id, label: n.label, color: n.color })) || []}
-                    onSave={saveField}
-                    displayNode={item.nature ? (
-                      <span className="px-2 py-0.5 rounded text-[11px] font-medium" style={{ background: item.nature.color + "18", color: item.nature.color }}>
-                        {item.nature.label}
-                      </span>
-                    ) : <span className="text-[var(--txt-3)] text-[11px]">—</span>}
-                  />
-                </td>
-                {/* 责任人 - editable select */}
-                <td className="px-3 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
-                  <EditableCell
-                    value={item.ownerId || ""}
-                    itemId={item.id}
-                    field="ownerId"
-                    type="select"
-                    options={options?.users?.map((u: any) => ({ value: u.id, label: u.name })) || []}
-                    onSave={saveField}
-                    displayNode={<span className="text-[12px]">{item.owner?.name || "—"}</span>}
-                  />
-                </td>
-                {/* 优先级 - editable select from DB */}
-                <td className="px-3 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
-                  <EditableCell
-                    value={item.priorityId || ""}
-                    itemId={item.id}
-                    field="priorityId"
-                    type="select"
-                    options={options?.priorities?.map((p: any) => ({ value: p.id, label: p.label })) || []}
-                    onSave={saveField}
-                    displayNode={priorityTag(item.priority)}
-                  />
-                </td>
-                {STAGE_GROUPS.map((g, gi) => {
-                  const st = stageStatus(item, g.code, STAGE_GROUPS, STAGE_GROUP_MAP);
-                  return (
-                    <td
-                      key={g.code}
-                      className="px-2 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors"
-                    >
-                      <StagePopover
-                        itemId={item.id}
-                        stageCode={g.code}
-                        children={item.children || []}
-                        onChanged={() => router.refresh()}
-                        statuses={options?.statuses}
-                        triggerNode={
-                          <div className={`flex flex-col gap-0.5 px-2 py-1.5 rounded-md ${st.cls}`}>
-                            {st.dates && <span className="font-mono text-[9px] text-[var(--txt-2)]">计划 {st.dates}</span>}
-                            <div className="flex items-center gap-1">
-                              <span className="w-[5px] h-[5px] rounded-full bg-current flex-shrink-0" />
-                              <span className="text-[11px] font-medium">{st.label}</span>
-                              {st.progress && <span className="font-mono text-[9px] text-[var(--txt-2)] bg-[var(--bg-3)] px-1 rounded ml-auto">{st.progress}</span>}
-                            </div>
-                            {st.sub && <span className="text-[10px] font-mono text-[var(--txt-2)] truncate">{st.sub}</span>}
-                            {st.isParallelRunning && <span className="text-[9px] text-blue-500 font-mono">⇉ 并行中</span>}
-                          </div>
-                        }
+                const row = (
+                  <tr
+                    key={item.id}
+                    onClick={() => openDrawer(item)}
+                    className={`cursor-pointer group ${selectedId === item.id ? "bg-blue-500/5" : ""}`}
+                  >
+                    {/* 版本号 - with indent + expand toggle */}
+                    <td className="px-2 h-[60px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors sticky left-0 z-[3]">
+                      <div className="flex items-center gap-1" style={{ paddingLeft: `${indentPx}px` }}>
+                        {hasSubItems ? (
+                          <button
+                            onClick={(e) => toggleExpand(item.id, e)}
+                            className="text-[10px] text-[var(--txt-3)] hover:text-[var(--accent)] transition-colors flex-shrink-0 w-3"
+                          >
+                            {isExpanded ? "▼" : "▶"}
+                          </button>
+                        ) : (
+                          <span className="w-3 flex-shrink-0" />
+                        )}
+                        <EditableCell
+                          value={item.versionNo || ""}
+                          itemId={item.id}
+                          field="versionNo"
+                          onSave={saveField}
+                          displayNode={
+                            <span className={`font-mono font-semibold ${indentLevel === 0 ? "text-[12px]" : "text-[11px] text-[var(--txt-1)]"}`}>
+                              {item.versionNo || "—"}
+                            </span>
+                          }
+                        />
+                      </div>
+                    </td>
+                    {/* 项目名称 */}
+                    <td className="px-3 h-[60px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
+                      <div style={{ paddingLeft: `${indentPx}px` }}>
+                        <EditableCell
+                          value={item.title || ""}
+                          itemId={item.id}
+                          field="title"
+                          onSave={saveField}
+                          displayNode={
+                            <span className="text-[13px] font-medium block leading-tight" title={item.title} style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                              {item.title}
+                            </span>
+                          }
+                        />
+                      </div>
+                    </td>
+                    {/* 研发模块 */}
+                    <td className="px-3 h-[60px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
+                      <ModuleCell itemId={item.id} currentModules={item.modules || []} allModules={options?.modules || []} onSave={saveModules} />
+                    </td>
+                    {/* 类型 */}
+                    <td className="px-3 h-[60px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
+                      <EditableCell value={item.natureId || ""} itemId={item.id} field="natureId" type="select" options={options?.natures?.map((n: any) => ({ value: n.id, label: n.label, color: n.color })) || []} onSave={saveField}
+                        displayNode={item.nature ? <span className="px-2 py-0.5 rounded text-[11px] font-medium" style={{ background: item.nature.color + "18", color: item.nature.color }}>{item.nature.label}</span> : <span className="text-[var(--txt-3)] text-[11px]">—</span>}
                       />
                     </td>
-                  );
-                })}
-                <td className="px-3 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors cursor-pointer" onClick={() => openDrawer(item)}>
-                  {(() => {
-                    const os = overallStatus(item);
-                    return (
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium ${os.cls}`}>
-                        <span className="w-[6px] h-[6px] rounded-full bg-current" />
-                        {os.label}
-                      </span>
-                    );
-                  })()}
-                </td>
-                <td className="px-3 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors relative">
-                  <ActionMenu
-                    onDetail={() => openDrawer(item)}
-                    onDelete={() => deleteVersion(item.id)}
-                  />
-                </td>
-              </tr>
-            );
-
-            // Expanded children rows
-            const childRows = isExpanded ? [
-              <tr key={`${item.id}-children`}>
-                <td colSpan={12} className="px-0 pb-0 border-b border-[var(--line)] bg-[var(--bg-base)]">
-                  <div className="ml-10 py-2 pr-4">
-                    {/* Group by stageType */}
-                    {STAGE_GROUPS.map(sg => {
-                      const stageChildren = children.filter(c => c.stageType === sg.code);
-                      if (stageChildren.length === 0) return null;
+                    {/* 责任人 */}
+                    <td className="px-3 h-[60px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
+                      <EditableCell value={item.ownerId || ""} itemId={item.id} field="ownerId" type="select" options={options?.users?.map((u: any) => ({ value: u.id, label: u.name })) || []} onSave={saveField}
+                        displayNode={<span className="text-[12px]">{item.owner?.name || "—"}</span>}
+                      />
+                    </td>
+                    {/* 优先级 */}
+                    <td className="px-3 h-[60px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
+                      <EditableCell value={item.priorityId || ""} itemId={item.id} field="priorityId" type="select" options={options?.priorities?.map((p: any) => ({ value: p.id, label: p.label })) || []} onSave={saveField}
+                        displayNode={priorityTag(item.priority)}
+                      />
+                    </td>
+                    {/* 阶段格子 */}
+                    {STAGE_GROUPS.map((g) => {
+                      const st = stageStatus(item, g.code, STAGE_GROUPS, STAGE_GROUP_MAP);
                       return (
-                        <div key={sg.code} className="mb-2 last:mb-0">
-                          <div className="text-[10px] font-mono text-[var(--txt-3)] uppercase tracking-wider mb-1 px-2">{sg.label}</div>
-                          <div className="border-l-2 border-[var(--line-2)] ml-2 pl-3 flex flex-col gap-0.5">
-                            {stageChildren.map((child: Item) => {
-                              const sc = child.status?.code || "";
-                              const iconCls = sc === "DELIVERED" ? "text-emerald-500" : sc === "REJECTED" ? "text-red-500" : sc === "DEVELOPING" ? "text-blue-500" : sc === "DESIGN" ? "text-purple-500" : sc === "ABORTED" ? "text-slate-400" : "text-[var(--txt-3)]";
-                              const icon = sc === "DELIVERED" ? "✓" : sc === "REJECTED" ? "!" : sc === "DEVELOPING" ? "●" : sc === "DESIGN" ? "◐" : sc === "ABORTED" ? "✕" : "○";
-                              return (
-                                <div key={child.id} className="flex items-center gap-2 px-2 py-1 rounded-md hover:bg-[var(--bg-2)] transition-colors">
-                                  <span className={`text-[11px] w-3 text-center flex-shrink-0 ${iconCls}`}>{icon}</span>
-                                  <span className="text-[12px] text-[var(--txt-0)] flex-1 truncate">{child.title}</span>
-                                  {child.status && (
-                                    <span className="text-[10px] px-1.5 py-0.5 rounded font-medium flex-shrink-0" style={{ background: child.status.color + "18", color: child.status.color }}>
-                                      {child.status.label}
-                                    </span>
-                                  )}
-                                  {(child.plannedStart || child.plannedEnd) && (
-                                    <span className="font-mono text-[9px] text-[var(--txt-3)] flex-shrink-0">
-                                      {child.plannedStart?.slice(5, 10)?.replace("-", "/")}
-                                      {child.plannedEnd ? `→${child.plannedEnd.slice(5, 10)?.replace("-", "/")}` : ""}
-                                    </span>
-                                  )}
-                                  {child.isParallel && (
-                                    <span className="text-[9px] text-blue-500 flex-shrink-0">⇉</span>
-                                  )}
+                        <td key={g.code} className="px-2 h-[60px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
+                          <StagePopover itemId={item.id} stageCode={g.code} children={item.children || []} onChanged={() => router.refresh()} statuses={options?.statuses}
+                            triggerNode={
+                              <div className={`flex flex-col gap-0.5 px-2 py-1.5 rounded-md ${st.cls}`}>
+                                {st.dates && <span className="font-mono text-[9px] text-[var(--txt-2)]">计划 {st.dates}</span>}
+                                <div className="flex items-center gap-1">
+                                  <span className="w-[5px] h-[5px] rounded-full bg-current flex-shrink-0" />
+                                  <span className="text-[11px] font-medium">{st.label}</span>
+                                  {st.progress && <span className="font-mono text-[9px] text-[var(--txt-2)] bg-[var(--bg-3)] px-1 rounded ml-auto">{st.progress}</span>}
                                 </div>
-                              );
-                            })}
-                          </div>
-                        </div>
+                                {st.sub && <span className="text-[10px] font-mono text-[var(--txt-2)] truncate">{st.sub}</span>}
+                                {st.isParallelRunning && <span className="text-[9px] text-blue-500 font-mono">⇉ 并行中</span>}
+                              </div>
+                            }
+                          />
+                        </td>
                       );
                     })}
-                  </div>
-                </td>
-              </tr>
-            ] : [];
+                    {/* 整体状态 */}
+                    <td className="px-3 h-[60px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors cursor-pointer" onClick={() => openDrawer(item)}>
+                      {(() => { const os = overallStatus(item); return <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium ${os.cls}`}><span className="w-[6px] h-[6px] rounded-full bg-current" />{os.label}</span>; })()}
+                    </td>
+                    {/* 操作 */}
+                    <td className="px-3 h-[60px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors relative">
+                      <ActionMenu
+                        onDetail={() => openDrawer(item)}
+                        onDelete={() => deleteVersion(item.id)}
+                        onAddChild={() => addChildItem(item.id, indentLevel)}
+                      />
+                    </td>
+                  </tr>
+                );
 
-            return [mainRow, ...childRows];
-          })}
+                // Recurse into sub-items if expanded
+                const childRows: React.ReactNode[] = isExpanded
+                  ? subItems.flatMap((child: Item) => renderItemRows(child, indentLevel + 1))
+                  : [];
+
+                return [row, ...childRows];
+              }
+
+              return searchedItems.flatMap((item: Item) => renderItemRows(item, 0));
+            })()}
           </tbody>
         </table>
       </div>

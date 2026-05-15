@@ -3,11 +3,13 @@ import { prisma } from '@/lib/prisma';
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { title, versionNo, priorityId, natureId, ownerId, moduleIds } = body;
+  const { title, versionNo, priorityId, natureId, ownerId, moduleIds, parentId, depth } = body;
 
   if (!title?.trim()) {
     return NextResponse.json({ error: '项目名称不能为空' }, { status: 400 });
   }
+
+  const itemDepth = depth ?? (parentId ? 1 : 0);
 
   const item = await prisma.item.create({
     data: {
@@ -17,7 +19,8 @@ export async function POST(req: NextRequest) {
       natureId: natureId || null,
       ownerId: ownerId || null,
       createdById: ownerId || null,
-      depth: 0,
+      parentId: parentId || null,
+      depth: itemDepth,
     },
   });
 
@@ -28,26 +31,28 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // Auto-generate child nodes from stage templates
-  const templates = await prisma.stageTemplate.findMany({
-    include: { stageGroup: true },
-    orderBy: [{ stageGroup: { order: 'asc' } }, { order: 'asc' }],
-  });
-
-  if (templates.length > 0) {
-    let globalOrder = 0;
-    await prisma.item.createMany({
-      data: templates.map((t) => ({
-        parentId: item.id,
-        title: t.name,
-        stageType: t.stageGroup.code,
-        isParallel: t.isParallel,
-        parallelGroup: t.parallelGroup,
-        order: globalOrder++,
-        depth: 1,
-        versionNo: item.versionNo,
-      })),
+  // Auto-generate stage nodes only for top-level items (no parent)
+  if (!parentId) {
+    const templates = await prisma.stageTemplate.findMany({
+      include: { stageGroup: true },
+      orderBy: [{ stageGroup: { order: 'asc' } }, { order: 'asc' }],
     });
+
+    if (templates.length > 0) {
+      let globalOrder = 0;
+      await prisma.item.createMany({
+        data: templates.map((t) => ({
+          parentId: item.id,
+          title: t.name,
+          stageType: t.stageGroup.code,
+          isParallel: t.isParallel,
+          parallelGroup: t.parallelGroup,
+          order: globalOrder++,
+          depth: 1,
+          versionNo: item.versionNo,
+        })),
+      });
+    }
   }
 
   return NextResponse.json(item, { status: 201 });
