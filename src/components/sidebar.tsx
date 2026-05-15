@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const NAV = [
   { href: "/", label: "总览", icon: "☰" },
   { href: "/alerts", label: "告警中心", icon: "⚠", badge: true },
+  { href: "/settings", label: "系统设置", icon: "⚙" },
 ];
 
 export function Sidebar() {
