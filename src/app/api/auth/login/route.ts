@@ -14,10 +14,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: '用户不存在' }, { status: 401 });
   }
 
-  // Support both hashed and plain 'hashed_demo' passwords (for migration)
+  // Support hashed_demo legacy, plain text dev passwords, and bcrypt
   let valid = false;
   if (user.password === 'hashed_demo') {
     valid = password === 'demo123';
+  } else if (user.password === password) {
+    valid = true;
   } else {
     valid = await bcrypt.compare(password, user.password);
   }

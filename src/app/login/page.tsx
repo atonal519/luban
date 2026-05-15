@@ -41,10 +41,7 @@ export default function LoginPage() {
           <div className="w-10 h-10 bg-[var(--accent)] rounded-lg flex items-center justify-center text-white text-[14px] font-semibold font-mono">
             LB
           </div>
-          <div>
-            <div className="font-mono text-[18px] font-semibold text-[var(--txt-0)]">鲁班</div>
-            <div className="text-[11px] text-[var(--txt-2)]">自动驾驶项目管理</div>
-          </div>
+          <div className="font-mono text-[20px] font-semibold text-[var(--txt-0)]">鲁班</div>
         </div>
 
         <form onSubmit={handleLogin} className="flex flex-col gap-4">

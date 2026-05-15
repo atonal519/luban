@@ -28,16 +28,13 @@ export function Sidebar() {
     <aside className="w-[220px] min-w-[220px] bg-[var(--bg-1)] border-r border-[var(--line)] flex flex-col h-full">
       {/* Logo */}
       <div className="px-4 pt-5 pb-4 border-b border-[var(--line)]">
-        <div className="flex items-center gap-2.5 mb-1">
+        <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 bg-[var(--accent)] rounded-lg flex items-center justify-center text-white text-[11px] font-semibold font-mono">
             LB
           </div>
           <span className="font-mono text-[15px] font-semibold text-[var(--txt-0)] tracking-wide">
             鲁班
           </span>
-        </div>
-        <div className="text-[10px] text-[var(--txt-2)] pl-[37px]">
-          自动驾驶项目管理
         </div>
       </div>
 
