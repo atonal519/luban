@@ -51,25 +51,13 @@ async function main() {
     prisma.nature.create({ data: { code: 'HOTFIX', label: 'Hotfix', color: '#d97706', order: 3 } }),
   ]);
 
-  // ── 状态字典 ──
+  // ── 状态字典（5个通用状态）──
   await Promise.all([
-    prisma.statusDef.create({ data: { code: 'PENDING_SCHEDULE', label: '待排期', stageGroup: 'REQUIREMENT', color: '#94a3b8', order: 1 } }),
-    prisma.statusDef.create({ data: { code: 'SPEC', label: '规格', stageGroup: 'REQUIREMENT', color: '#8b5cf6', order: 2 } }),
-    prisma.statusDef.create({ data: { code: 'DESIGN', label: '设计', stageGroup: 'REQUIREMENT', color: '#7c3aed', order: 3 } }),
-    prisma.statusDef.create({ data: { code: 'TMG', label: 'TMG', stageGroup: 'DEVELOPMENT', color: '#0891b2', order: 4 } }),
-    prisma.statusDef.create({ data: { code: 'DEVELOPING', label: '开发/推进', stageGroup: 'DEVELOPMENT', color: '#3b6ff0', order: 5 } }),
-    prisma.statusDef.create({ data: { code: 'SELF_TEST', label: '自测', stageGroup: 'DEVELOPMENT', color: '#6366f1', order: 6 } }),
-    prisma.statusDef.create({ data: { code: 'REJECTED', label: '打回', stageGroup: 'DEVELOPMENT', color: '#dc3535', order: 7 } }),
-    prisma.statusDef.create({ data: { code: 'SUBMIT_TEST', label: '提测', stageGroup: 'TEST', color: '#0891b2', order: 8 } }),
-    prisma.statusDef.create({ data: { code: 'HIL', label: 'HIL', stageGroup: 'TEST', color: '#059669', order: 9 } }),
-    prisma.statusDef.create({ data: { code: 'SIL', label: 'SIL', stageGroup: 'TEST', color: '#10b981', order: 10 } }),
-    prisma.statusDef.create({ data: { code: 'INTEGRATION', label: '集成', stageGroup: 'TEST', color: '#14b8a6', order: 11 } }),
-    prisma.statusDef.create({ data: { code: 'REAL_CAR', label: '实车', stageGroup: 'TEST', color: '#f59e0b', order: 12 } }),
-    prisma.statusDef.create({ data: { code: 'PRE_TEST', label: '预测', stageGroup: 'TEST', color: '#d97706', order: 13 } }),
-    prisma.statusDef.create({ data: { code: 'PRE_PRODUCTION', label: '预生产', stageGroup: 'TEST', color: '#ea580c', order: 14 } }),
-    prisma.statusDef.create({ data: { code: 'PENDING_RELEASE', label: '待上线', stageGroup: 'DELIVERY', color: '#8b5cf6', order: 15 } }),
-    prisma.statusDef.create({ data: { code: 'DELIVERED', label: '交付/完成', stageGroup: 'DELIVERY', color: '#18a870', order: 16 } }),
-    prisma.statusDef.create({ data: { code: 'ABORTED', label: '中止', stageGroup: 'DELIVERY', color: '#64748b', order: 17 } }),
+    prisma.statusDef.create({ data: { code: 'DESIGN', label: '设计中', stageGroup: 'REQUIREMENT', color: '#7c3aed', order: 1 } }),
+    prisma.statusDef.create({ data: { code: 'DEVELOPING', label: '进行中', stageGroup: 'DEVELOPMENT', color: '#3b6ff0', order: 2 } }),
+    prisma.statusDef.create({ data: { code: 'REJECTED', label: '打回', stageGroup: 'DEVELOPMENT', color: '#dc3535', order: 3 } }),
+    prisma.statusDef.create({ data: { code: 'ABORTED', label: '中止', stageGroup: 'DELIVERY', color: '#64748b', order: 4 } }),
+    prisma.statusDef.create({ data: { code: 'DELIVERED', label: '已完成', stageGroup: 'DELIVERY', color: '#18a870', order: 5 } }),
   ]);
 
   // ── 研发模块（13个）──

@@ -16,7 +16,7 @@ datasource db {
 model User {
   id         String   @id @default(cuid())
   name       String
-  email      String   @unique
+  email      String   @unique @default("")
   password   String
   role       String   @default("DEV") // PM / DEV / MANAGER
   avatarSeed String   @default("")
