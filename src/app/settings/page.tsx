@@ -162,58 +162,70 @@ export default function SettingsPage() {
         {loading ? (
           <div className="text-[12px] text-[var(--txt-3)] text-center py-8">加载中…</div>
         ) : (tab as any).grouped ? (
-          // Grouped display for stageTemplates
-          <div className="flex flex-col gap-4">
-            {stageGroups.map((g: any) => {
-              const groupItems = items.filter((item: any) => (item.stageGroup?.id || item.stageGroupId) === g.id);
-              return (
-                <div key={g.id}>
-                  <div className="text-[12px] font-medium text-[var(--txt-0)] px-2 py-1.5 bg-[var(--bg-3)] rounded-md mb-1">{g.label}（{groupItems.length}）</div>
-                  <table className="w-full text-[12px] border-collapse">
-                    <thead>
-                      <tr>
-                        {displayFields.map(f => (
-                          <th key={f} className="text-left px-2 py-1 text-[10px] text-[var(--txt-3)] font-medium">{f === "name" ? "名称" : f === "isParallel" ? "并行" : f === "parallelGroup" ? "并行组" : f}</th>
-                        ))}
-                        <th className="text-left px-2 py-1 text-[10px] text-[var(--txt-3)] font-medium">操作</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {groupItems.map((item: any) => (
-                        <tr key={item.id} className="hover:bg-[var(--bg-2)]">
-                          {displayFields.map(f => (
-                            <td key={f} className="px-2 py-1.5 border-b border-[var(--line)]">
-                              {editingId === item.id
-                                ? renderField(f, editData[f] ?? item[f], (v) => setEditData({ ...editData, [f]: v }), true)
-                                : f === "isParallel" ? (item[f] ? "✓" : "")
-                                : f === "stageGroupId" ? (item.stageGroup?.label || "")
-                                : String(item[f] ?? "")
-                              }
-                            </td>
-                          ))}
-                          <td className="px-2 py-1.5 border-b border-[var(--line)]">
-                            {editingId === item.id ? (
-                              <div className="flex gap-1">
-                                <button onClick={() => handleSave(item.id)} className="text-[10px] text-[var(--accent)] hover:underline">保存</button>
-                                <button onClick={() => setEditingId(null)} className="text-[10px] text-[var(--txt-2)]">取消</button>
-                              </div>
-                            ) : (
-                              <div className="flex gap-1">
-                                <button onClick={() => { setEditingId(item.id); setEditData({}); }} className="text-[10px] text-[var(--txt-3)] hover:text-[var(--accent)]">✎</button>
-                                <button onClick={() => handleDelete(item.id)} className="text-[10px] text-[var(--txt-3)] hover:text-[var(--late)]">✕</button>
-                              </div>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              );
-            })}
-          </div>
+          // Grouped display for stageTemplates — single table with group header rows
+          <table className="text-[12px] border-collapse">
+            <colgroup>
+              <col style={{ width: '160px' }} />
+              <col style={{ width: '60px' }} />
+              <col style={{ width: '100px' }} />
+              <col style={{ width: '60px' }} />
+            </colgroup>
+            <thead>
+              <tr>
+                <th className="text-left px-2 py-1.5 text-[10px] text-[var(--txt-3)] font-medium border-b border-[var(--line-2)]">名称</th>
+                <th className="text-left px-2 py-1.5 text-[10px] text-[var(--txt-3)] font-medium border-b border-[var(--line-2)]">并行</th>
+                <th className="text-left px-2 py-1.5 text-[10px] text-[var(--txt-3)] font-medium border-b border-[var(--line-2)]">并行组</th>
+                <th className="text-left px-2 py-1.5 text-[10px] text-[var(--txt-3)] font-medium border-b border-[var(--line-2)]">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {stageGroups.map((g: any) => {
+                const groupItems = items.filter((item: any) => (item.stageGroup?.id || item.stageGroupId) === g.id);
+                return [
+                  <tr key={`h-${g.id}`}>
+                    <td colSpan={4} className="px-2 pt-4 pb-1 text-[12px] font-semibold text-[var(--txt-0)]">{g.label}（{groupItems.length}）</td>
+                  </tr>,
+                  ...groupItems.map((item: any) => (
+                    <tr key={item.id} className="hover:bg-[var(--bg-2)]">
+                      <td className="px-2 py-1.5 border-b border-[var(--line)]">
+                        {editingId === item.id
+                          ? renderField("name", editData.name ?? item.name, (v) => setEditData({ ...editData, name: v }))
+                          : item.name
+                        }
+                      </td>
+                      <td className="px-2 py-1.5 border-b border-[var(--line)]">
+                        {editingId === item.id
+                          ? renderField("isParallel", editData.isParallel ?? item.isParallel, (v) => setEditData({ ...editData, isParallel: v }))
+                          : item.isParallel ? "✓" : ""
+                        }
+                      </td>
+                      <td className="px-2 py-1.5 border-b border-[var(--line)]">
+                        {editingId === item.id
+                          ? renderField("parallelGroup", editData.parallelGroup ?? item.parallelGroup, (v) => setEditData({ ...editData, parallelGroup: v }))
+                          : item.parallelGroup || ""
+                        }
+                      </td>
+                      <td className="px-2 py-1.5 border-b border-[var(--line)]">
+                        {editingId === item.id ? (
+                          <div className="flex gap-1">
+                            <button onClick={() => handleSave(item.id)} className="text-[10px] text-[var(--accent)] hover:underline">保存</button>
+                            <button onClick={() => setEditingId(null)} className="text-[10px] text-[var(--txt-2)]">取消</button>
+                          </div>
+                        ) : (
+                          <div className="flex gap-1">
+                            <button onClick={() => { setEditingId(item.id); setEditData({}); }} className="text-[10px] text-[var(--txt-3)] hover:text-[var(--accent)]">✎</button>
+                            <button onClick={() => handleDelete(item.id)} className="text-[10px] text-[var(--txt-3)] hover:text-[var(--late)]">✕</button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  )),
+                ];
+              })}
+            </tbody>
+          </table>
         ) : (
-          <table className="w-full text-[12px] border-collapse">
+          <table className="text-[12px] border-collapse">
             <thead>
               <tr>
                 {displayFields.map(f => (
