@@ -71,6 +71,20 @@ export default function SettingsPage() {
     loadItems();
   }
 
+  async function handleMove(id: string, direction: "up" | "down") {
+    const idx = items.findIndex((i: any) => i.id === id);
+    if (idx < 0) return;
+    const swapIdx = direction === "up" ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= items.length) return;
+    const a = items[idx], b = items[swapIdx];
+    const orderA = a.order ?? idx, orderB = b.order ?? swapIdx;
+    await Promise.all([
+      fetch(`/api/settings/${activeTab}/${a.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ order: orderB }) }),
+      fetch(`/api/settings/${activeTab}/${b.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ order: orderA }) }),
+    ]);
+    loadItems();
+  }
+
   function renderField(field: string, value: any, onChange: (v: any) => void, isEdit = false) {
     if (field === "color") {
       return (
@@ -81,7 +95,7 @@ export default function SettingsPage() {
       );
     }
     if (field === "isParallel") {
-      return <input type="checkbox" checked={!!value} onChange={(e) => onChange(e.target.checked)} className="accent-[var(--accent)]" />;
+      return <input type="checkbox" checked={!!value} onChange={(e) => onChange(e.target.checked)} className="w-4 h-4 accent-[var(--accent)] cursor-pointer" />;
     }
     if (field === "order") {
       return <input type="number" value={value || 0} onChange={(e) => onChange(Number(e.target.value))} className="w-14 px-1.5 py-0.5 rounded border border-[var(--line-2)] bg-[var(--bg-2)] text-[12px] outline-none focus:border-[var(--accent)]" />;
@@ -223,7 +237,9 @@ export default function SettingsPage() {
                             <button onClick={() => setEditingId(null)} className="text-[10px] text-[var(--txt-2)]">取消</button>
                           </div>
                         ) : (
-                          <div className="flex gap-1">
+                          <div className="flex gap-1.5">
+                            <button onClick={() => handleMove(item.id, "up")} className="text-[10px] text-[var(--txt-3)] hover:text-[var(--txt-0)]">↑</button>
+                            <button onClick={() => handleMove(item.id, "down")} className="text-[10px] text-[var(--txt-3)] hover:text-[var(--txt-0)]">↓</button>
                             <button onClick={() => { setEditingId(item.id); setEditData({}); }} className="text-[10px] text-[var(--txt-3)] hover:text-[var(--accent)]">✎</button>
                             <button onClick={() => handleDelete(item.id)} className="text-[10px] text-[var(--txt-3)] hover:text-[var(--late)]">✕</button>
                           </div>
@@ -270,6 +286,8 @@ export default function SettingsPage() {
                       </div>
                     ) : (
                       <div className="flex gap-1">
+                        <button onClick={() => handleMove(item.id, "up")} className="text-[10px] text-[var(--txt-3)] hover:text-[var(--txt-0)]">↑</button>
+                        <button onClick={() => handleMove(item.id, "down")} className="text-[10px] text-[var(--txt-3)] hover:text-[var(--txt-0)]">↓</button>
                         <button onClick={() => { setEditingId(item.id); setEditData({}); }} className="text-[10px] text-[var(--txt-3)] hover:text-[var(--accent)]">✎</button>
                         <button onClick={() => handleDelete(item.id)} className="text-[10px] text-[var(--txt-3)] hover:text-[var(--late)]">✕</button>
                       </div>
