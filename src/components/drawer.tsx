@@ -209,7 +209,6 @@ function SubNodeList({ children, stageCode, options, onChanged, parentId }: { ch
 
   const stageChildren = children.filter((c: Item) => {
     if (c.stageType === stageCode) return true;
-    if (c.status?.code && STAGE_GROUP_MAP[c.status.code] === stageCode) return true;
     return false;
   });
 

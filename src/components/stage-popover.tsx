@@ -51,7 +51,6 @@ export function StagePopover({
 
   const stageChildren = allChildren.filter((c) => {
     if (c.stageType === stageCode) return true;
-    if (c.status?.code && STAGE_GROUP_MAP[c.status.code] === stageCode) return true;
     return false;
   });
 

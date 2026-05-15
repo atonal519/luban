@@ -57,7 +57,6 @@ function stageStatus(item: Item, stageCode: string, STAGE_GROUPS: {code:string;l
   const children = (item.children || []) as Item[];
   const stageChildren = children.filter((c: Item) => {
     if (c.stageType === stageCode) return true;
-    if (c.status?.code && STAGE_GROUP_MAP[c.status.code] === stageCode) return true;
     return false;
   });
 
