@@ -105,7 +105,7 @@ export default function SettingsPage() {
       );
     }
     if (field === "isParallel") {
-      return <input type="checkbox" checked={!!value} onChange={(e) => onChange(e.target.checked)} className="w-4 h-4 accent-[var(--accent)] cursor-pointer" />;
+      return <input type="checkbox" checked={!!value} onChange={(e) => onChange(e.target.checked)} style={{ width: '18px', height: '18px' }} className="accent-[var(--accent)] cursor-pointer" />;
     }
     if (field === "order") {
       return <input type="number" value={value || 0} onChange={(e) => onChange(Number(e.target.value))} className="w-14 px-1.5 py-0.5 rounded border border-[var(--line-2)] bg-[var(--bg-2)] text-[12px] outline-none focus:border-[var(--accent)]" />;
