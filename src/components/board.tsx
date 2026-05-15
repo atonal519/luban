@@ -63,14 +63,24 @@ function stageStatus(item: Item, stageCode: string) {
     return false;
   });
 
+  // Calculate date range from children's plannedStart/plannedEnd
+  function dateRange(nodes: Item[]) {
+    const starts = nodes.map(n => n.plannedStart).filter(Boolean).sort();
+    const ends = nodes.map(n => n.plannedEnd).filter(Boolean).sort();
+    const s = starts[0]?.slice(5, 10)?.replace("-", "/");
+    const e = ends[ends.length - 1]?.slice(5, 10)?.replace("-", "/");
+    if (s && e) return `${s}-${e}`;
+    if (s) return `${s}-`;
+    return "";
+  }
+
   if (stageChildren.length === 0) {
-    // Check if the item itself is at or past this stage
     const itemStageGroup = item.status?.code ? STAGE_GROUP_MAP[item.status.code] : item.stageType;
     const itemIdx = STAGE_GROUPS.findIndex(g => g.code === itemStageGroup);
     const stageIdx = STAGE_GROUPS.findIndex(g => g.code === stageCode);
-    if (stageIdx < itemIdx) return { label: "完成", cls: "text-emerald-600 bg-emerald-500/8", progress: "—", sub: "" };
-    if (stageIdx === itemIdx) return { label: item.status?.label || "进行中", cls: "text-blue-600 bg-blue-500/8", progress: "", sub: "" };
-    return { label: "未开始", cls: "text-slate-400 bg-transparent", progress: "", sub: "" };
+    if (stageIdx < itemIdx) return { label: "完成", cls: "text-emerald-600 bg-emerald-500/8", progress: "—", sub: "", dates: "" };
+    if (stageIdx === itemIdx) return { label: item.status?.label || "进行中", cls: "text-blue-600 bg-blue-500/8", progress: "", sub: "", dates: "" };
+    return { label: "未开始", cls: "text-slate-400 bg-transparent", progress: "", sub: "", dates: "" };
   }
 
   const done = stageChildren.filter((c: Item) => c.progress >= 100 || c.status?.code === "DELIVERED").length;
@@ -78,17 +88,18 @@ function stageStatus(item: Item, stageCode: string) {
   const hasActive = stageChildren.some((c: Item) => c.progress > 0 && c.progress < 100);
   const activeChild = stageChildren.find((c: Item) => c.progress > 0 && c.progress < 100);
   const hasParallel = stageChildren.some((c: Item) => c.isParallel);
+  const dates = dateRange(stageChildren);
 
   if (done === stageChildren.length) {
-    return { label: "完成", cls: "text-emerald-600 bg-emerald-500/8", progress: `${done}/${stageChildren.length}`, sub: "" };
+    return { label: "完成", cls: "text-emerald-600 bg-emerald-500/8", progress: `${done}/${stageChildren.length}`, sub: "", dates };
   }
   if (hasLate) {
-    return { label: "驳回", cls: "text-red-600 bg-red-500/8", progress: `${done}/${stageChildren.length}`, sub: activeChild?.title || "", hasParallel };
+    return { label: "驳回", cls: "text-red-600 bg-red-500/8", progress: `${done}/${stageChildren.length}`, sub: activeChild?.title || "", hasParallel, dates };
   }
   if (hasActive) {
-    return { label: "进行中", cls: "text-blue-600 bg-blue-500/8", progress: `${done}/${stageChildren.length}`, sub: activeChild?.title || "", hasParallel };
+    return { label: "进行中", cls: "text-blue-600 bg-blue-500/8", progress: `${done}/${stageChildren.length}`, sub: activeChild?.title || "", hasParallel, dates };
   }
-  return { label: "未开始", cls: "text-slate-400 bg-transparent", progress: `${done}/${stageChildren.length}`, sub: "" };
+  return { label: "未开始", cls: "text-slate-400 bg-transparent", progress: `${done}/${stageChildren.length}`, sub: "", dates };
 }
 
 function AlertBar({ items }: { items: Item[] }) {
@@ -349,6 +360,7 @@ export function Board({ items, stageFilter = "" }: { items: Item[]; stageFilter?
                         onChanged={() => router.refresh()}
                         triggerNode={
                           <div className={`flex flex-col gap-0.5 px-2 py-1.5 rounded-md ${st.cls}`}>
+                            {st.dates && <span className="font-mono text-[9px] text-[var(--txt-2)]">计划 {st.dates}</span>}
                             <div className="flex items-center gap-1">
                               <span className="w-[5px] h-[5px] rounded-full bg-current flex-shrink-0" />
                               <span className="text-[11px] font-medium">{st.label}</span>
