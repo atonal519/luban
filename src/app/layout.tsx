@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "鲁班 — 自动驾驶项目管理",
-  description: "Luban — ADS Project Management",
+  title: "鲁班",
+  description: "Luban Project Management",
 };
 
 export default function RootLayout({
