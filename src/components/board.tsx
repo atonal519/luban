@@ -10,14 +10,15 @@ import { StagePopover } from "./stage-popover";
 
 type Item = any;
 
-const STAGE_GROUPS = [
+// Fallback defaults (overridden by props from DB)
+const DEFAULT_STAGE_GROUPS = [
   { code: "REQUIREMENT", label: "需求入口" },
   { code: "DEVELOPMENT", label: "版本开发" },
   { code: "TEST", label: "版本测试" },
   { code: "DELIVERY", label: "版本交付" },
 ];
 
-const STAGE_GROUP_MAP: Record<string, string> = {
+const DEFAULT_STAGE_GROUP_MAP: Record<string, string> = {
   PENDING_SCHEDULE: "REQUIREMENT", SPEC: "REQUIREMENT", DESIGN: "REQUIREMENT",
   TMG: "DEVELOPMENT",
   DEVELOPING: "DEVELOPMENT", SELF_TEST: "DEVELOPMENT", REJECTED: "DEVELOPMENT",
@@ -55,7 +56,7 @@ function overallStatus(item: Item): { label: string; cls: string } {
   return { label: "正常", cls: "bg-emerald-500/12 text-emerald-600" };
 }
 
-function stageStatus(item: Item, stageCode: string) {
+function stageStatus(item: Item, stageCode: string, STAGE_GROUPS: {code:string;label:string}[], STAGE_GROUP_MAP: Record<string,string>) {
   const children = (item.children || []) as Item[];
   const stageChildren = children.filter((c: Item) => {
     if (c.stageType === stageCode) return true;
@@ -125,14 +126,10 @@ function AlertBar({ items }: { items: Item[] }) {
   );
 }
 
-const STAGE_LABELS: Record<string, string> = {
-  REQUIREMENT: "需求看板",
-  DEVELOPMENT: "开发看板",
-  TEST: "测试看板",
-  DELIVERY: "交付看板",
-};
 
-export function Board({ items, stageFilter = "" }: { items: Item[]; stageFilter?: string }) {
+export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGroups: propGroups }: { items: Item[]; stageFilter?: string; stageGroupMap?: Record<string, string>; stageGroups?: { code: string; label: string }[] }) {
+  const STAGE_GROUPS = propGroups || DEFAULT_STAGE_GROUPS;
+  const STAGE_GROUP_MAP = propMap || DEFAULT_STAGE_GROUP_MAP;
   const router = useRouter();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [drawerStage, setDrawerStage] = useState(0);
@@ -178,7 +175,7 @@ export function Board({ items, stageFilter = "" }: { items: Item[]; stageFilter?
       })
     : items;
 
-  const boardTitle = stageFilter ? (STAGE_LABELS[stageFilter] || "版本看板") : "全部版本";
+  const boardTitle = stageFilter ? (STAGE_GROUPS.find(g => g.code === stageFilter)?.label || "看板") : "全部版本";
 
   function openDrawer(item: Item, stageIdx?: number) {
     setSelectedId(item.id);
@@ -348,7 +345,7 @@ export function Board({ items, stageFilter = "" }: { items: Item[]; stageFilter?
                   />
                 </td>
                 {STAGE_GROUPS.map((g, gi) => {
-                  const st = stageStatus(item, g.code);
+                  const st = stageStatus(item, g.code, STAGE_GROUPS, STAGE_GROUP_MAP);
                   return (
                     <td
                       key={g.code}
