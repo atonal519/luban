@@ -22,34 +22,51 @@ const STAGE_GROUP_MAP: Record<string, string> = {
 };
 
 function ApprovalChain({ approval, nodeId, options, onChanged }: { approval: any; nodeId: string; options: any; onChanged: () => void }) {
-  const [actionForm, setActionForm] = useState<string | null>(null); // "initiate"|"submit"|"approve"|"reject"|"resubmit"
+  const [actionForm, setActionForm] = useState<string | null>(null);
   const [actorId, setActorId] = useState("");
   const [note, setNote] = useState("");
+  const [branchName, setBranchName] = useState("");
+  const [commitId, setCommitId] = useState("");
   const [uploading, setUploading] = useState(false);
-  const [imageUrl, setImageUrl] = useState("");
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
     setUploading(true);
-    const fd = new FormData();
-    fd.append("file", file);
-    const res = await fetch("/api/upload", { method: "POST", body: fd });
-    const data = await res.json();
-    setImageUrl(data.url || "");
+    const urls: string[] = [...imageUrls];
+    for (let i = 0; i < files.length; i++) {
+      const fd = new FormData();
+      fd.append("file", files[i]);
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      const data = await res.json();
+      if (data.url) urls.push(data.url);
+    }
+    setImageUrls(urls);
     setUploading(false);
+    e.target.value = "";
   }
+
+  function removeImage(idx: number) {
+    setImageUrls(prev => prev.filter((_, i) => i !== idx));
+  }
+
+  const isSubmitAction = actionForm === "submit" || actionForm === "resubmit";
 
   async function doAction() {
     if (!actorId || submitting) return;
     setSubmitting(true);
+    const evidenceUrl = imageUrls.length > 0 ? JSON.stringify(imageUrls) : "";
+    const fullNote = isSubmitAction && (branchName || commitId)
+      ? `${branchName ? `分支: ${branchName}` : ""}${commitId ? ` | Commit: ${commitId}` : ""}${note ? `\n${note.trim()}` : ""}`
+      : note.trim();
     await fetch(`/api/versions/${nodeId}/approval`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: actionForm, actorId, note: note.trim(), evidenceUrl: imageUrl }),
+      body: JSON.stringify({ action: actionForm, actorId, note: fullNote, evidenceUrl }),
     });
-    setActionForm(null); setActorId(""); setNote(""); setImageUrl("");
+    setActionForm(null); setActorId(""); setNote(""); setBranchName(""); setCommitId(""); setImageUrls([]);
     setSubmitting(false);
     onChanged();
   }
@@ -111,8 +128,16 @@ function ApprovalChain({ approval, nodeId, options, onChanged }: { approval: any
                   </div>
                 )}
                 {ev.evidenceUrl && (
-                  <div className="mt-1">
-                    <img src={ev.evidenceUrl} alt="凭证" className="max-w-[200px] max-h-[150px] rounded border border-[var(--line-2)] cursor-pointer" onClick={() => window.open(ev.evidenceUrl, '_blank')} />
+                  <div className="mt-1 flex gap-1.5 flex-wrap">
+                    {(() => {
+                      try {
+                        const urls = JSON.parse(ev.evidenceUrl);
+                        if (Array.isArray(urls)) return urls.map((u: string, i: number) => (
+                          <img key={i} src={u} alt="凭证" className="max-w-[120px] max-h-[90px] rounded border border-[var(--line-2)] cursor-pointer" onClick={() => window.open(u, '_blank')} />
+                        ));
+                      } catch {}
+                      return <img src={ev.evidenceUrl} alt="凭证" className="max-w-[200px] max-h-[150px] rounded border border-[var(--line-2)] cursor-pointer" onClick={() => window.open(ev.evidenceUrl, '_blank')} />;
+                    })()}
                   </div>
                 )}
               </div>
@@ -128,13 +153,28 @@ function ApprovalChain({ approval, nodeId, options, onChanged }: { approval: any
             <option value="">操作人</option>
             {users.map((u: any) => <option key={u.id} value={u.id}>{u.name}</option>)}
           </select>
-          {(actionForm === "submit" || actionForm === "resubmit") && (
-            <div>
-              <label className="text-[10px] text-[var(--txt-2)] block mb-1">上传凭证图片</label>
-              <input type="file" accept="image/*" onChange={handleUpload} className="text-[11px] text-[var(--txt-1)]" />
-              {uploading && <span className="text-[10px] text-[var(--txt-3)]">上传中…</span>}
-              {imageUrl && <img src={imageUrl} alt="preview" className="mt-1 max-w-[150px] max-h-[100px] rounded border border-[var(--line-2)]" />}
-            </div>
+          {isSubmitAction && (
+            <>
+              <div className="grid grid-cols-2 gap-1.5">
+                <input type="text" value={branchName} onChange={(e) => setBranchName(e.target.value)} placeholder="分支名 *" className="px-2 py-1 rounded-md border border-[var(--line-2)] bg-[var(--bg-1)] text-[11px] outline-none focus:border-[var(--accent)]" />
+                <input type="text" value={commitId} onChange={(e) => setCommitId(e.target.value)} placeholder="Commit ID *" className="px-2 py-1 rounded-md border border-[var(--line-2)] bg-[var(--bg-1)] text-[11px] font-mono outline-none focus:border-[var(--accent)]" />
+              </div>
+              <div>
+                <label className="text-[10px] text-[var(--txt-2)] block mb-1">上传凭证图片（可多张）</label>
+                <input type="file" accept="image/*" multiple onChange={handleUpload} className="text-[11px] text-[var(--txt-1)]" />
+                {uploading && <span className="text-[10px] text-[var(--txt-3)]">上传中…</span>}
+                {imageUrls.length > 0 && (
+                  <div className="flex gap-1.5 flex-wrap mt-1">
+                    {imageUrls.map((url, i) => (
+                      <div key={i} className="relative">
+                        <img src={url} alt="" className="w-[60px] h-[45px] object-cover rounded border border-[var(--line-2)]" />
+                        <button onClick={() => removeImage(i)} className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-red-500 text-white text-[8px] flex items-center justify-center">✕</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
           )}
           <textarea value={note} onChange={(e) => setNote(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); doAction(); } }} placeholder={actionForm === "reject" ? "驳回理由…" : "备注（可选）…"} className="px-2 py-1 rounded-md border border-[var(--line-2)] bg-[var(--bg-1)] text-[12px] outline-none resize-none min-h-[32px]" />
           <div className="flex gap-1 justify-end">
