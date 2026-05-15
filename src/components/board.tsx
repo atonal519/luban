@@ -139,6 +139,7 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
   const [quickInput, setQuickInput] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [options, setOptions] = useState<any>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const selectedItem = items.find((i: Item) => i.id === selectedId);
 
   useEffect(() => {
@@ -163,6 +164,13 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
     router.refresh();
   }
 
+  async function deleteVersion(itemId: string) {
+    if (!confirm("确认删除该版本？所有子节点、日志、审核记录将一并删除。")) return;
+    await fetch(`/api/versions/${itemId}`, { method: "DELETE" });
+    setSelectedId(null);
+    router.refresh();
+  }
+
   // Stage filter: only show versions that have children in the selected stage
   const filteredItems = stageFilter
     ? items.filter((item: Item) => {
@@ -177,6 +185,16 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
         });
       })
     : items;
+
+  // Search filter
+  const searchedItems = searchQuery.trim()
+    ? filteredItems.filter((item: Item) => {
+        const q = searchQuery.toLowerCase();
+        return (item.versionNo || "").toLowerCase().includes(q)
+          || (item.title || "").toLowerCase().includes(q)
+          || (item.owner?.name || "").toLowerCase().includes(q);
+      })
+    : filteredItems;
 
   const boardTitle = stageFilter ? (STAGE_GROUPS.find(g => g.code === stageFilter)?.label || "看板") : "全部版本";
 
@@ -198,7 +216,7 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
         {/* Left: title */}
         <span className="text-[15px] font-semibold flex-shrink-0">{boardTitle}</span>
         <span className="font-mono text-[11px] text-[var(--txt-2)] bg-[var(--bg-3)] px-2 py-0.5 rounded flex-shrink-0">
-          {filteredItems.length} 个版本
+          {searchedItems.length} 个版本
         </span>
 
         {/* Center: quick create */}
@@ -239,12 +257,12 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
           ))}
           <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-[var(--line-2)] bg-[var(--bg-1)] text-[12px] w-[160px] ml-1">
             <span className="text-[var(--txt-3)]">🔍</span>
-            <input type="text" placeholder="搜索版本 / 项目名" className="bg-transparent outline-none text-[12px] text-[var(--txt-0)] w-full placeholder:text-[var(--txt-3)]" />
+            <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="搜索版本 / 项目名 / 责任人" className="bg-transparent outline-none text-[12px] text-[var(--txt-0)] w-full placeholder:text-[var(--txt-3)]" />
           </div>
         </div>
       </div>
 
-      <AlertBar items={filteredItems} />
+      <AlertBar items={searchedItems} />
 
       {/* Table */}
       <div className="flex-1 overflow-auto px-5 py-4">
@@ -267,7 +285,7 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
             </tr>
           </thead>
           <tbody>
-            {filteredItems.map((item: Item) => (
+            {searchedItems.map((item: Item) => (
               <tr
                 key={item.id}
                 onClick={() => openDrawer(item)}
@@ -388,12 +406,20 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
                   })()}
                 </td>
                 <td className="px-3 h-[68px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); openDrawer(item); }}
-                    className="px-2.5 py-1 rounded-md border border-[var(--line-2)] text-[var(--txt-2)] text-[12px] hover:bg-[var(--bg-3)] hover:text-[var(--txt-0)] transition-colors"
-                  >
-                    ···
-                  </button>
+                  <div className="flex gap-1.5">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); openDrawer(item); }}
+                      className="px-2 py-0.5 rounded-md text-[11px] text-[var(--txt-2)] hover:text-[var(--accent)] transition-colors"
+                    >
+                      详情
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); deleteVersion(item.id); }}
+                      className="px-2 py-0.5 rounded-md text-[11px] text-[var(--txt-3)] hover:text-[var(--late)] transition-colors"
+                    >
+                      删除
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

@@ -52,3 +52,40 @@ export async function PATCH(
 
   return NextResponse.json(updated);
 }
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+
+  // Cascade: delete children's approvals/events, then children, then parent's related data
+  const children = await prisma.item.findMany({ where: { parentId: id }, select: { id: true } });
+  const childIds = children.map(c => c.id);
+
+  // Delete approval events and approvals for children
+  const childApprovals = await prisma.approval.findMany({ where: { itemId: { in: childIds } } });
+  if (childApprovals.length > 0) {
+    await prisma.approvalEvent.deleteMany({ where: { approvalId: { in: childApprovals.map(a => a.id) } } });
+    await prisma.approval.deleteMany({ where: { itemId: { in: childIds } } });
+  }
+
+  // Delete children
+  await prisma.item.deleteMany({ where: { parentId: id } });
+
+  // Delete parent's related data
+  const parentApproval = await prisma.approval.findUnique({ where: { itemId: id } });
+  if (parentApproval) {
+    await prisma.approvalEvent.deleteMany({ where: { approvalId: parentApproval.id } });
+    await prisma.approval.delete({ where: { id: parentApproval.id } });
+  }
+  await prisma.dailyLog.deleteMany({ where: { itemId: id } });
+  await prisma.rejection.deleteMany({ where: { itemId: id } });
+  await prisma.alert.deleteMany({ where: { itemId: id } });
+  await prisma.itemModule.deleteMany({ where: { itemId: id } });
+
+  // Delete the item itself
+  await prisma.item.delete({ where: { id } });
+
+  return NextResponse.json({ ok: true });
+}
