@@ -114,6 +114,13 @@ export default function SettingsPage() {
   // For stageTemplates, add stageGroupId field
   const displayFields = activeTab === "stageTemplates" ? ["name", "isParallel", "parallelGroup"] : tab.fields;
 
+  const fieldLabels: Record<string, string> = {
+    name: "名称", label: "名称", color: "颜色", order: "排序",
+    email: "邮箱", role: "角色", code: "编码",
+    isParallel: "并行", parallelGroup: "并行组",
+    stageGroup: "所属阶段", stageGroupId: "所属阶段",
+  };
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       {/* Header */}
@@ -149,7 +156,7 @@ export default function SettingsPage() {
           <div className="mb-3 p-3 bg-[var(--bg-2)] rounded-lg border border-[var(--line-2)] flex gap-2 items-end flex-wrap">
             {displayFields.map(f => (
               <div key={f} className="flex flex-col gap-0.5">
-                <span className="text-[10px] text-[var(--txt-2)]">{f}</span>
+                <span className="text-[10px] text-[var(--txt-2)]">{fieldLabels[f] || f}</span>
                 {renderField(f, addData[f], (v) => setAddData({ ...addData, [f]: v }))}
               </div>
             ))}
@@ -229,7 +236,7 @@ export default function SettingsPage() {
             <thead>
               <tr>
                 {displayFields.map(f => (
-                  <th key={f} className="text-left px-2 py-1.5 text-[11px] text-[var(--txt-2)] font-medium border-b border-[var(--line-2)]">{f}</th>
+                  <th key={f} className="text-left px-2 py-1.5 text-[11px] text-[var(--txt-2)] font-medium border-b border-[var(--line-2)]">{fieldLabels[f] || f}</th>
                 ))}
                 <th className="text-left px-2 py-1.5 text-[11px] text-[var(--txt-2)] font-medium border-b border-[var(--line-2)]">操作</th>
               </tr>
