@@ -130,7 +130,7 @@ function ActionMenu({ onDetail, onDelete, onAddChild, onChangeTag }: { onDetail:
         <div className="absolute right-0 top-full mt-1 z-50 bg-[var(--bg-1)] border border-[var(--line-2)] rounded-lg shadow-lg py-1 min-w-[100px]" onClick={(e) => e.stopPropagation()}>
           <button onClick={() => { onDetail(); setOpen(false); }} className="w-full text-left px-3 py-1.5 text-[12px] text-[var(--txt-0)] hover:bg-[var(--bg-2)]">详情</button>
           {onAddChild && <button onClick={() => { onAddChild(); setOpen(false); }} className="w-full text-left px-3 py-1.5 text-[12px] text-[var(--accent)] hover:bg-[var(--bg-2)]">+ 添加子项目</button>}
-          {onChangeTag && <button onClick={() => { onChangeTag(); setOpen(false); }} className="w-full text-left px-3 py-1.5 text-[12px] text-[var(--txt-1)] hover:bg-[var(--bg-2)]">🎩 修改帽子</button>}
+          {onChangeTag && <button onClick={() => { onChangeTag(); setOpen(false); }} className="w-full text-left px-3 py-1.5 text-[12px] text-[var(--txt-1)] hover:bg-[var(--bg-2)]">修改帽子</button>}
           <button onClick={() => { onDelete(); setOpen(false); }} className="w-full text-left px-3 py-1.5 text-[12px] text-[var(--late)] hover:bg-red-500/5">删除</button>
         </div>
       )}
