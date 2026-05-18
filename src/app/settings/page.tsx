@@ -10,6 +10,7 @@ const TABS = [
   { key: "priorities", label: "优先级", fields: ["label", "color"] },
   { key: "natures", label: "类型", fields: ["label", "color"] },
   { key: "statuses", label: "节点状态", fields: ["label", "color"] },
+  { key: "tags", label: "帽子", fields: ["name", "color"] },
 ];
 
 export default function SettingsPage() {

@@ -9,6 +9,7 @@ const MODELS: Record<string, any> = {
   stageGroups: prisma.stageGroup,
   stageTemplates: prisma.stageTemplate,
   users: prisma.user,
+  tags: prisma.tag,
 };
 
 const HAS_ORDER = new Set(['modules', 'natures', 'statuses', 'priorities', 'stageGroups', 'stageTemplates']);

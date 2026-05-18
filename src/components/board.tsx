@@ -105,7 +105,7 @@ function stageStatus(item: Item, stageCode: string, STAGE_GROUPS: {code:string;l
   return { label: "未开始", cls: "text-slate-400 bg-transparent", progress: `${done}/${stageChildren.length}`, sub: "", isParallelRunning: false, dates };
 }
 
-function ActionMenu({ onDetail, onDelete, onAddChild }: { onDetail: () => void; onDelete: () => void; onAddChild?: () => void }) {
+function ActionMenu({ onDetail, onDelete, onAddChild, onChangeTag }: { onDetail: () => void; onDelete: () => void; onAddChild?: () => void; onChangeTag?: () => void }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -130,6 +130,7 @@ function ActionMenu({ onDetail, onDelete, onAddChild }: { onDetail: () => void; 
         <div className="absolute right-0 top-full mt-1 z-50 bg-[var(--bg-1)] border border-[var(--line-2)] rounded-lg shadow-lg py-1 min-w-[100px]" onClick={(e) => e.stopPropagation()}>
           <button onClick={() => { onDetail(); setOpen(false); }} className="w-full text-left px-3 py-1.5 text-[12px] text-[var(--txt-0)] hover:bg-[var(--bg-2)]">详情</button>
           {onAddChild && <button onClick={() => { onAddChild(); setOpen(false); }} className="w-full text-left px-3 py-1.5 text-[12px] text-[var(--accent)] hover:bg-[var(--bg-2)]">+ 添加子项目</button>}
+          {onChangeTag && <button onClick={() => { onChangeTag(); setOpen(false); }} className="w-full text-left px-3 py-1.5 text-[12px] text-[var(--txt-1)] hover:bg-[var(--bg-2)]">🎩 修改帽子</button>}
           <button onClick={() => { onDelete(); setOpen(false); }} className="w-full text-left px-3 py-1.5 text-[12px] text-[var(--late)] hover:bg-red-500/5">删除</button>
         </div>
       )}
@@ -214,6 +215,18 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ moduleIds }),
     });
+    router.refresh();
+  }
+
+  const [tagPickerItemId, setTagPickerItemId] = useState<string | null>(null);
+
+  async function changeTag(itemId: string, tagId: string | null) {
+    await fetch(`/api/versions/${itemId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tagId }),
+    });
+    setTagPickerItemId(null);
     router.refresh();
   }
 
@@ -471,6 +484,7 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
                         onDetail={() => openDrawer(item)}
                         onDelete={() => deleteVersion(item.id)}
                         onAddChild={() => startInlineAdd(item.id, indentLevel)}
+                        onChangeTag={indentLevel === 0 ? () => setTagPickerItemId(item.id) : undefined}
                       />
                     </td>
                   </tr>
@@ -592,6 +606,28 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
           onClose={() => setSelectedId(null)}
           currentUser={currentUser}
         />
+      )}
+
+      {/* Tag Picker */}
+      {tagPickerItemId && (
+        <>
+          <div className="fixed inset-0 z-50" onClick={() => setTagPickerItemId(null)} />
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-[var(--bg-1)] border border-[var(--line-2)] rounded-xl shadow-2xl p-4 w-[280px]">
+            <div className="text-[13px] font-semibold mb-3">🎩 选择帽子</div>
+            <div className="flex flex-col gap-1">
+              <button onClick={() => changeTag(tagPickerItemId, null)} className="flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] text-[var(--txt-2)] hover:bg-[var(--bg-3)] transition-colors">
+                <span className="w-3 h-3 rounded-full bg-[var(--bg-4)] flex-shrink-0" />
+                <span>取消帽子（未分类）</span>
+              </button>
+              {tags.map(tag => (
+                <button key={tag.id} onClick={() => changeTag(tagPickerItemId, tag.id)} className="flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] text-[var(--txt-0)] hover:bg-[var(--bg-3)] transition-colors">
+                  <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: tag.color }} />
+                  <span>{tag.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </>
       )}
 
       {/* Create Modal */}
