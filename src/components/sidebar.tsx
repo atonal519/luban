@@ -52,14 +52,11 @@ export function Sidebar({
         </Link>
       </div>
 
-      {/* Filter label or back button */}
-      <div className="px-4 pt-3 pb-1 flex items-center justify-between">
+      {/* Filter label */}
+      <div className="px-4 pt-3 pb-1">
         <span className="text-[10px] text-[var(--txt-3)] tracking-widest uppercase font-mono">
           {pathname === "/settings" ? "设置" : "筛选"}
         </span>
-        {pathname === "/settings" && (
-          <Link href="/" className="text-[11px] text-[var(--accent)] hover:underline">← 返回</Link>
-        )}
       </div>
 
       {/* Filters */}

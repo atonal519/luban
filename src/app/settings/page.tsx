@@ -165,6 +165,9 @@ export default function SettingsPage() {
       {/* Header */}
       <div className="h-[52px] min-h-[52px] flex items-center px-5 border-b border-[var(--line)] bg-[var(--bg-1)]">
         <span className="text-[15px] font-semibold">系统设置</span>
+        <a href="/" className="ml-auto flex items-center gap-1.5 text-[12px] text-[var(--txt-2)] hover:text-[var(--accent)] transition-colors">
+          <span>←</span> 返回主页
+        </a>
       </div>
 
       {/* Tabs */}
