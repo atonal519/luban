@@ -6,8 +6,11 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  const userId = req.cookies.get('userId')?.value;
+  if (!userId) return NextResponse.json({ error: '未登录' }, { status: 401 });
+
   const body = await req.json();
-  const { content, authorId } = body;
+  const { content } = body;
 
   if (!content?.trim()) {
     return NextResponse.json({ error: '日志内容不能为空' }, { status: 400 });
@@ -23,7 +26,7 @@ export async function POST(
   const log = await prisma.dailyLog.create({
     data: {
       itemId: id,
-      authorId: authorId || '',
+      authorId: userId,
       logDate,
       content: content.trim(),
     },
