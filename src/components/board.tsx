@@ -161,7 +161,7 @@ function AlertBar({ items }: { items: Item[] }) {
 }
 
 
-export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGroups: propGroups }: { items: Item[]; stageFilter?: string; stageGroupMap?: Record<string, string>; stageGroups?: { code: string; label: string }[] }) {
+export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGroups: propGroups, tags = [] }: { items: Item[]; stageFilter?: string; stageGroupMap?: Record<string, string>; stageGroups?: { code: string; label: string }[]; tags?: { id: string; name: string; color: string }[] }) {
   const STAGE_GROUPS = propGroups || DEFAULT_STAGE_GROUPS;
   const STAGE_GROUP_MAP = propMap || DEFAULT_STAGE_GROUP_MAP;
   const router = useRouter();
@@ -169,12 +169,21 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
   const [drawerStage, setDrawerStage] = useState(0);
   const [quickInput, setQuickInput] = useState("");
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [collapsedTags, setCollapsedTags] = useState<Set<string>>(new Set());
 
   function toggleExpand(id: string, e: React.MouseEvent) {
     e.stopPropagation();
     setExpandedIds(prev => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleTag(tagId: string) {
+    setCollapsedTags(prev => {
+      const next = new Set(prev);
+      if (next.has(tagId)) next.delete(tagId); else next.add(tagId);
       return next;
     });
   }
@@ -499,7 +508,77 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
                 return [row, ...childRows, ...addRow];
               }
 
-              return searchedItems.flatMap((item: Item) => renderItemRows(item, 0));
+              // Group by tag
+              const taggedItems: Record<string, Item[]> = {};
+              const untagged: Item[] = [];
+              for (const item of searchedItems) {
+                const tid = item.tag?.id;
+                if (tid) {
+                  if (!taggedItems[tid]) taggedItems[tid] = [];
+                  taggedItems[tid].push(item);
+                } else {
+                  untagged.push(item);
+                }
+              }
+
+              const rows: React.ReactNode[] = [];
+
+              // Render tagged groups
+              for (const tag of tags) {
+                const groupItems = taggedItems[tag.id];
+                if (!groupItems || groupItems.length === 0) continue;
+                // Tag banner row
+                rows.push(
+                  <tr key={`tag-${tag.id}`}>
+                    <td colSpan={12} className="px-0 border-b border-[var(--line)]">
+                      <button
+                        onClick={() => toggleTag(tag.id)}
+                        className="w-full flex items-center gap-2 px-4 py-2 text-left hover:opacity-90 transition-opacity"
+                        style={{ background: tag.color + "14" }}
+                      >
+                        <span className="text-[11px]" style={{ color: tag.color }}>
+                          {collapsedTags.has(tag.id) ? "▶" : "▼"}
+                        </span>
+                        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: tag.color }} />
+                        <span className="text-[12px] font-semibold" style={{ color: tag.color }}>{tag.name}</span>
+                        <span className="text-[10px] font-mono ml-1" style={{ color: tag.color + "99" }}>{groupItems.length} 个版本</span>
+                      </button>
+                    </td>
+                  </tr>
+                );
+                if (!collapsedTags.has(tag.id)) {
+                  groupItems.forEach(item => {
+                    renderItemRows(item, 0).forEach(r => rows.push(r));
+                  });
+                }
+              }
+
+              // Untagged
+              if (untagged.length > 0) {
+                rows.push(
+                  <tr key="tag-untagged">
+                    <td colSpan={12} className="px-0 border-b border-[var(--line)]">
+                      <div className="flex items-center gap-2 px-4 py-2 bg-[var(--bg-3)]">
+                        <span className="w-2 h-2 rounded-full bg-[var(--txt-3)] flex-shrink-0" />
+                        <span className="text-[12px] font-semibold text-[var(--txt-2)]">未分类</span>
+                        <span className="text-[10px] font-mono text-[var(--txt-3)]">{untagged.length} 个版本</span>
+                      </div>
+                    </td>
+                  </tr>
+                );
+                untagged.forEach(item => {
+                  renderItemRows(item, 0).forEach(r => rows.push(r));
+                });
+              }
+
+              // Fallback: no tags defined yet
+              if (tags.length === 0) {
+                searchedItems.forEach(item => {
+                  renderItemRows(item, 0).forEach(r => rows.push(r));
+                });
+              }
+
+              return rows;
             })()}
           </tbody>
         </table>

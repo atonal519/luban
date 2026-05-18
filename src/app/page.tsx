@@ -23,7 +23,7 @@ export default async function Home({
   const { stage, modules: modulesParam } = await searchParams;
   const selectedModuleIds = modulesParam ? modulesParam.split(",").filter(Boolean) : [];
 
-  const [items, statuses, stageGroups] = await Promise.all([
+  const [items, statuses, stageGroups, tags] = await Promise.all([
     prisma.item.findMany({
       where: {
         parentId: null,
@@ -36,6 +36,7 @@ export default async function Home({
         status: true,
         owner: true,
         priority: true,
+        tag: true,
         modules: { include: { module: true } },
         children: buildChildrenInclude(4), // up to depth 5
         dailyLogs: {
@@ -56,6 +57,7 @@ export default async function Home({
     }),
     prisma.statusDef.findMany({ orderBy: { order: "asc" } }),
     prisma.stageGroup.findMany({ orderBy: { order: "asc" } }),
+    prisma.tag.findMany({ orderBy: { name: "asc" } }),
   ]);
 
   // Build dynamic stage group map from DB
@@ -72,6 +74,7 @@ export default async function Home({
       stageFilter={stage || ""}
       stageGroupMap={stageGroupMap}
       stageGroups={stageGroupsList}
+      tags={JSON.parse(JSON.stringify(tags))}
     />
   );
 }

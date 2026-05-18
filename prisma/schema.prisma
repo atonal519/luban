@@ -31,7 +31,16 @@ model User {
   filterPrefs     UserFilterPref[]
 }
 
-// ── 用户筛选偏好 ─────────────────────────────────────
+// ── Tag 帽子 ─────────────────────────────────────────
+model Tag {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  color     String    @default("#6366f1")
+  createdAt DateTime  @default(now())
+
+  items     Item[]
+}
+
 model UserFilterPref {
   id        String   @id @default(cuid())
   userId    String
@@ -156,6 +165,10 @@ model Item {
   mokraObjects     String @default("")
   mokraKeyResults  String @default("")
   mokraActions     String @default("")
+
+  // 帽子 Tag（顶层版本归类）
+  tagId            String?
+  tag              Tag?      @relation(fields: [tagId], references: [id])
 
   // 审核
   requiresApproval Boolean   @default(false)
