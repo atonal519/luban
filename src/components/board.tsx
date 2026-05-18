@@ -105,7 +105,7 @@ function stageStatus(item: Item, stageCode: string, STAGE_GROUPS: {code:string;l
   return { label: "未开始", cls: "text-slate-400 bg-transparent", progress: `${done}/${stageChildren.length}`, sub: "", isParallelRunning: false, dates };
 }
 
-function ActionMenu({ onDetail, onDelete, onAddChild, onChangeTag }: { onDetail: () => void; onDelete: () => void; onAddChild?: () => void; onChangeTag?: () => void }) {
+function ActionMenu({ onDetail, onDelete, onAddChild }: { onDetail: () => void; onDelete: () => void; onAddChild?: () => void }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -130,7 +130,6 @@ function ActionMenu({ onDetail, onDelete, onAddChild, onChangeTag }: { onDetail:
         <div className="absolute right-0 top-full mt-1 z-50 bg-[var(--bg-1)] border border-[var(--line-2)] rounded-lg shadow-lg py-1 min-w-[100px]" onClick={(e) => e.stopPropagation()}>
           <button onClick={() => { onDetail(); setOpen(false); }} className="w-full text-left px-3 py-1.5 text-[12px] text-[var(--txt-0)] hover:bg-[var(--bg-2)]">详情</button>
           {onAddChild && <button onClick={() => { onAddChild(); setOpen(false); }} className="w-full text-left px-3 py-1.5 text-[12px] text-[var(--accent)] hover:bg-[var(--bg-2)]">+ 添加子项目</button>}
-          {onChangeTag && <button onClick={() => { onChangeTag(); setOpen(false); }} className="w-full text-left px-3 py-1.5 text-[12px] text-[var(--txt-1)] hover:bg-[var(--bg-2)]">🎩 修改帽子</button>}
           <button onClick={() => { onDelete(); setOpen(false); }} className="w-full text-left px-3 py-1.5 text-[12px] text-[var(--late)] hover:bg-red-500/5">删除</button>
         </div>
       )}
@@ -484,7 +483,6 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
                         onDetail={() => openDrawer(item)}
                         onDelete={() => deleteVersion(item.id)}
                         onAddChild={() => startInlineAdd(item.id, indentLevel)}
-                        onChangeTag={indentLevel === 0 ? () => setTagPickerItemId(item.id) : undefined}
                       />
                     </td>
                   </tr>
@@ -545,18 +543,27 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
                 rows.push(
                   <tr key={`tag-${tag.id}`}>
                     <td colSpan={12} className="px-0 border-b border-[var(--line)]">
-                      <button
-                        onClick={() => toggleTag(tag.id)}
-                        className="w-full flex items-center gap-2 px-4 py-2 text-left hover:opacity-90 transition-opacity"
+                      <div
+                        className="w-full flex items-center gap-2 px-4 py-2 group/tag"
                         style={{ background: tag.color + "14" }}
                       >
-                        <span className="text-[11px]" style={{ color: tag.color }}>
-                          {collapsedTags.has(tag.id) ? "▶" : "▼"}
-                        </span>
-                        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: tag.color }} />
-                        <span className="text-[12px] font-semibold" style={{ color: tag.color }}>{tag.name}</span>
-                        <span className="text-[10px] font-mono ml-1" style={{ color: tag.color + "99" }}>{groupItems.length} 个版本</span>
-                      </button>
+                        <button onClick={() => toggleTag(tag.id)} className="flex items-center gap-2 flex-1 text-left hover:opacity-80 transition-opacity">
+                          <span className="text-[11px]" style={{ color: tag.color }}>
+                            {collapsedTags.has(tag.id) ? "▶" : "▼"}
+                          </span>
+                          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: tag.color }} />
+                          <span className="text-[12px] font-semibold" style={{ color: tag.color }}>{tag.name}</span>
+                          <span className="text-[10px] font-mono ml-1" style={{ color: tag.color + "99" }}>{groupItems.length} 个版本</span>
+                        </button>
+                        <button
+                          onClick={() => setTagPickerItemId(`__tag__${tag.id}`)}
+                          className="text-[11px] opacity-0 group-hover/tag:opacity-60 hover:!opacity-100 transition-opacity"
+                          style={{ color: tag.color }}
+                          title="修改帽子名称"
+                        >
+                          ✎
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -608,27 +615,71 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
         />
       )}
 
-      {/* Tag Picker */}
-      {tagPickerItemId && (
-        <>
-          <div className="fixed inset-0 z-50" onClick={() => setTagPickerItemId(null)} />
-          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-[var(--bg-1)] border border-[var(--line-2)] rounded-xl shadow-2xl p-4 w-[280px]">
-            <div className="text-[13px] font-semibold mb-3">🎩 选择帽子</div>
-            <div className="flex flex-col gap-1">
-              <button onClick={() => changeTag(tagPickerItemId, null)} className="flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] text-[var(--txt-2)] hover:bg-[var(--bg-3)] transition-colors">
-                <span className="w-3 h-3 rounded-full bg-[var(--bg-4)] flex-shrink-0" />
-                <span>取消帽子（未分类）</span>
-              </button>
-              {tags.map(tag => (
-                <button key={tag.id} onClick={() => changeTag(tagPickerItemId, tag.id)} className="flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] text-[var(--txt-0)] hover:bg-[var(--bg-3)] transition-colors">
-                  <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: tag.color }} />
-                  <span>{tag.name}</span>
+      {/* Tag Picker — for versions OR tag name editor */}
+      {tagPickerItemId && (() => {
+        const isTagEdit = tagPickerItemId.startsWith("__tag__");
+        if (isTagEdit) {
+          const editingTag = tags.find(t => tagPickerItemId === `__tag__${t.id}`);
+          if (!editingTag) return null;
+          return (
+            <>
+              <div className="fixed inset-0 z-50" onClick={() => setTagPickerItemId(null)} />
+              <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-[var(--bg-1)] border border-[var(--line-2)] rounded-xl shadow-2xl p-4 w-[260px]" onClick={e => e.stopPropagation()}>
+                <div className="text-[13px] font-semibold mb-3">编辑帽子</div>
+                <div className="flex flex-col gap-2">
+                  <input
+                    autoFocus
+                    type="text"
+                    defaultValue={editingTag.name}
+                    onKeyDown={async (e) => {
+                      if (e.key === "Enter") {
+                        await fetch(`/api/tags/${editingTag.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: (e.target as HTMLInputElement).value.trim() }) });
+                        setTagPickerItemId(null); router.refresh();
+                      }
+                      if (e.key === "Escape") setTagPickerItemId(null);
+                    }}
+                    className="px-3 py-2 rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] text-[13px] text-[var(--txt-0)] outline-none focus:border-[var(--accent)]"
+                  />
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] text-[var(--txt-2)]">颜色</span>
+                    <input type="color" defaultValue={editingTag.color}
+                      onChange={async (e) => {
+                        await fetch(`/api/tags/${editingTag.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ color: e.target.value }) });
+                        router.refresh();
+                      }}
+                      className="w-7 h-7 rounded border border-[var(--line-2)] cursor-pointer"
+                    />
+                  </div>
+                  <div className="flex justify-between pt-1">
+                    <button onClick={async () => { if (confirm("确认删除此帽子？")) { await fetch(`/api/tags/${editingTag.id}`, { method: "DELETE" }); setTagPickerItemId(null); router.refresh(); } }} className="text-[11px] text-[var(--late)] hover:underline">删除帽子</button>
+                    <button onClick={() => setTagPickerItemId(null)} className="text-[11px] text-[var(--txt-2)] hover:underline">关闭</button>
+                  </div>
+                </div>
+              </div>
+            </>
+          );
+        }
+        return (
+          <>
+            <div className="fixed inset-0 z-50" onClick={() => setTagPickerItemId(null)} />
+            <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-[var(--bg-1)] border border-[var(--line-2)] rounded-xl shadow-2xl p-4 w-[280px]">
+              <div className="text-[13px] font-semibold mb-3">🎩 选择帽子</div>
+              <div className="flex flex-col gap-1">
+                <button onClick={() => changeTag(tagPickerItemId, null)} className="flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] text-[var(--txt-2)] hover:bg-[var(--bg-3)] transition-colors">
+                  <span className="w-3 h-3 rounded-full bg-[var(--bg-4)] flex-shrink-0" />
+                  <span>取消帽子（未分类）</span>
                 </button>
-              ))}
+                {tags.map(tag => (
+                  <button key={tag.id} onClick={() => changeTag(tagPickerItemId, tag.id)} className="flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] text-[var(--txt-0)] hover:bg-[var(--bg-3)] transition-colors">
+                    <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: tag.color }} />
+                    <span>{tag.name}</span>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-        </>
-      )}
+          </>
+        );
+      })()}
 
       {/* Create Modal */}
       {showCreate && (
