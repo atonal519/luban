@@ -997,10 +997,12 @@ export function Drawer({ item, initialStage, onClose, currentUser }: { item: Ite
               </div>
               <div>
                 <div className="text-[11px] text-[var(--txt-2)] mb-1">责任人</div>
-                <DrawerPersonSelect
-                  currentOwners={item.owner ? [item.owner] : []}
-                  allUsers={options?.users || []}
-                  onSave={(ids) => save("ownerId", ids[0] || null)}
+                <SearchSelect
+                  value={item.ownerId || ""}
+                  displayText={item.owner?.name || "—"}
+                  options={options?.users?.map((u: any) => ({ value: u.id, label: u.name })) || []}
+                  placeholder="搜索责任人…"
+                  onSelect={(v) => save("ownerId", v || null)}
                 />
               </div>
               <DrawerModuleSelect
