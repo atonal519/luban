@@ -22,6 +22,9 @@ export default function SettingsPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [addData, setAddData] = useState<any>({});
   const [stageGroups, setStageGroups] = useState<any[]>([]);
+  const [pwdUserId, setPwdUserId] = useState<string | null>(null);
+  const [pwdValue, setPwdValue] = useState("");
+  const [pwdMsg, setPwdMsg] = useState("");
 
   const tab = TABS.find(t => t.key === activeTab)!;
 
@@ -71,6 +74,21 @@ export default function SettingsPage() {
     if (!confirm("确认删除？")) return;
     await fetch(`/api/settings/${activeTab}/${id}`, { method: "DELETE" });
     loadItems();
+  }
+
+  async function handleSetPassword() {
+    if (!pwdUserId || !pwdValue.trim()) return;
+    setPwdMsg("");
+    const res = await fetch(`/api/users/${pwdUserId}/set-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: pwdValue.trim() }),
+    });
+    const data = await res.json();
+    if (!res.ok) { setPwdMsg(data.error || "设置失败"); return; }
+    setPwdMsg("✓ 密码已设置");
+    setPwdValue("");
+    setTimeout(() => { setPwdUserId(null); setPwdMsg(""); }, 800);
   }
 
   async function handleMove(id: string, direction: "up" | "down") {
@@ -310,10 +328,11 @@ export default function SettingsPage() {
                         <button onClick={() => setEditingId(null)} className="text-[10px] text-[var(--txt-2)]">取消</button>
                       </div>
                     ) : (
-                      <div className="flex gap-1">
+                      <div className="flex gap-1.5">
                         <button onClick={() => handleMove(item.id, "up")} className="text-[10px] text-[var(--txt-3)] hover:text-[var(--txt-0)]">↑</button>
                         <button onClick={() => handleMove(item.id, "down")} className="text-[10px] text-[var(--txt-3)] hover:text-[var(--txt-0)]">↓</button>
                         <button onClick={() => { setEditingId(item.id); setEditData({}); }} className="text-[10px] text-[var(--txt-3)] hover:text-[var(--accent)]">✎</button>
+                        {activeTab === "users" && <button onClick={() => { setPwdUserId(item.id); setPwdValue(""); setPwdMsg(""); }} className="text-[10px] text-[var(--txt-3)] hover:text-[var(--active)]">设密码</button>}
                         <button onClick={() => handleDelete(item.id)} className="text-[10px] text-[var(--txt-3)] hover:text-[var(--late)]">✕</button>
                       </div>
                     )}
@@ -324,6 +343,38 @@ export default function SettingsPage() {
           </table>
         )}
       </div>
+
+      {/* Set password modal */}
+      {pwdUserId && (
+        <>
+          <div className="fixed inset-0 bg-black/30 z-50" onClick={() => setPwdUserId(null)} />
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-[var(--bg-1)] border border-[var(--line-2)] rounded-xl shadow-2xl p-6 w-[320px]">
+            <div className="text-[14px] font-semibold mb-4">
+              设置密码 — {items.find(u => u.id === pwdUserId)?.name}
+            </div>
+            <div className="flex flex-col gap-3">
+              <input
+                autoFocus
+                type="password"
+                value={pwdValue}
+                onChange={(e) => setPwdValue(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") handleSetPassword(); if (e.key === "Escape") setPwdUserId(null); }}
+                placeholder="输入新密码（至少4位）"
+                className="w-full px-3 py-2 rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] text-[13px] text-[var(--txt-0)] outline-none focus:border-[var(--accent)]"
+              />
+              {pwdMsg && (
+                <div className={`text-[12px] ${pwdMsg.startsWith("✓") ? "text-emerald-600" : "text-red-600"}`}>
+                  {pwdMsg}
+                </div>
+              )}
+              <div className="flex gap-2 justify-end">
+                <button onClick={() => setPwdUserId(null)} className="px-3 py-1.5 rounded-lg text-[12px] text-[var(--txt-1)] border border-[var(--line-2)] hover:bg-[var(--bg-3)]">取消</button>
+                <button onClick={handleSetPassword} disabled={!pwdValue.trim()} className="px-3 py-1.5 rounded-lg text-[12px] text-white bg-[var(--accent)] hover:opacity-85 disabled:opacity-50">确认设置</button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

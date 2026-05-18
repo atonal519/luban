@@ -17,6 +17,10 @@ export function Sidebar({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const [showPwd, setShowPwd] = useState(false);
+  const [oldPwd, setOldPwd] = useState("");
+  const [newPwd, setNewPwd] = useState("");
+  const [pwdMsg, setPwdMsg] = useState("");
   const [user, setUser] = useState<any>(null);
   const [modulesOpen, setModulesOpen] = useState(true);
 
@@ -27,6 +31,20 @@ export function Sidebar({
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
     router.push("/login");
+  }
+
+  async function handleChangePwd() {
+    setPwdMsg("");
+    const res = await fetch("/api/auth/change-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ oldPassword: oldPwd, newPassword: newPwd }),
+    });
+    const data = await res.json();
+    if (!res.ok) { setPwdMsg(data.error || "修改失败"); return; }
+    setPwdMsg("✓ 修改成功");
+    setOldPwd(""); setNewPwd("");
+    setTimeout(() => { setShowPwd(false); setPwdMsg(""); }, 800);
   }
 
   function toggleModule(id: string) {
@@ -116,9 +134,29 @@ export function Sidebar({
             <div className="text-[12px] font-medium text-[var(--txt-0)] truncate">{user?.name || "未登录"}</div>
             <div className="text-[10px] text-[var(--txt-2)]">{user?.role || ""}</div>
           </div>
+          <button onClick={() => { setShowPwd(true); setOldPwd(""); setNewPwd(""); setPwdMsg(""); }} className="text-[10px] text-[var(--txt-3)] hover:text-[var(--accent)] transition-colors flex-shrink-0">改密码</button>
           <button onClick={handleLogout} className="text-[10px] text-[var(--txt-3)] hover:text-[var(--late)] transition-colors flex-shrink-0">退出</button>
         </div>
       </div>
+
+      {/* Change password modal */}
+      {showPwd && (
+        <>
+          <div className="fixed inset-0 bg-black/30 z-50" onClick={() => setShowPwd(false)} />
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-[var(--bg-1)] border border-[var(--line-2)] rounded-xl shadow-2xl p-6 w-[300px]">
+            <div className="text-[14px] font-semibold mb-4">修改密码</div>
+            <div className="flex flex-col gap-3">
+              <input type="password" value={oldPwd} onChange={(e) => setOldPwd(e.target.value)} placeholder="当前密码" className="w-full px-3 py-2 rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] text-[13px] outline-none focus:border-[var(--accent)]" />
+              <input type="password" value={newPwd} onChange={(e) => setNewPwd(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") handleChangePwd(); }} placeholder="新密码（至少4位）" className="w-full px-3 py-2 rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] text-[13px] outline-none focus:border-[var(--accent)]" />
+              {pwdMsg && <div className={`text-[12px] ${pwdMsg.startsWith("✓") ? "text-emerald-600" : "text-red-600"}`}>{pwdMsg}</div>}
+              <div className="flex gap-2 justify-end">
+                <button onClick={() => setShowPwd(false)} className="px-3 py-1.5 rounded-lg text-[12px] text-[var(--txt-1)] border border-[var(--line-2)]">取消</button>
+                <button onClick={handleChangePwd} disabled={!oldPwd || !newPwd} className="px-3 py-1.5 rounded-lg text-[12px] text-white bg-[var(--accent)] disabled:opacity-50">确认修改</button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </aside>
   );
 }
