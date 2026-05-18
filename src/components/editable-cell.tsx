@@ -18,6 +18,7 @@ export function EditableCell({
   itemId,
   field,
   type = "text",
+  multiline = false,
   options,
   displayNode,
   onSave,
@@ -52,7 +53,6 @@ export function EditableCell({
     try {
       await onSave(itemId, field, editValue);
     } catch {
-      // revert on error
       setEditValue(value);
     }
     setSaving(false);
@@ -60,7 +60,7 @@ export function EditableCell({
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Enter") commit();
+    if (e.key === "Enter" && !e.shiftKey) commit();
     if (e.key === "Escape") { setEditValue(value); setEditing(false); }
   }
 
@@ -93,6 +93,22 @@ export function EditableCell({
           <option key={o.value} value={o.value}>{o.label}</option>
         ))}
       </select>
+    );
+  }
+
+  if (multiline) {
+    return (
+      <textarea
+        autoFocus
+        value={editValue}
+        onChange={(e) => setEditValue(e.target.value)}
+        onBlur={commit}
+        onKeyDown={handleKeyDown}
+        onClick={(e) => e.stopPropagation()}
+        disabled={saving}
+        rows={3}
+        className="w-full px-1.5 py-1 rounded border border-[var(--accent)] bg-[var(--bg-2)] text-[13px] text-[var(--txt-0)] outline-none resize-none"
+      />
     );
   }
 
