@@ -423,7 +423,7 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
                           field="title"
                           onSave={saveField}
                           displayNode={
-                            <span className="text-[13px] font-medium block leading-tight" title={item.title} style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                            <span className="text-[13px] font-medium block leading-tight" title={item.title} style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                               {item.title}
                             </span>
                           }
