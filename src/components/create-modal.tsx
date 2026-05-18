@@ -6,6 +6,7 @@ type Options = {
   users: { id: string; name: string }[];
   modules: { id: string; name: string; color: string }[];
   natures: { id: string; code: string; label: string; color: string }[];
+  priorities: { id: string; code: string; label: string; color: string }[];
 };
 
 export function CreateModal({

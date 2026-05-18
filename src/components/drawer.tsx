@@ -175,7 +175,7 @@ function ApprovalChain({ approval, nodeId, options, onChanged }: { approval: any
           )}
           <textarea value={note} onChange={(e) => setNote(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); doAction(); } }} placeholder={actionForm === "reject" ? "驳回理由…" : "备注（可选）…"} className="px-2 py-1 rounded-md border border-[var(--line-2)] bg-[var(--bg-1)] text-[12px] outline-none resize-none min-h-[32px]" />
           <div className="flex gap-1 justify-end">
-            <button onClick={() => { setActionForm(null); setImageUrl(""); }} className="px-2 py-0.5 rounded text-[10px] text-[var(--txt-1)] border border-[var(--line-2)]">取消</button>
+            <button onClick={() => { setActionForm(null); setImageUrls([]); }} className="px-2 py-0.5 rounded text-[10px] text-[var(--txt-1)] border border-[var(--line-2)]">取消</button>
             <button onClick={doAction} disabled={!actorId || submitting} className="px-2 py-0.5 rounded text-[10px] text-white bg-[var(--accent)] disabled:opacity-50">{submitting ? "…" : "确认"}</button>
           </div>
         </div>

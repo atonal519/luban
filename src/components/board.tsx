@@ -236,8 +236,6 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
     setInlineTitle("");
     router.refresh();
   }
-    router.refresh();
-  }
 
   // Stage filter: only show versions that have children in the selected stage
   const filteredItems = stageFilter
