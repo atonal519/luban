@@ -389,7 +389,7 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
                     className={`cursor-pointer group ${selectedId === item.id ? "bg-blue-500/5" : ""}`}
                   >
                     {/* 版本号 - with indent + expand toggle */}
-                    <td className="px-2 h-[60px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors sticky left-0 z-[3]">
+                    <td className="px-2 py-2 align-top border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors sticky left-0 z-[3]">
                       <div className="flex items-center gap-1" style={{ paddingLeft: `${indentPx}px` }}>
                         {hasSubItems ? (
                           <button
@@ -415,7 +415,7 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
                       </div>
                     </td>
                     {/* 项目名称 */}
-                    <td className="px-3 h-[60px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
+                    <td className="px-3 py-2 align-top border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
                       <div style={{ paddingLeft: `${indentPx}px` }}>
                         <EditableCell
                           value={item.title || ""}
@@ -431,23 +431,23 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
                       </div>
                     </td>
                     {/* 研发模块 */}
-                    <td className="px-3 h-[60px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
+                    <td className="px-3 py-2 align-top border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
                       <ModuleCell itemId={item.id} currentModules={item.modules || []} allModules={options?.modules || []} onSave={saveModules} />
                     </td>
                     {/* 类型 */}
-                    <td className="px-3 h-[60px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
+                    <td className="px-3 py-2 align-top border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
                       <EditableCell value={item.natureId || ""} itemId={item.id} field="natureId" type="select" options={options?.natures?.map((n: any) => ({ value: n.id, label: n.label, color: n.color })) || []} onSave={saveField}
                         displayNode={item.nature ? <span className="px-2 py-0.5 rounded text-[11px] font-medium" style={{ background: item.nature.color + "18", color: item.nature.color }}>{item.nature.label}</span> : <span className="text-[var(--txt-3)] text-[11px]">—</span>}
                       />
                     </td>
                     {/* 责任人 */}
-                    <td className="px-3 h-[60px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
+                    <td className="px-3 py-2 align-top border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
                       <EditableCell value={item.ownerId || ""} itemId={item.id} field="ownerId" type="select" options={options?.users?.map((u: any) => ({ value: u.id, label: u.name })) || []} onSave={saveField}
                         displayNode={<span className="text-[12px]">{item.owner?.name || "—"}</span>}
                       />
                     </td>
                     {/* 优先级 */}
-                    <td className="px-3 h-[60px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
+                    <td className="px-3 py-2 align-top border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
                       <EditableCell value={item.priorityId || ""} itemId={item.id} field="priorityId" type="select" options={options?.priorities?.map((p: any) => ({ value: p.id, label: p.label })) || []} onSave={saveField}
                         displayNode={priorityTag(item.priority)}
                       />
@@ -456,7 +456,7 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
                     {STAGE_GROUPS.map((g) => {
                       const st = stageStatus(item, g.code, STAGE_GROUPS, STAGE_GROUP_MAP);
                       return (
-                        <td key={g.code} className="px-2 h-[60px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
+                        <td key={g.code} className="px-2 py-2 align-top border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
                           <StagePopover itemId={item.id} stageCode={g.code} children={item.children || []} onChanged={() => router.refresh()} statuses={options?.statuses}
                             triggerNode={
                               <div className={`flex flex-col gap-0.5 px-2 py-1.5 rounded-md ${st.cls}`}>
@@ -475,11 +475,11 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
                       );
                     })}
                     {/* 整体状态 */}
-                    <td className="px-3 h-[60px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors cursor-pointer" onClick={() => openDrawer(item)}>
+                    <td className="px-3 py-2 align-top border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors cursor-pointer" onClick={() => openDrawer(item)}>
                       {(() => { const os = overallStatus(item); return <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium ${os.cls}`}><span className="w-[6px] h-[6px] rounded-full bg-current" />{os.label}</span>; })()}
                     </td>
                     {/* 操作 */}
-                    <td className="px-3 h-[60px] border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors relative">
+                    <td className="px-3 py-2 align-top border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors relative">
                       <ActionMenu
                         onDetail={() => openDrawer(item)}
                         onDelete={() => deleteVersion(item.id)}
