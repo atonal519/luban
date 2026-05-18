@@ -635,15 +635,15 @@ function DrawerModuleSelect({ currentModules, allModules, onSave }: { currentMod
   return (
     <div ref={ref}>
       <div className="text-[11px] text-[var(--txt-2)]">研发模块</div>
-      <div className="flex gap-1 items-center mt-1 cursor-pointer overflow-hidden" onClick={() => { setQuery(""); setOpen(!open); }}>
+      <div className="flex gap-1 items-center mt-1 cursor-pointer" onClick={() => { setQuery(""); setOpen(!open); }}>
         {selectedModules.length > 0 ? (
           <>
-            {selectedModules.slice(0, 2).map((m: any) => (
-              <span key={m.id} className="px-2 py-0.5 rounded text-[11px] font-medium whitespace-nowrap flex-shrink-0" style={{ background: m.color + "18", color: m.color }}>
+            {selectedModules.slice(0, 1).map((m: any) => (
+              <span key={m.id} className="px-2 py-0.5 rounded text-[11px] font-medium whitespace-nowrap flex-shrink-0 max-w-[80px] truncate block" style={{ background: m.color + "18", color: m.color }}>
                 {m.name}
               </span>
             ))}
-            {selectedModules.length > 2 && <span className="text-[10px] text-[var(--txt-2)] flex-shrink-0">+{selectedModules.length - 2}</span>}
+            {selectedModules.length > 1 && <span className="text-[10px] text-[var(--txt-2)] flex-shrink-0">+{selectedModules.length - 1}</span>}
           </>
         ) : (
           <span className="text-[13px] text-[var(--txt-3)]">—</span>
