@@ -18,17 +18,26 @@ function buildChildrenInclude(depth: number): any {
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ stage?: string; modules?: string }>;
+  searchParams: Promise<{ stage?: string; modules?: string; tags?: string; priorities?: string; focus?: string; dateFrom?: string; dateTo?: string }>;
 }) {
-  const { stage, modules: modulesParam } = await searchParams;
+  const { stage, modules: modulesParam, tags: tagsParam, priorities: prioritiesParam, focus, dateFrom, dateTo } = await searchParams;
   const selectedModuleIds = modulesParam ? modulesParam.split(",").filter(Boolean) : [];
+  const selectedTagIds = tagsParam ? tagsParam.split(",").filter(Boolean) : [];
+  const selectedPriorityIds = prioritiesParam ? prioritiesParam.split(",").filter(Boolean) : [];
 
   const [items, statuses, stageGroups, tags] = await Promise.all([
     prisma.item.findMany({
       where: {
         parentId: null,
-        ...(selectedModuleIds.length > 0 ? {
-          modules: { some: { moduleId: { in: selectedModuleIds } } }
+        ...(selectedModuleIds.length > 0 ? { modules: { some: { moduleId: { in: selectedModuleIds } } } } : {}),
+        ...(selectedTagIds.length > 0 ? { tagId: { in: selectedTagIds } } : {}),
+        ...(selectedPriorityIds.length > 0 ? { priorityId: { in: selectedPriorityIds } } : {}),
+        ...(focus ? { focus } : {}),
+        ...(dateFrom || dateTo ? {
+          OR: [
+            { plannedStart: { gte: dateFrom ? new Date(dateFrom) : undefined, lte: dateTo ? new Date(dateTo) : undefined } },
+            { plannedEnd: { gte: dateFrom ? new Date(dateFrom) : undefined, lte: dateTo ? new Date(dateTo) : undefined } },
+          ]
         } : {}),
       },
       include: {

@@ -142,6 +142,7 @@ model Item {
   priority         PriorityDef? @relation(fields: [priorityId], references: [id])
   versionNo        String  @default("")
   applicationScope String  @default("")
+  focus            String  @default("") // "this_week" | "next_week" | ""
 
   // 模块（多选）
   modules ItemModule[]

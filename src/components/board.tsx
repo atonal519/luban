@@ -105,7 +105,7 @@ function stageStatus(item: Item, stageCode: string, STAGE_GROUPS: {code:string;l
   return { label: "未开始", cls: "text-slate-400 bg-transparent", progress: `${done}/${stageChildren.length}`, sub: "", isParallelRunning: false, dates };
 }
 
-function ActionMenu({ onDetail, onDelete, onAddChild, onChangeTag }: { onDetail: () => void; onDelete: () => void; onAddChild?: () => void; onChangeTag?: () => void }) {
+function ActionMenu({ onDetail, onDelete, onAddChild, onChangeTag, onSetFocus }: { onDetail: () => void; onDelete: () => void; onAddChild?: () => void; onChangeTag?: () => void; onSetFocus?: (focus: string) => void }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -131,6 +131,13 @@ function ActionMenu({ onDetail, onDelete, onAddChild, onChangeTag }: { onDetail:
           <button onClick={() => { onDetail(); setOpen(false); }} className="w-full text-left px-3 py-1.5 text-[12px] text-[var(--txt-0)] hover:bg-[var(--bg-2)]">详情</button>
           {onAddChild && <button onClick={() => { onAddChild(); setOpen(false); }} className="w-full text-left px-3 py-1.5 text-[12px] text-[var(--accent)] hover:bg-[var(--bg-2)]">+ 添加子项目</button>}
           {onChangeTag && <button onClick={() => { onChangeTag(); setOpen(false); }} className="w-full text-left px-3 py-1.5 text-[12px] text-[var(--txt-1)] hover:bg-[var(--bg-2)]">修改帽子</button>}
+          {onSetFocus && (
+            <>
+              <button onClick={() => { onSetFocus("this_week"); setOpen(false); }} className="w-full text-left px-3 py-1.5 text-[12px] text-[var(--txt-1)] hover:bg-[var(--bg-2)]">标记本周计划</button>
+              <button onClick={() => { onSetFocus("next_week"); setOpen(false); }} className="w-full text-left px-3 py-1.5 text-[12px] text-[var(--txt-1)] hover:bg-[var(--bg-2)]">标记下周计划</button>
+              <button onClick={() => { onSetFocus(""); setOpen(false); }} className="w-full text-left px-3 py-1.5 text-[12px] text-[var(--txt-3)] hover:bg-[var(--bg-2)]">取消焦点标记</button>
+            </>
+          )}
           <button onClick={() => { onDelete(); setOpen(false); }} className="w-full text-left px-3 py-1.5 text-[12px] text-[var(--late)] hover:bg-red-500/5">删除</button>
         </div>
       )}
@@ -227,6 +234,15 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
       body: JSON.stringify({ tagId }),
     });
     setTagPickerItemId(null);
+    router.refresh();
+  }
+
+  async function setFocus(itemId: string, focus: string) {
+    await fetch(`/api/versions/${itemId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ focus }),
+    });
     router.refresh();
   }
 
@@ -417,6 +433,11 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
                     {/* 项目名称 */}
                     <td className="px-3 py-2 align-top border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
                       <div style={{ paddingLeft: `${indentPx}px` }}>
+                        {item.focus && (
+                          <span className={`inline-block text-[9px] font-mono font-semibold px-1.5 py-0.5 rounded mb-0.5 ${item.focus === "this_week" ? "bg-blue-500/12 text-blue-600" : "bg-emerald-500/12 text-emerald-600"}`}>
+                            {item.focus === "this_week" ? "本周" : "下周"}
+                          </span>
+                        )}
                         <EditableCell
                           value={item.title || ""}
                           itemId={item.id}
@@ -484,6 +505,7 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
                         onDelete={() => deleteVersion(item.id)}
                         onAddChild={() => startInlineAdd(item.id, indentLevel)}
                         onChangeTag={indentLevel === 0 ? () => setTagPickerItemId(item.id) : undefined}
+                        onSetFocus={indentLevel === 0 ? (f) => setFocus(item.id, f) : undefined}
                       />
                     </td>
                   </tr>
