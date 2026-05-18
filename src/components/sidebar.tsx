@@ -17,11 +17,11 @@ export function Sidebar({
 }: {
   modules: any[]; tags: any[]; priorities: any[];
   selectedModules: string[]; selectedTags: string[]; selectedPriorities: string[];
-  selectedFocus: string; dateFrom: string; dateTo: string;
+  selectedFocus: string[]; dateFrom: string; dateTo: string;
   onModuleChange: (ids: string[]) => void;
   onTagChange: (ids: string[]) => void;
   onPriorityChange: (ids: string[]) => void;
-  onFocusChange: (val: string) => void;
+  onFocusChange: (vals: string[]) => void;
   onDateChange: (from: string, to: string) => void;
 }) {
   const router = useRouter();
@@ -70,10 +70,10 @@ export function Sidebar({
 
   // Count total active filters
   const activeCount = selectedModules.length + selectedTags.length + selectedPriorities.length
-    + (selectedFocus ? 1 : 0) + (dateFrom || dateTo ? 1 : 0);
+    + selectedFocus.length + (dateFrom || dateTo ? 1 : 0);
 
   function clearAll() {
-    onModuleChange([]); onTagChange([]); onPriorityChange([]); onFocusChange(""); onDateChange("", "");
+    onModuleChange([]); onTagChange([]); onPriorityChange([]); onFocusChange([]); onDateChange("", "");
   }
 
   const FOCUS_OPTIONS = [
@@ -101,7 +101,7 @@ export function Sidebar({
               if (id === "modules") onModuleChange([]);
               else if (id === "tags") onTagChange([]);
               else if (id === "priorities") onPriorityChange([]);
-              else if (id === "focus") onFocusChange("");
+              else if (id === "focus") onFocusChange([]);
               else if (id === "date") onDateChange("", "");
             }}
             className="text-[10px] text-[var(--txt-3)] hover:text-[var(--late)]"
@@ -138,18 +138,18 @@ export function Sidebar({
 
         {/* 焦点 */}
         <div className="mb-1">
-          <FilterSection id="focus" label="焦点计划" count={selectedFocus ? 1 : 0} />
+          <FilterSection id="focus" label="焦点计划" count={selectedFocus.length} />
           {open.focus && (
             <div className="mt-0.5 flex flex-col gap-0.5">
               {FOCUS_OPTIONS.map(f => (
                 <button
                   key={f.value}
-                  onClick={() => onFocusChange(selectedFocus === f.value ? "" : f.value)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-[12px] transition-colors w-full text-left ${selectedFocus === f.value ? "bg-[var(--accent-dim)] text-[var(--accent)]" : "text-[var(--txt-1)] hover:bg-[var(--bg-3)]"}`}
+                  onClick={() => { const next=selectedFocus.includes(f.value)?selectedFocus.filter(x=>x!==f.value):[...selectedFocus,f.value]; onFocusChange(next); }}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-[12px] transition-colors w-full text-left ${selectedFocus.includes(f.value) ? "bg-[var(--accent-dim)] text-[var(--accent)]" : "text-[var(--txt-1)] hover:bg-[var(--bg-3)]"}`}
                 >
                   <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: f.color }} />
                   {f.label}
-                  {selectedFocus === f.value && <span className="ml-auto text-[10px]">✓</span>}
+                  {selectedFocus.includes(f.value) && <span className="ml-auto text-[10px]">✓</span>}
                 </button>
               ))}
             </div>

@@ -32,7 +32,7 @@ export default async function Home({
         ...(selectedModuleIds.length > 0 ? { modules: { some: { moduleId: { in: selectedModuleIds } } } } : {}),
         ...(selectedTagIds.length > 0 ? { tagId: { in: selectedTagIds } } : {}),
         ...(selectedPriorityIds.length > 0 ? { priorityId: { in: selectedPriorityIds } } : {}),
-        ...(focus ? { focus } : {}),
+        ...(focus ? { focus: { in: focus.split(",").filter(Boolean) } } : {}),
         ...(dateFrom || dateTo ? {
           OR: [
             { plannedStart: { gte: dateFrom ? new Date(dateFrom) : undefined, lte: dateTo ? new Date(dateTo) : undefined } },

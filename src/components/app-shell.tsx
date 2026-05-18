@@ -17,7 +17,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
   const [selectedModules, setSelectedModules] = useState<string[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedPriorities, setSelectedPriorities] = useState<string[]>([]);
-  const [selectedFocus, setSelectedFocus] = useState<string>("");
+  const [selectedFocus, setSelectedFocus] = useState<string[]>([]);
   const [dateFrom, setDateFrom] = useState<string>("");
   const [dateTo, setDateTo] = useState<string>("");
 
@@ -34,7 +34,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
       setSelectedModules(prefs.modules || []);
       setSelectedTags(prefs.tags || []);
       setSelectedPriorities(prefs.priorities || []);
-      setSelectedFocus(prefs.focus?.[0] || "");
+      setSelectedFocus(prefs.focus || []);
       setDateFrom(prefs.dateFrom?.[0] || "");
       setDateTo(prefs.dateTo?.[0] || "");
     });
@@ -83,9 +83,9 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
     saveAndNavigate("priorities", ids);
   }, [selectedModules, selectedTags, selectedPriorities, selectedFocus, dateFrom, dateTo, pathname, router, searchParams]);
 
-  const handleFocusChange = useCallback((val: string) => {
+  const handleFocusChange = useCallback((val: string[]) => {
     setSelectedFocus(val);
-    saveAndNavigate("focus", val ? [val] : []);
+    saveAndNavigate("focus", val);
   }, [selectedModules, selectedTags, selectedPriorities, selectedFocus, dateFrom, dateTo, pathname, router, searchParams]);
 
   const handleDateChange = useCallback((from: string, to: string) => {
