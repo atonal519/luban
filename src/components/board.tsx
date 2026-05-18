@@ -215,15 +215,27 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
     router.refresh();
   }
 
-  async function addChildItem(parentId: string, parentDepth: number) {
-    const title = prompt("子项目名称：");
-    if (!title?.trim()) return;
+  // Inline add: { parentId, depth } when user clicks "添加子项目"
+  const [inlineAdd, setInlineAdd] = useState<{ parentId: string; depth: number } | null>(null);
+  const [inlineTitle, setInlineTitle] = useState("");
+
+  function startInlineAdd(parentId: string, parentDepth: number) {
+    setExpandedIds(prev => new Set(prev).add(parentId));
+    setInlineAdd({ parentId, depth: parentDepth + 1 });
+    setInlineTitle("");
+  }
+
+  async function submitInlineAdd() {
+    if (!inlineTitle.trim() || !inlineAdd) { setInlineAdd(null); return; }
     await fetch("/api/versions/create", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: title.trim(), parentId, depth: parentDepth + 1 }),
+      body: JSON.stringify({ title: inlineTitle.trim(), parentId: inlineAdd.parentId, depth: inlineAdd.depth }),
     });
-    setExpandedIds(prev => new Set(prev).add(parentId));
+    setInlineAdd(null);
+    setInlineTitle("");
+    router.refresh();
+  }
     router.refresh();
   }
 
@@ -451,7 +463,7 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
                       <ActionMenu
                         onDetail={() => openDrawer(item)}
                         onDelete={() => deleteVersion(item.id)}
-                        onAddChild={() => addChildItem(item.id, indentLevel)}
+                        onAddChild={() => startInlineAdd(item.id, indentLevel)}
                       />
                     </td>
                   </tr>
@@ -462,7 +474,31 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
                   ? subItems.flatMap((child: Item) => renderItemRows(child, indentLevel + 1))
                   : [];
 
-                return [row, ...childRows];
+                // Inline add row
+                const addRow = (inlineAdd?.parentId === item.id) ? [(
+                  <tr key={`${item.id}-inline-add`}>
+                    <td className="px-2 h-[48px] border-b border-[var(--line)] bg-blue-500/5" style={{ paddingLeft: `${(indentLevel + 1) * 20 + 12}px` }}>
+                      <span className="text-[var(--accent)] text-[11px]">└</span>
+                    </td>
+                    <td className="px-2 h-[48px] border-b border-[var(--line)] bg-blue-500/5" colSpan={11}>
+                      <input
+                        autoFocus
+                        type="text"
+                        value={inlineTitle}
+                        onChange={(e) => setInlineTitle(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") submitInlineAdd();
+                          if (e.key === "Escape") setInlineAdd(null);
+                        }}
+                        onBlur={() => { if (!inlineTitle.trim()) setInlineAdd(null); }}
+                        placeholder="输入子项目名称，Enter 确认，Esc 取消"
+                        className="w-full bg-transparent outline-none text-[13px] text-[var(--txt-0)] placeholder:text-[var(--txt-3)]"
+                      />
+                    </td>
+                  </tr>
+                )] : [];
+
+                return [row, ...childRows, ...addRow];
               }
 
               return searchedItems.flatMap((item: Item) => renderItemRows(item, 0));
