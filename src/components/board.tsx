@@ -105,7 +105,7 @@ function stageStatus(item: Item, stageCode: string, STAGE_GROUPS: {code:string;l
   return { label: "未开始", cls: "text-slate-400 bg-transparent", progress: `${done}/${stageChildren.length}`, sub: "", isParallelRunning: false, dates };
 }
 
-function ActionMenu({ onDetail, onDelete, onAddChild }: { onDetail: () => void; onDelete: () => void; onAddChild?: () => void }) {
+function ActionMenu({ onDetail, onDelete, onAddChild, onChangeTag }: { onDetail: () => void; onDelete: () => void; onAddChild?: () => void; onChangeTag?: () => void }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -130,6 +130,7 @@ function ActionMenu({ onDetail, onDelete, onAddChild }: { onDetail: () => void; 
         <div className="absolute right-0 top-full mt-1 z-50 bg-[var(--bg-1)] border border-[var(--line-2)] rounded-lg shadow-lg py-1 min-w-[100px]" onClick={(e) => e.stopPropagation()}>
           <button onClick={() => { onDetail(); setOpen(false); }} className="w-full text-left px-3 py-1.5 text-[12px] text-[var(--txt-0)] hover:bg-[var(--bg-2)]">详情</button>
           {onAddChild && <button onClick={() => { onAddChild(); setOpen(false); }} className="w-full text-left px-3 py-1.5 text-[12px] text-[var(--accent)] hover:bg-[var(--bg-2)]">+ 添加子项目</button>}
+          {onChangeTag && <button onClick={() => { onChangeTag(); setOpen(false); }} className="w-full text-left px-3 py-1.5 text-[12px] text-[var(--txt-1)] hover:bg-[var(--bg-2)]">🎩 修改帽子</button>}
           <button onClick={() => { onDelete(); setOpen(false); }} className="w-full text-left px-3 py-1.5 text-[12px] text-[var(--late)] hover:bg-red-500/5">删除</button>
         </div>
       )}
@@ -483,6 +484,7 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
                         onDetail={() => openDrawer(item)}
                         onDelete={() => deleteVersion(item.id)}
                         onAddChild={() => startInlineAdd(item.id, indentLevel)}
+                        onChangeTag={indentLevel === 0 ? () => setTagPickerItemId(item.id) : undefined}
                       />
                     </td>
                   </tr>
@@ -624,35 +626,41 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
           return (
             <>
               <div className="fixed inset-0 z-50" onClick={() => setTagPickerItemId(null)} />
-              <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-[var(--bg-1)] border border-[var(--line-2)] rounded-xl shadow-2xl p-4 w-[260px]" onClick={e => e.stopPropagation()}>
-                <div className="text-[13px] font-semibold mb-3">编辑帽子</div>
-                <div className="flex flex-col gap-2">
-                  <input
-                    autoFocus
-                    type="text"
-                    defaultValue={editingTag.name}
-                    onKeyDown={async (e) => {
-                      if (e.key === "Enter") {
-                        await fetch(`/api/tags/${editingTag.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: (e.target as HTMLInputElement).value.trim() }) });
-                        setTagPickerItemId(null); router.refresh();
-                      }
-                      if (e.key === "Escape") setTagPickerItemId(null);
-                    }}
-                    className="px-3 py-2 rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] text-[13px] text-[var(--txt-0)] outline-none focus:border-[var(--accent)]"
-                  />
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] text-[var(--txt-2)]">颜色</span>
-                    <input type="color" defaultValue={editingTag.color}
-                      onChange={async (e) => {
-                        await fetch(`/api/tags/${editingTag.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ color: e.target.value }) });
-                        router.refresh();
+              <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-[var(--bg-1)] border border-[var(--line-2)] rounded-xl shadow-2xl p-5 w-[320px]" onClick={e => e.stopPropagation()}>
+                <div className="text-[14px] font-semibold mb-4">编辑帽子「{editingTag.name}」</div>
+                <div className="flex flex-col gap-3">
+                  <div>
+                    <label className="text-[11px] text-[var(--txt-2)] block mb-1">帽子名称</label>
+                    <input
+                      autoFocus
+                      type="text"
+                      defaultValue={editingTag.name}
+                      onKeyDown={async (e) => {
+                        if (e.key === "Enter") {
+                          await fetch(`/api/tags/${editingTag.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: (e.target as HTMLInputElement).value.trim() }) });
+                          setTagPickerItemId(null); router.refresh();
+                        }
+                        if (e.key === "Escape") setTagPickerItemId(null);
                       }}
-                      className="w-7 h-7 rounded border border-[var(--line-2)] cursor-pointer"
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] text-[13px] text-[var(--txt-0)] outline-none focus:border-[var(--accent)]"
                     />
                   </div>
-                  <div className="flex justify-between pt-1">
-                    <button onClick={async () => { if (confirm("确认删除此帽子？")) { await fetch(`/api/tags/${editingTag.id}`, { method: "DELETE" }); setTagPickerItemId(null); router.refresh(); } }} className="text-[11px] text-[var(--late)] hover:underline">删除帽子</button>
-                    <button onClick={() => setTagPickerItemId(null)} className="text-[11px] text-[var(--txt-2)] hover:underline">关闭</button>
+                  <div>
+                    <label className="text-[11px] text-[var(--txt-2)] block mb-1">颜色</label>
+                    <div className="flex items-center gap-2">
+                      <input type="color" defaultValue={editingTag.color}
+                        onChange={async (e) => {
+                          await fetch(`/api/tags/${editingTag.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ color: e.target.value }) });
+                          router.refresh();
+                        }}
+                        className="w-9 h-9 rounded-lg border border-[var(--line-2)] cursor-pointer"
+                      />
+                      <span className="text-[11px] text-[var(--txt-2)] font-mono">{editingTag.color}</span>
+                    </div>
+                  </div>
+                  <div className="flex justify-between pt-1 border-t border-[var(--line)]">
+                    <button onClick={async () => { if (confirm("确认删除此帽子？其下版本将变为未分类。")) { await fetch(`/api/tags/${editingTag.id}`, { method: "DELETE" }); setTagPickerItemId(null); router.refresh(); } }} className="text-[12px] text-[var(--late)] hover:underline">删除帽子</button>
+                    <button onClick={() => setTagPickerItemId(null)} className="text-[12px] text-[var(--txt-2)] hover:underline">关闭</button>
                   </div>
                 </div>
               </div>
