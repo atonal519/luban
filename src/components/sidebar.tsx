@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 
 type Module = { id: string; name: string; color: string };
@@ -16,6 +16,7 @@ export function Sidebar({
   onModuleChange: (ids: string[]) => void;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [user, setUser] = useState<any>(null);
   const [modulesOpen, setModulesOpen] = useState(true);
 
@@ -43,17 +44,22 @@ export function Sidebar({
     <aside className="w-[220px] min-w-[220px] bg-[var(--bg-1)] border-r border-[var(--line)] flex flex-col h-full">
       {/* Logo */}
       <div className="px-4 pt-5 pb-4 border-b border-[var(--line)]">
-        <div className="flex items-center gap-2.5">
+        <Link href="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
           <div className="w-7 h-7 bg-[var(--accent)] rounded-lg flex items-center justify-center text-white text-[11px] font-semibold font-mono">
             LB
           </div>
           <span className="font-mono text-[15px] font-semibold text-[var(--txt-0)] tracking-wide">鲁班</span>
-        </div>
+        </Link>
       </div>
 
-      {/* Filter label */}
-      <div className="px-4 pt-3 pb-1">
-        <span className="text-[10px] text-[var(--txt-3)] tracking-widest uppercase font-mono">筛选</span>
+      {/* Filter label or back button */}
+      <div className="px-4 pt-3 pb-1 flex items-center justify-between">
+        <span className="text-[10px] text-[var(--txt-3)] tracking-widest uppercase font-mono">
+          {pathname === "/settings" ? "设置" : "筛选"}
+        </span>
+        {pathname === "/settings" && (
+          <Link href="/" className="text-[11px] text-[var(--accent)] hover:underline">← 返回</Link>
+        )}
       </div>
 
       {/* Filters */}
