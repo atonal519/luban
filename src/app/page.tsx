@@ -18,13 +18,19 @@ function buildChildrenInclude(depth: number): any {
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ stage?: string }>;
+  searchParams: Promise<{ stage?: string; modules?: string }>;
 }) {
-  const { stage } = await searchParams;
+  const { stage, modules: modulesParam } = await searchParams;
+  const selectedModuleIds = modulesParam ? modulesParam.split(",").filter(Boolean) : [];
 
   const [items, statuses, stageGroups] = await Promise.all([
     prisma.item.findMany({
-      where: { parentId: null },
+      where: {
+        parentId: null,
+        ...(selectedModuleIds.length > 0 ? {
+          modules: { some: { moduleId: { in: selectedModuleIds } } }
+        } : {}),
+      },
       include: {
         nature: true,
         status: true,

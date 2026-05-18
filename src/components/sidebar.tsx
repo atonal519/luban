@@ -1,19 +1,23 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 
-const NAV = [
-  { href: "/", label: "总览", icon: "☰" },
-  { href: "/alerts", label: "告警中心", icon: "⚠", badge: true },
-  { href: "/settings", label: "系统设置", icon: "⚙" },
-];
+type Module = { id: string; name: string; color: string };
 
-export function Sidebar() {
-  const pathname = usePathname();
+export function Sidebar({
+  modules,
+  selectedModules,
+  onModuleChange,
+}: {
+  modules: Module[];
+  selectedModules: string[];
+  onModuleChange: (ids: string[]) => void;
+}) {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
+  const [modulesOpen, setModulesOpen] = useState(true);
 
   useEffect(() => {
     fetch("/api/auth/me").then(r => r.json()).then(setUser);
@@ -24,6 +28,17 @@ export function Sidebar() {
     router.push("/login");
   }
 
+  function toggleModule(id: string) {
+    const next = selectedModules.includes(id)
+      ? selectedModules.filter(m => m !== id)
+      : [...selectedModules, id];
+    onModuleChange(next);
+  }
+
+  function clearModules() {
+    onModuleChange([]);
+  }
+
   return (
     <aside className="w-[220px] min-w-[220px] bg-[var(--bg-1)] border-r border-[var(--line)] flex flex-col h-full">
       {/* Logo */}
@@ -32,56 +47,74 @@ export function Sidebar() {
           <div className="w-7 h-7 bg-[var(--accent)] rounded-lg flex items-center justify-center text-white text-[11px] font-semibold font-mono">
             LB
           </div>
-          <span className="font-mono text-[15px] font-semibold text-[var(--txt-0)] tracking-wide">
-            鲁班
-          </span>
+          <span className="font-mono text-[15px] font-semibold text-[var(--txt-0)] tracking-wide">鲁班</span>
         </div>
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 px-2.5 py-3 flex flex-col gap-0.5">
-        <div className="text-[10px] text-[var(--txt-3)] tracking-widest uppercase px-2 py-1 font-mono">
-          导航
-        </div>
-        {NAV.map((item) => {
-          const active = pathname === item.href;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-colors relative ${
-                active
-                  ? "bg-[var(--accent-dim)] text-[var(--accent)]"
-                  : "text-[var(--txt-1)] hover:bg-[var(--bg-3)] hover:text-[var(--txt-0)]"
-              }`}
-            >
-              {active && (
-                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[18px] bg-[var(--accent)] rounded-r" />
-              )}
-              <span className="text-sm w-4 text-center">{item.icon}</span>
-              {item.label}
-              {item.badge && (
-                <span className="ml-auto bg-[var(--late)] text-white text-[10px] font-mono font-semibold px-1.5 rounded-full min-w-[18px] text-center">
-                  3
-                </span>
-              )}
-            </Link>
-          );
-        })}
-      </nav>
+      {/* Filter label */}
+      <div className="px-4 pt-3 pb-1">
+        <span className="text-[10px] text-[var(--txt-3)] tracking-widest uppercase font-mono">筛选</span>
+      </div>
 
-      {/* User */}
-      <div className="px-3.5 py-3 border-t border-[var(--line)] flex items-center gap-2.5">
-        <div className="w-[30px] h-[30px] rounded-full bg-gradient-to-br from-[#3b6ff0] to-[#7c3aed] flex items-center justify-center text-white text-xs font-semibold">
-          {user?.name?.[0] || "?"}
+      {/* Filters */}
+      <div className="flex-1 overflow-y-auto px-2.5 pb-2">
+        {/* 研发模块 */}
+        <div className="mb-1">
+          <div className="flex items-center justify-between px-2 py-1.5 rounded-md hover:bg-[var(--bg-3)] cursor-pointer" onClick={() => setModulesOpen(v => !v)}>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] text-[var(--txt-3)]">{modulesOpen ? "▼" : "▶"}</span>
+              <span className="text-[12px] font-medium text-[var(--txt-0)]">研发模块</span>
+              {selectedModules.length > 0 && (
+                <span className="text-[10px] font-mono bg-[var(--accent-dim)] text-[var(--accent)] px-1.5 rounded-full">{selectedModules.length}</span>
+              )}
+            </div>
+            {selectedModules.length > 0 && (
+              <button
+                onClick={(e) => { e.stopPropagation(); clearModules(); }}
+                className="text-[10px] text-[var(--txt-3)] hover:text-[var(--late)] transition-colors"
+              >
+                清除
+              </button>
+            )}
+          </div>
+          {modulesOpen && (
+            <div className="mt-0.5 flex flex-col gap-0.5">
+              {modules.map(m => {
+                const selected = selectedModules.includes(m.id);
+                return (
+                  <button
+                    key={m.id}
+                    onClick={() => toggleModule(m.id)}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-[12px] transition-colors w-full text-left ${
+                      selected ? "bg-[var(--accent-dim)] text-[var(--accent)]" : "text-[var(--txt-1)] hover:bg-[var(--bg-3)]"
+                    }`}
+                  >
+                    <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: m.color }} />
+                    <span className="truncate">{m.name}</span>
+                    {selected && <span className="ml-auto text-[10px]">✓</span>}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
-        <div className="flex-1 min-w-0">
-          <div className="text-[13px] font-medium text-[var(--txt-0)]">{user?.name || "未登录"}</div>
-          <div className="text-[11px] text-[var(--txt-2)]">{user?.role || ""}</div>
+      </div>
+
+      {/* Bottom: settings + user */}
+      <div className="border-t border-[var(--line)] p-3 flex flex-col gap-2">
+        <Link href="/settings" className="flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] text-[var(--txt-1)] hover:bg-[var(--bg-3)] hover:text-[var(--txt-0)] transition-colors">
+          <span>⚙</span> 系统设置
+        </Link>
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#3b6ff0] to-[#7c3aed] flex items-center justify-center text-white text-[11px] font-semibold flex-shrink-0">
+            {user?.name?.[0] || "?"}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-[12px] font-medium text-[var(--txt-0)] truncate">{user?.name || "未登录"}</div>
+            <div className="text-[10px] text-[var(--txt-2)]">{user?.role || ""}</div>
+          </div>
+          <button onClick={handleLogout} className="text-[10px] text-[var(--txt-3)] hover:text-[var(--late)] transition-colors flex-shrink-0">退出</button>
         </div>
-        <button onClick={handleLogout} className="text-[10px] text-[var(--txt-3)] hover:text-[var(--late)] transition-colors" title="退出登录">
-          退出
-        </button>
       </div>
     </aside>
   );
