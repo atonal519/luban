@@ -420,8 +420,7 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
                         <EditableCell
                           value={item.title || ""}
                           itemId={item.id}
-                          field="title"
-                          onSave={saveField}
+                          field="title" multiline={true} onSave={saveField}
                           displayNode={
                             <span className="text-[13px] font-medium block leading-tight" title={item.title} style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                               {item.title}

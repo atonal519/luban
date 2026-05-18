@@ -7,6 +7,7 @@ type EditableCellProps = {
   itemId: string;
   field: string;
   type?: "text" | "select";
+  multiline?: boolean;
   options?: { value: string; label: string; color?: string }[];
   displayNode?: React.ReactNode;
   onSave: (itemId: string, field: string, value: string) => Promise<void>;
