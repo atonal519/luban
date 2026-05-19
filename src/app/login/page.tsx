@@ -79,10 +79,6 @@ export default function LoginPage() {
             {loading ? "登录中…" : "登录"}
           </button>
         </form>
-
-        <div className="mt-4 text-[11px] text-[var(--txt-3)] text-center">
-          默认密码：demo123
-        </div>
       </div>
     </div>
   );
