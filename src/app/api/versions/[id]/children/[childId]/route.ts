@@ -34,7 +34,7 @@ export async function DELETE(
   const { childId } = await params;
 
   // Delete approval and events if exists
-  const approval = await prisma.approval.findUnique({ where: { itemId: childId } });
+  const approval = await prisma.approval.findFirst({ where: { itemId: childId } });
   if (approval) {
     await prisma.approvalEvent.deleteMany({ where: { approvalId: approval.id } });
     await prisma.approval.delete({ where: { id: approval.id } });

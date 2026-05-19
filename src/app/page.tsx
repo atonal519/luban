@@ -8,7 +8,7 @@ function buildChildrenInclude(depth: number): any {
     include: {
       status: true, owner: true, priority: true, nature: true,
       modules: { include: { module: true } },
-      approval: { include: { events: { include: { actor: true }, orderBy: { createdAt: "asc" } } } },
+      approvals: { where: { scope: "NODE" }, include: { events: { include: { actor: true }, orderBy: { createdAt: "asc" } } }, orderBy: { createdAt: "asc" }, take: 1 },
       children: buildChildrenInclude(depth - 1),
     },
     orderBy: { order: "asc" },
@@ -60,6 +60,9 @@ export default async function Home({
         rejections: {
           include: { rejectedBy: true },
           orderBy: { createdAt: "desc" },
+        },
+        approvals: {
+          include: { events: { include: { actor: true }, orderBy: { createdAt: "asc" } } },
         },
       },
       orderBy: { createdAt: "desc" },

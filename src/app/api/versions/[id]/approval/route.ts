@@ -17,7 +17,7 @@ export async function POST(
   }
 
   // Get or create approval for this item
-  let approval = await prisma.approval.findUnique({ where: { itemId: id } });
+  let approval = await prisma.approval.findFirst({ where: { itemId: id, scope: "NODE" } });
 
   if (action === 'initiate') {
     if (approval) {

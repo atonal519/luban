@@ -93,7 +93,7 @@ function ApprovalChain({ approval, nodeId, options, onChanged }: { approval: any
     );
   }
 
-  const events = approval.events || [];
+  const events = (approval || {events:[]}).events || [];
 
   return (
     <div className="ml-6 mt-2 p-3 bg-[var(--bg-2)] rounded-lg border border-[var(--line-2)]">
@@ -266,10 +266,10 @@ function SubNodeList({ children, stageCode, options, onChanged, parentId }: { ch
     const statusIcon = statusCode === "DELIVERED" ? "✓" : statusCode === "REJECTED" ? "!" : statusCode === "ABORTED" ? "✕" : statusCode === "DEVELOPING" ? "●" : statusCode === "DESIGN" ? "◐" : "○";
     const statusColor = statusCode === "DELIVERED" ? "text-emerald-500" : statusCode === "REJECTED" ? "text-red-500" : statusCode === "ABORTED" ? "text-slate-400" : statusCode === "DEVELOPING" ? "text-blue-500" : statusCode === "DESIGN" ? "text-purple-500" : "text-[var(--txt-3)]";
 
-    const apBadge = node.approval?.state === "WAITING_SUBMIT" ? { label: "待提交凭证", cls: "bg-amber-500/8 text-amber-600" }
-      : node.approval?.state === "SUBMITTED" ? { label: "待PM审核", cls: "bg-blue-500/8 text-blue-600" }
-      : node.approval?.state === "REJECTED" ? { label: "已驳回", cls: "bg-red-500/8 text-red-600" }
-      : node.approval?.state === "APPROVED" ? { label: "已通过", cls: "bg-emerald-500/8 text-emerald-600" }
+    const apBadge = node.approvals?.[0]?.state === "WAITING_SUBMIT" ? { label: "待提交凭证", cls: "bg-amber-500/8 text-amber-600" }
+      : node.approvals?.[0]?.state === "SUBMITTED" ? { label: "待PM审核", cls: "bg-blue-500/8 text-blue-600" }
+      : node.approvals?.[0]?.state === "REJECTED" ? { label: "已驳回", cls: "bg-red-500/8 text-red-600" }
+      : node.approvals?.[0]?.state === "APPROVED" ? { label: "已通过", cls: "bg-emerald-500/8 text-emerald-600" }
       : null;
 
     const statuses = options?.statuses || [];
@@ -344,7 +344,7 @@ function SubNodeList({ children, stageCode, options, onChanged, parentId }: { ch
             className="font-mono text-[10px] bg-[var(--bg-2)] border border-[var(--line-2)] rounded px-1 py-0.5 outline-none focus:border-[var(--accent)] w-[100px]"
           />
         </div>
-        <ApprovalChain approval={node.approval} nodeId={node.id} options={options} onChanged={onChanged} />
+        <ApprovalChain approval={node.approvals?.[0]} nodeId={node.id} options={options} onChanged={onChanged} />
         {node.children?.length > 0 && (
           <div className="ml-6 border-l border-[var(--line)] pl-3">
             {node.children.map((sub: Item) => (

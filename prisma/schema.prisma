@@ -173,7 +173,7 @@ model Item {
 
   // 审核
   requiresApproval Boolean   @default(false)
-  approval         Approval?
+  approvals        Approval[]
 
   // 日志与告警
   dailyLogs  DailyLog[]
@@ -202,14 +202,19 @@ model ItemModule {
 // ── 审核单 ───────────────────────────────────────
 model Approval {
   id     String @id @default(cuid())
-  itemId String @unique
+  itemId String
   item   Item   @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  scope  String @default("NODE") // NODE | STAGE_GATE
+  stageFrom String @default("")   // DEVELOPMENT / TEST / ...
+  stageTo   String @default("")   // TEST / DELIVERY / ...
   state  String @default("WAITING_SUBMIT") // WAITING_SUBMIT / SUBMITTED / APPROVED / REJECTED
 
   events ApprovalEvent[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([itemId])
 }
 
 // ── 审核流转事件 ─────────────────────────────────

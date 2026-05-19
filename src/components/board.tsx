@@ -37,14 +37,14 @@ function overallStatus(item: Item): { label: string; cls: string } {
     return { label: "完成", cls: "bg-blue-500/12 text-blue-600" };
   }
   // 延期：有子节点被驳回，或有告警为LATE
-  const hasLate = (item.children || []).some((c: Item) => c.approval?.state === "REJECTED");
+  const hasLate = (item.children || []).some((c: Item) => c.approvals?.[0]?.state === "REJECTED");
   const hasLateAlert = (item.alerts || []).some((a: any) => a.level === "LATE");
   if (hasLate || hasLateAlert) {
     return { label: "延期", cls: "bg-red-500/12 text-red-600" };
   }
   // 风险：有告警为RISK，或有子节点有审核卡着
   const hasRisk = (item.alerts || []).some((a: any) => a.level === "RISK");
-  const hasWaiting = (item.children || []).some((c: Item) => c.approval?.state === "WAITING_SUBMIT");
+  const hasWaiting = (item.children || []).some((c: Item) => c.approvals?.[0]?.state === "WAITING_SUBMIT");
   if (hasRisk || hasWaiting) {
     return { label: "风险", cls: "bg-amber-500/12 text-amber-600" };
   }
@@ -58,6 +58,32 @@ function stageStatus(item: Item, stageCode: string, STAGE_GROUPS: {code:string;l
     if (c.stageType === stageCode) return true;
     return false;
   });
+
+  // Stage gate: check if previous stage is all done and this stage needs approval to enter
+  const GATE_MAP: Record<string, string> = { TEST: 'DEVELOPMENT', DELIVERY: 'TEST' };
+  const prevStage = GATE_MAP[stageCode];
+  if (prevStage && stageChildren.length === 0) {
+    // Check if prev stage is all done
+    const prevChildren = children.filter((c: Item) => c.stageType === prevStage);
+    const prevAllDone = prevChildren.length > 0 && prevChildren.every((c: Item) => c.status?.code === "DELIVERED");
+    if (prevAllDone) {
+      // Find stage gate approval
+      const approvals = (item.approvals || []) as any[];
+      const gate = approvals.find((a: any) => a.scope === 'STAGE_GATE' && a.stageTo === stageCode);
+      if (!gate) {
+        return { label: "待审核进入", cls: "text-amber-600 bg-amber-500/12", progress: "", sub: "需审核", isParallelRunning: false, dates: "", gateNeeded: true, gateFrom: prevStage, gateTo: stageCode };
+      }
+      if (gate.state === 'WAITING_SUBMIT') {
+        return { label: "审核中", cls: "text-blue-600 bg-blue-500/12", progress: "", sub: "待提交凭证", isParallelRunning: false, dates: "", gateState: gate.state };
+      }
+      if (gate.state === 'SUBMITTED') {
+        return { label: "审核中", cls: "text-blue-600 bg-blue-500/12", progress: "", sub: "待审批", isParallelRunning: false, dates: "", gateState: gate.state };
+      }
+      if (gate.state === 'REJECTED') {
+        return { label: "审核驳回", cls: "text-red-600 bg-red-500/12", progress: "", sub: "需重新提交", isParallelRunning: false, dates: "", gateState: gate.state };
+      }
+    }
+  }
 
   // Calculate date range from children's plannedStart/plannedEnd
   function dateRange(nodes: Item[]) {
@@ -80,7 +106,7 @@ function stageStatus(item: Item, stageCode: string, STAGE_GROUPS: {code:string;l
   }
 
   const done = stageChildren.filter((c: Item) => c.status?.code === "DELIVERED").length;
-  const hasLate = stageChildren.some((c: Item) => c.status?.code === "REJECTED" || c.approval?.state === "REJECTED");
+  const hasLate = stageChildren.some((c: Item) => c.status?.code === "REJECTED" || c.approvals?.[0]?.state === "REJECTED");
   const activeNodes = stageChildren.filter((c: Item) => c.status?.code && c.status.code !== "DELIVERED" && c.status.code !== "REJECTED" && c.status.code !== "ABORTED");
   const hasActive = activeNodes.length > 0;
   const dates = dateRange(stageChildren);
@@ -96,7 +122,7 @@ function stageStatus(item: Item, stageCode: string, STAGE_GROUPS: {code:string;l
     return { label: "完成", cls: "text-emerald-600 bg-emerald-500/8", progress: `${done}/${stageChildren.length}`, sub: "", isParallelRunning, dates };
   }
   if (hasLate) {
-    const lateNode = stageChildren.find((c: Item) => c.status?.code === "REJECTED" || c.approval?.state === "REJECTED");
+    const lateNode = stageChildren.find((c: Item) => c.status?.code === "REJECTED" || c.approvals?.[0]?.state === "REJECTED");
     return { label: "驳回", cls: "text-red-600 bg-red-500/8", progress: `${done}/${stageChildren.length}`, sub: lateNode?.title || subLabel, isParallelRunning, dates };
   }
   if (hasActive) {
@@ -226,6 +252,23 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
   }
 
   const [tagPickerItemId, setTagPickerItemId] = useState<string | null>(null);
+  const [gateModal, setGateModal] = useState<{ itemId: string; from: string; to: string; state?: string } | null>(null);
+  const [gateActorId, setGateActorId] = useState("");
+  const [gateNote, setGateNote] = useState("");
+  const [gateSubmitting, setGateSubmitting] = useState(false);
+
+  async function doGateAction(action: string) {
+    if (!gateModal || !gateActorId || gateSubmitting) return;
+    setGateSubmitting(true);
+    await fetch(`/api/versions/${gateModal.itemId}/stage-gate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action, stageFrom: gateModal.from, stageTo: gateModal.to, actorId: gateActorId, note: gateNote }),
+    });
+    setGateModal(null); setGateActorId(""); setGateNote("");
+    setGateSubmitting(false);
+    router.refresh();
+  }
 
   async function changeTag(itemId: string, tagId: string | null) {
     await fetch(`/api/versions/${itemId}`, {
@@ -475,8 +518,21 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
                     {/* 阶段格子 */}
                     {STAGE_GROUPS.map((g) => {
                       const st = stageStatus(item, g.code, STAGE_GROUPS, STAGE_GROUP_MAP);
+                      const isGate = (st as any).gateNeeded || (st as any).gateState;
                       return (
                         <td key={g.code} className="px-2 py-2 align-top border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors">
+                          {isGate ? (
+                            <div
+                              className={`flex flex-col gap-0.5 px-2 py-1.5 rounded-md cursor-pointer ${st.cls}`}
+                              onClick={(e) => { e.stopPropagation(); setGateModal({ itemId: item.id, from: (st as any).gateFrom, to: (st as any).gateTo || g.code, state: (st as any).gateState }); setGateActorId(""); setGateNote(""); }}
+                            >
+                              <div className="flex items-center gap-1">
+                                <span className="w-[5px] h-[5px] rounded-full bg-current flex-shrink-0" />
+                                <span className="text-[11px] font-medium">{st.label}</span>
+                              </div>
+                              {st.sub && <span className="text-[10px] font-mono truncate">{st.sub}</span>}
+                            </div>
+                          ) : (
                           <StagePopover itemId={item.id} stageCode={g.code} children={item.children || []} onChanged={() => router.refresh()} statuses={options?.statuses}
                             triggerNode={
                               <div className={`flex flex-col gap-0.5 px-2 py-1.5 rounded-md ${st.cls}`}>
@@ -491,6 +547,7 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
                               </div>
                             }
                           />
+                          )}
                         </td>
                       );
                     })}
@@ -636,6 +693,52 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
           onClose={() => setSelectedId(null)}
           currentUser={currentUser}
         />
+      )}
+
+      {/* Stage Gate Modal */}
+      {gateModal && (
+        <>
+          <div className="fixed inset-0 bg-black/30 z-50" onClick={() => setGateModal(null)} />
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-[var(--bg-1)] border border-[var(--line-2)] rounded-xl shadow-2xl p-5 w-[360px]">
+            <div className="text-[14px] font-semibold mb-1">
+              阶段推进审核
+            </div>
+            <div className="text-[11px] text-[var(--txt-2)] mb-4">
+              {gateModal.from} → {gateModal.to}
+              {gateModal.state === "WAITING_SUBMIT" && " · 等待提交凭证"}
+              {gateModal.state === "SUBMITTED" && " · 等待审批"}
+              {gateModal.state === "REJECTED" && " · 已驳回，需重新提交"}
+            </div>
+            <div className="flex flex-col gap-2.5">
+              <div>
+                <label className="text-[11px] text-[var(--txt-2)] block mb-1">操作人 *</label>
+                <select value={gateActorId} onChange={(e) => setGateActorId(e.target.value)} className="w-full px-2.5 py-2 rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] text-[12px] outline-none focus:border-[var(--accent)]">
+                  <option value="">选择操作人</option>
+                  {options?.users?.map((u: any) => <option key={u.id} value={u.id}>{u.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-[11px] text-[var(--txt-2)] block mb-1">备注</label>
+                <textarea value={gateNote} onChange={(e) => setGateNote(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); doGateAction(!gateModal.state ? "initiate" : gateModal.state === "WAITING_SUBMIT" || gateModal.state === "REJECTED" ? "submit" : "approve"); } }} className="w-full px-2.5 py-2 rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] text-[12px] outline-none resize-none min-h-[48px] focus:border-[var(--accent)]" placeholder="备注…（可选）" />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <button onClick={() => setGateModal(null)} className="px-3 py-1.5 rounded-lg text-[12px] text-[var(--txt-1)] border border-[var(--line-2)]">取消</button>
+                {!gateModal.state && (
+                  <button onClick={() => doGateAction("initiate")} disabled={!gateActorId || gateSubmitting} className="px-3 py-1.5 rounded-lg text-[12px] text-white bg-[var(--accent)] disabled:opacity-50">发起审核</button>
+                )}
+                {(gateModal.state === "WAITING_SUBMIT" || gateModal.state === "REJECTED") && (
+                  <button onClick={() => doGateAction("submit")} disabled={!gateActorId || gateSubmitting} className="px-3 py-1.5 rounded-lg text-[12px] text-white bg-[var(--accent)] disabled:opacity-50">提交凭证</button>
+                )}
+                {gateModal.state === "SUBMITTED" && (
+                  <>
+                    <button onClick={() => doGateAction("reject")} disabled={!gateActorId || gateSubmitting} className="px-3 py-1.5 rounded-lg text-[12px] text-white bg-[var(--late)] disabled:opacity-50">驳回</button>
+                    <button onClick={() => doGateAction("approve")} disabled={!gateActorId || gateSubmitting} className="px-3 py-1.5 rounded-lg text-[12px] text-white bg-emerald-600 disabled:opacity-50">通过</button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </>
       )}
 
       {/* Tag Picker — for versions OR tag name editor */}

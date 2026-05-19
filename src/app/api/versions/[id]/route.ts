@@ -74,7 +74,7 @@ export async function DELETE(
   await prisma.item.deleteMany({ where: { parentId: id } });
 
   // Delete parent's related data
-  const parentApproval = await prisma.approval.findUnique({ where: { itemId: id } });
+  const parentApproval = await prisma.approval.findFirst({ where: { itemId: id } });
   if (parentApproval) {
     await prisma.approvalEvent.deleteMany({ where: { approvalId: parentApproval.id } });
     await prisma.approval.delete({ where: { id: parentApproval.id } });
