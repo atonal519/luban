@@ -44,8 +44,14 @@ export default function SettingsPage() {
 
   async function handleAdd() {
     const data = { ...addData };
+    // Auto-generate code
     if ((activeTab === "natures" || activeTab === "statuses" || activeTab === "stageGroups") && data.label && !data.code) {
       data.code = data.label.toUpperCase().replace(/[^A-Z0-9\u4e00-\u9fff]/g, '_').replace(/_+/g, '_');
+    }
+    // Auto-generate random color if not set
+    if (!data.color && (activeTab === "modules" || activeTab === "natures" || activeTab === "statuses" || activeTab === "priorities" || activeTab === "tags")) {
+      const hue = Math.floor(Math.random() * 360);
+      data.color = `hsl(${hue}, 65%, 45%)`;
     }
     const res = await fetch(`/api/settings/${activeTab}`, {
       method: "POST",
