@@ -65,9 +65,6 @@ export default async function Home({
           include: { rejectedBy: true },
           orderBy: { createdAt: "desc" },
         },
-        approvals: {
-          include: { events: { include: { actor: true }, orderBy: { createdAt: "asc" } } },
-        },
       },
       orderBy: { createdAt: "desc" },
     }),

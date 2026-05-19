@@ -14,7 +14,7 @@ export async function GET() {
           nature: true,
           status: true,
           owner: true,
-          approval: { include: { events: { include: { actor: true }, orderBy: { createdAt: 'asc' } } } },
+          approvals: { include: { events: { include: { actor: true }, orderBy: { createdAt: 'asc' } } } },
           children: {
             include: { status: true, owner: true },
             orderBy: { order: 'asc' },
