@@ -70,28 +70,9 @@ function ApprovalChain({ approval, nodeId, options, onChanged, stageType }: { ap
 
   const users = options?.users || [];
 
-  // No approval yet — only show initiate for TEST stage nodes
+  // Node-level approval entry disabled (all approvals are handled by stage gates)
   if (!approval) {
-    if (stageType !== "TEST") return null;
-    return (
-      <div className="ml-6 mt-2">
-        {actionForm === "initiate" ? (
-          <div className="p-3 bg-[var(--bg-2)] rounded-lg border border-[var(--line-2)] flex flex-col gap-2">
-            <select value={actorId} onChange={(e) => setActorId(e.target.value)} className="px-2 py-1 rounded-md border border-[var(--line-2)] bg-[var(--bg-1)] text-[12px] outline-none">
-              <option value="">发起人</option>
-              {users.map((u: any) => <option key={u.id} value={u.id}>{u.name}</option>)}
-            </select>
-            <textarea value={note} onChange={(e) => setNote(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); doAction(); } }} placeholder="审核要求…" className="px-2 py-1 rounded-md border border-[var(--line-2)] bg-[var(--bg-1)] text-[12px] outline-none resize-none min-h-[32px]" />
-            <div className="flex gap-1 justify-end">
-              <button onClick={() => setActionForm(null)} className="px-2 py-0.5 rounded text-[10px] text-[var(--txt-1)] border border-[var(--line-2)]">取消</button>
-              <button onClick={doAction} disabled={!actorId || submitting} className="px-2 py-0.5 rounded text-[10px] text-white bg-[var(--accent)] disabled:opacity-50">{submitting ? "…" : "发起"}</button>
-            </div>
-          </div>
-        ) : (
-          <button onClick={() => setActionForm("initiate")} className="text-[11px] text-[var(--accent)] hover:underline">+ 发起审核</button>
-        )}
-      </div>
-    );
+    return null;
   }
 
   const events = (approval || {events:[]}).events || [];

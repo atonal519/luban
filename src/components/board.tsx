@@ -256,17 +256,42 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
   const [gateModal, setGateModal] = useState<{ itemId: string; from: string; to: string; state?: string } | null>(null);
   const [gateActorId, setGateActorId] = useState("");
   const [gateNote, setGateNote] = useState("");
+  const [gateBranch, setGateBranch] = useState("");
+  const [gateCommit, setGateCommit] = useState("");
+  const [gateImages, setGateImages] = useState<string[]>([]);
+  const [gateUploading, setGateUploading] = useState(false);
+
+  async function handleGateUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (!files) return;
+    setGateUploading(true);
+    const urls = [...gateImages];
+    for (let i = 0; i < files.length; i++) {
+      const fd = new FormData();
+      fd.append("file", files[i]);
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      const data = await res.json();
+      if (data.url) urls.push(data.url);
+    }
+    setGateImages(urls);
+    setGateUploading(false);
+    e.target.value = "";
+  }
   const [gateSubmitting, setGateSubmitting] = useState(false);
 
   async function doGateAction(action: string) {
     if (!gateModal || !gateActorId || gateSubmitting) return;
     setGateSubmitting(true);
+    const fullNote = gateBranch || gateCommit
+      ? `${gateBranch ? `分支: ${gateBranch}` : ""}${gateCommit ? ` | Commit: ${gateCommit}` : ""}${gateNote ? `\n${gateNote}` : ""}`
+      : gateNote;
+    const evidenceUrl = gateImages.length > 0 ? JSON.stringify(gateImages) : "";
     await fetch(`/api/versions/${gateModal.itemId}/stage-gate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action, stageFrom: gateModal.from, stageTo: gateModal.to, actorId: gateActorId, note: gateNote }),
+      body: JSON.stringify({ action, stageFrom: gateModal.from, stageTo: gateModal.to, actorId: gateActorId, note: fullNote, evidenceUrl }),
     });
-    setGateModal(null); setGateActorId(""); setGateNote("");
+    setGateModal(null); setGateActorId(""); setGateNote(""); setGateBranch(""); setGateCommit(""); setGateImages([]);
     setGateSubmitting(false);
     router.refresh();
   }
@@ -700,10 +725,8 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
       {gateModal && (
         <>
           <div className="fixed inset-0 bg-black/30 z-50" onClick={() => setGateModal(null)} />
-          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-[var(--bg-1)] border border-[var(--line-2)] rounded-xl shadow-2xl p-5 w-[360px]">
-            <div className="text-[14px] font-semibold mb-1">
-              阶段推进审核
-            </div>
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-[var(--bg-1)] border border-[var(--line-2)] rounded-xl shadow-2xl p-5 w-[400px] max-h-[85vh] overflow-y-auto">
+            <div className="text-[14px] font-semibold mb-1">阶段推进审核</div>
             <div className="text-[11px] text-[var(--txt-2)] mb-4">
               {gateModal.from} → {gateModal.to}
               {gateModal.state === "WAITING_SUBMIT" && " · 等待提交凭证"}
@@ -718,12 +741,42 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
                   {options?.users?.map((u: any) => <option key={u.id} value={u.id}>{u.name}</option>)}
                 </select>
               </div>
+              {/* Branch/Commit fields for submit actions */}
+              {(gateModal.state === "WAITING_SUBMIT" || gateModal.state === "REJECTED" || !gateModal.state) && (
+                <>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[11px] text-[var(--txt-2)] block mb-1">分支名</label>
+                      <input type="text" value={gateBranch} onChange={(e) => setGateBranch(e.target.value)} placeholder="feature/xxx" className="w-full px-2 py-1.5 rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] text-[12px] outline-none focus:border-[var(--accent)] font-mono" />
+                    </div>
+                    <div>
+                      <label className="text-[11px] text-[var(--txt-2)] block mb-1">Commit ID</label>
+                      <input type="text" value={gateCommit} onChange={(e) => setGateCommit(e.target.value)} placeholder="abc1234" className="w-full px-2 py-1.5 rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] text-[12px] outline-none focus:border-[var(--accent)] font-mono" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[11px] text-[var(--txt-2)] block mb-1">凭证截图（可多张）</label>
+                    <input type="file" accept="image/*" multiple onChange={handleGateUpload} className="text-[11px] text-[var(--txt-1)]" />
+                    {gateUploading && <span className="text-[10px] text-[var(--txt-3)] ml-2">上传中…</span>}
+                    {gateImages.length > 0 && (
+                      <div className="flex gap-1.5 flex-wrap mt-1">
+                        {gateImages.map((url, i) => (
+                          <div key={i} className="relative">
+                            <img src={url} alt="" className="w-[60px] h-[45px] object-cover rounded border border-[var(--line-2)]" />
+                            <button onClick={() => setGateImages(prev => prev.filter((_, j) => j !== i))} className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-red-500 text-white text-[8px] flex items-center justify-center">✕</button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
               <div>
-                <label className="text-[11px] text-[var(--txt-2)] block mb-1">备注</label>
-                <textarea value={gateNote} onChange={(e) => setGateNote(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); doGateAction(!gateModal.state ? "initiate" : gateModal.state === "WAITING_SUBMIT" || gateModal.state === "REJECTED" ? "submit" : "approve"); } }} className="w-full px-2.5 py-2 rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] text-[12px] outline-none resize-none min-h-[48px] focus:border-[var(--accent)]" placeholder="备注…（可选）" />
+                <label className="text-[11px] text-[var(--txt-2)] block mb-1">{gateModal.state === "SUBMITTED" ? "审批意见" : "备注"}</label>
+                <textarea value={gateNote} onChange={(e) => setGateNote(e.target.value)} className="w-full px-2.5 py-2 rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] text-[12px] outline-none resize-none min-h-[48px] focus:border-[var(--accent)]" placeholder="备注…（可选）" />
               </div>
               <div className="flex gap-2 justify-end">
-                <button onClick={() => setGateModal(null)} className="px-3 py-1.5 rounded-lg text-[12px] text-[var(--txt-1)] border border-[var(--line-2)]">取消</button>
+                <button onClick={() => { setGateModal(null); setGateImages([]); setGateBranch(""); setGateCommit(""); }} className="px-3 py-1.5 rounded-lg text-[12px] text-[var(--txt-1)] border border-[var(--line-2)]">取消</button>
                 {!gateModal.state && (
                   <button onClick={() => doGateAction("initiate")} disabled={!gateActorId || gateSubmitting} className="px-3 py-1.5 rounded-lg text-[12px] text-white bg-[var(--accent)] disabled:opacity-50">发起审核</button>
                 )}
