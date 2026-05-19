@@ -20,5 +20,5 @@ export async function POST(req: NextRequest) {
 
   await writeFile(filepath, buffer);
 
-  return NextResponse.json({ url: `/uploads/${filename}` }, { status: 201 });
+  return NextResponse.json({ url: `/api/uploads/${filename}` }, { status: 201 });
 }
