@@ -238,7 +238,7 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
     await fetch(`/api/versions/${itemId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ [field]: value || null }),
+      body: JSON.stringify({ [field]: value }),
     });
     router.refresh();
   }
