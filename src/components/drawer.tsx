@@ -238,7 +238,7 @@ function SubNodeList({ children, stageCode, options, onChanged, parentId }: { ch
     i++;
   }
 
-  function NodeRow({ node }: { node: Item }) {
+  function NodeRow({ node, prevNode }: { node: Item; prevNode?: Item }) {
     const [editingTitle, setEditingTitle] = useState(false);
     const [titleVal, setTitleVal] = useState(node.title);
 
@@ -265,8 +265,20 @@ function SubNodeList({ children, stageCode, options, onChanged, parentId }: { ch
       onChanged();
     }
 
+    // Delivery sub-gate: 正式交付 needs approval after 预生产 is done
+    const isDeliveryFinal = node.title === "正式交付" && node.stageType === "DELIVERY";
+    const prevIsDone = prevNode?.status?.code === "DELIVERED";
+    const selfNotStarted = !statusCode || statusCode === "";
+    const needsSubGate = isDeliveryFinal && prevIsDone && selfNotStarted && !node.approvals?.[0];
+
     return (
       <div>
+        {needsSubGate && (
+          <div className="mx-2 mb-1 px-2.5 py-1.5 rounded-md bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-600 flex items-center gap-1.5">
+            <span className="w-[5px] h-[5px] rounded-full bg-amber-500 flex-shrink-0" />
+            预生产已完成，需发起审核才能推进正式交付
+          </div>
+        )}
         <div className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-[var(--bg-2)] transition-colors group/node">
           <span className={`w-4 text-center text-[12px] ${statusColor}`}>{statusIcon}</span>
           {editingTitle ? (
@@ -309,21 +321,17 @@ function SubNodeList({ children, stageCode, options, onChanged, parentId }: { ch
             <button onClick={(e) => { e.stopPropagation(); deleteNode(node.id); }} className="text-[10px] text-[var(--txt-3)] hover:text-[var(--late)]">✕</button>
           </span>
         </div>
-        {/* Date range */}
-        <div className="flex items-center gap-1.5 px-2 ml-6 text-[10px]">
+        {/* Date range — separate row to avoid overlap */}
+        <div className="flex items-center gap-1.5 px-2 py-0.5 ml-6 text-[10px] flex-wrap">
           <span className="text-[var(--txt-3)]">计划</span>
-          <input
-            type="date"
-            defaultValue={node.plannedStart?.slice(0, 10) || ""}
+          <input type="date" defaultValue={node.plannedStart?.slice(0, 10) || ""}
             onBlur={(e) => { fetch(`/api/versions/${parentId}/children/${node.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plannedStart: e.target.value || null }) }).then(() => onChanged()); }}
-            className="font-mono text-[10px] bg-[var(--bg-2)] border border-[var(--line-2)] rounded px-1 py-0.5 outline-none focus:border-[var(--accent)] w-[100px]"
+            className="font-mono text-[10px] bg-[var(--bg-2)] border border-[var(--line-2)] rounded px-1 py-0.5 outline-none focus:border-[var(--accent)]"
           />
           <span className="text-[var(--txt-3)]">~</span>
-          <input
-            type="date"
-            defaultValue={node.plannedEnd?.slice(0, 10) || ""}
+          <input type="date" defaultValue={node.plannedEnd?.slice(0, 10) || ""}
             onBlur={(e) => { fetch(`/api/versions/${parentId}/children/${node.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plannedEnd: e.target.value || null }) }).then(() => onChanged()); }}
-            className="font-mono text-[10px] bg-[var(--bg-2)] border border-[var(--line-2)] rounded px-1 py-0.5 outline-none focus:border-[var(--accent)] w-[100px]"
+            className="font-mono text-[10px] bg-[var(--bg-2)] border border-[var(--line-2)] rounded px-1 py-0.5 outline-none focus:border-[var(--accent)]"
           />
         </div>
         <ApprovalChain approval={node.approvals?.[0]} nodeId={node.id} options={options} onChanged={onChanged} stageType={node.stageType} />
@@ -355,7 +363,7 @@ function SubNodeList({ children, stageCode, options, onChanged, parentId }: { ch
             </div>
           );
         }
-        return <NodeRow key={r.node.id} node={r.node} />;
+        return <NodeRow key={r.node.id} node={r.node} prevNode={rendered[rendered.length - 1]?.type === 'linear' ? rendered[rendered.length - 1]?.node : undefined} />;
       })}
 
       {stageChildren.length === 0 && !showAdd && (
@@ -972,9 +980,9 @@ export function Drawer({ item, initialStage, onClose, currentUser }: { item: Ite
               <div>
                 <div className="text-[11px] text-[var(--txt-2)] mb-1">计划起止</div>
                 <div className="text-[12px] font-mono bg-[var(--bg-2)] border border-[var(--line-2)] rounded-md px-2 py-0.5 leading-[22px] text-[var(--txt-1)]">
-                  {item.actualStart ? item.actualStart.slice(0, 10) : <span className="text-[var(--txt-3)]">未开始</span>}
+                  {item.plannedStart ? item.plannedStart.slice(0, 10) : <span className="text-[var(--txt-3)]">—</span>}
                   {" ~ "}
-                  {item.actualEnd ? item.actualEnd.slice(0, 10) : <span className="text-[var(--txt-3)]">进行中</span>}
+                  {item.plannedEnd ? item.plannedEnd.slice(0, 10) : <span className="text-[var(--txt-3)]">—</span>}
                 </div>
               </div>
               <div>
