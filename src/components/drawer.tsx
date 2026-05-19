@@ -979,7 +979,7 @@ export function Drawer({ item, initialStage, onClose, currentUser }: { item: Ite
               </div>
               <div>
                 <div className="text-[11px] text-[var(--txt-2)] mb-1">计划起止</div>
-                <div className="text-[12px] font-mono bg-[var(--bg-2)] border border-[var(--line-2)] rounded-md px-2 py-0.5 leading-[22px] text-[var(--txt-1)]">
+                <div className="text-[12px] font-mono leading-[22px] text-[var(--txt-1)] whitespace-nowrap">
                   {item.plannedStart ? item.plannedStart.slice(0, 10) : <span className="text-[var(--txt-3)]">—</span>}
                   {" ~ "}
                   {item.plannedEnd ? item.plannedEnd.slice(0, 10) : <span className="text-[var(--txt-3)]">—</span>}
