@@ -959,13 +959,13 @@ export function Drawer({ item, initialStage, onClose, currentUser }: { item: Ite
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto">
-          {/* Info Grid — 3 cols × 2 rows, editable */}
+          {/* Info Grid — 2 cols, cleaner layout */}
           <div className="px-5 py-4 border-b border-[var(--line)]">
-            <div className="text-[11px] text-[var(--txt-2)] tracking-wider uppercase font-mono mb-3">基本信息</div>
-            <div className="grid grid-cols-3 gap-x-4 gap-y-3">
+            <div className="text-[13px] font-semibold text-[var(--txt-0)] mb-3">基本信息</div>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-3">
               <div>
                 <div className="text-[11px] text-[var(--txt-2)] mb-1">创建日期</div>
-                <div className="text-[12px] font-mono bg-[var(--bg-2)] border border-[var(--line-2)] rounded-md px-2 py-0.5 leading-[22px] text-[var(--txt-1)] w-fit">{item.createdAt?.slice(0, 10) || "—"}</div>
+                <div className="text-[12px] font-mono text-[var(--txt-1)]">{item.createdAt?.slice(0, 10) || "—"}</div>
               </div>
               <div>
                 <div className="text-[11px] text-[var(--txt-2)] mb-1">预计交付</div>
@@ -979,10 +979,19 @@ export function Drawer({ item, initialStage, onClose, currentUser }: { item: Ite
               </div>
               <div>
                 <div className="text-[11px] text-[var(--txt-2)] mb-1">计划起止</div>
-                <div className="text-[12px] font-mono leading-[22px] text-[var(--txt-1)] whitespace-nowrap">
-                  {item.plannedStart ? item.plannedStart.slice(0, 10) : <span className="text-[var(--txt-3)]">—</span>}
+                <div className="text-[12px] font-mono text-[var(--txt-1)]">
+                  {item.plannedStart ? item.plannedStart.slice(0, 10) : "—"}
                   {" ~ "}
-                  {item.plannedEnd ? item.plannedEnd.slice(0, 10) : <span className="text-[var(--txt-3)]">—</span>}
+                  {item.plannedEnd ? item.plannedEnd.slice(0, 10) : "—"}
+                </div>
+              </div>
+              <div>
+                <div className="text-[11px] text-[var(--txt-2)] mb-1">回溯历史</div>
+                <div className="text-[12px] font-mono leading-[22px]">
+                  {(item.rejections?.length || 0) > 0
+                    ? <span className="text-[var(--late)] font-medium">打回 {item.rejections.length} 次</span>
+                    : <span className="text-[var(--txt-3)]">0 次</span>
+                  }
                 </div>
               </div>
               <div>
@@ -1000,27 +1009,18 @@ export function Drawer({ item, initialStage, onClose, currentUser }: { item: Ite
                 allModules={options?.modules || []}
                 onSave={saveModules}
               />
-              <div>
-                <div className="text-[11px] text-[var(--txt-2)] mb-1">回溯历史</div>
-                <div className="text-[12px] font-mono leading-[22px]">
-                  {(item.rejections?.length || 0) > 0
-                    ? <span className="text-[var(--late)] font-medium">打回 {item.rejections.length} 次</span>
-                    : <span className="text-[var(--txt-3)]">0 次</span>
-                  }
-                </div>
-              </div>
             </div>
           </div>
 
           {/* 规格 — editable */}
           <div className="px-5 py-4 border-b border-[var(--line)]">
-            <div className="text-[11px] text-[var(--txt-2)] tracking-wider uppercase font-mono mb-3">规格</div>
+            <div className="text-[13px] font-semibold text-[var(--txt-0)] mb-3">规格</div>
             <EditableTextArea value={item.description || ""} placeholder="点击添加规格描述…" onSave={(v) => save("description", v)} />
           </div>
 
           {/* MOKRA — editable */}
           <div className="px-5 py-4 border-b border-[var(--line)]">
-            <div className="text-[11px] text-[var(--txt-2)] tracking-wider uppercase font-mono mb-3">MOKRA</div>
+            <div className="text-[13px] font-semibold text-[var(--txt-0)] mb-3">MOKRA</div>
             <div className="flex flex-col gap-2.5">
               <MokraField label="M" color="blue" value={item.mokraMotivation || ""} field="mokraMotivation" onSave={save} placeholder="背景动机…" />
               <MokraField label="O" color="emerald" value={item.mokraObjects || ""} field="mokraObjects" onSave={save} placeholder="目标…" />
@@ -1032,7 +1032,7 @@ export function Drawer({ item, initialStage, onClose, currentUser }: { item: Ite
           {/* Stage tabs */}
           <div className="border-b border-[var(--line)]">
             <div className="px-5 pt-4">
-              <div className="text-[11px] text-[var(--txt-2)] tracking-wider uppercase font-mono mb-2.5">阶段子节点</div>
+              <div className="text-[13px] font-semibold text-[var(--txt-0)] mb-3">阶段子节点</div>
             </div>
             <div className="flex overflow-x-auto">
               {STAGE_GROUPS.map((g, idx) => (
@@ -1058,7 +1058,7 @@ export function Drawer({ item, initialStage, onClose, currentUser }: { item: Ite
 
           {/* Logs */}
           <div className="px-5 py-4">
-            <div className="text-[11px] text-[var(--txt-2)] tracking-wider uppercase font-mono mb-3">跟进日志</div>
+            <div className="text-[13px] font-semibold text-[var(--txt-0)] mb-3">跟进日志</div>
             <div className="flex flex-col gap-3">
               {(item.dailyLogs || []).map((log: any) => (
                 <LogItem key={log.id} log={log} itemId={item.id} onChanged={() => router.refresh()} />
