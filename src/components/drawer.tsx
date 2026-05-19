@@ -18,7 +18,7 @@ const STAGE_GROUP_MAP: Record<string, string> = {
   ABORTED: "DELIVERY", DELIVERED: "DELIVERY",
 };
 
-function ApprovalChain({ approval, nodeId, options, onChanged }: { approval: any; nodeId: string; options: any; onChanged: () => void }) {
+function ApprovalChain({ approval, nodeId, options, onChanged, stageType }: { approval: any; nodeId: string; options: any; onChanged: () => void; stageType?: string }) {
   const [actionForm, setActionForm] = useState<string | null>(null);
   const [actorId, setActorId] = useState("");
   const [note, setNote] = useState("");
@@ -70,8 +70,9 @@ function ApprovalChain({ approval, nodeId, options, onChanged }: { approval: any
 
   const users = options?.users || [];
 
-  // No approval yet — show initiate button
+  // No approval yet — only show initiate for TEST stage nodes
   if (!approval) {
+    if (stageType !== "TEST") return null;
     return (
       <div className="ml-6 mt-2">
         {actionForm === "initiate" ? (
@@ -344,7 +345,7 @@ function SubNodeList({ children, stageCode, options, onChanged, parentId }: { ch
             className="font-mono text-[10px] bg-[var(--bg-2)] border border-[var(--line-2)] rounded px-1 py-0.5 outline-none focus:border-[var(--accent)] w-[100px]"
           />
         </div>
-        <ApprovalChain approval={node.approvals?.[0]} nodeId={node.id} options={options} onChanged={onChanged} />
+        <ApprovalChain approval={node.approvals?.[0]} nodeId={node.id} options={options} onChanged={onChanged} stageType={node.stageType} />
         {node.children?.length > 0 && (
           <div className="ml-6 border-l border-[var(--line)] pl-3">
             {node.children.map((sub: Item) => (
