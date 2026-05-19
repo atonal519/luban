@@ -62,11 +62,12 @@ function stageStatus(item: Item, stageCode: string, STAGE_GROUPS: {code:string;l
   // Stage gate: check if previous stage is all done and this stage needs approval to enter
   const GATE_MAP: Record<string, string> = { TEST: 'DEVELOPMENT', DELIVERY: 'TEST' };
   const prevStage = GATE_MAP[stageCode];
-  if (prevStage && stageChildren.length === 0) {
-    // Check if prev stage is all done
+  if (prevStage) {
+    // Check if prev stage is all done and this stage hasn't started (no DELIVERED/active nodes)
     const prevChildren = children.filter((c: Item) => c.stageType === prevStage);
     const prevAllDone = prevChildren.length > 0 && prevChildren.every((c: Item) => c.status?.code === "DELIVERED");
-    if (prevAllDone) {
+    const thisStageStarted = stageChildren.some((c: Item) => c.status?.code && c.status.code !== "");
+    if (prevAllDone && !thisStageStarted) {
       // Find stage gate approval
       const approvals = (item.approvals || []) as any[];
       const gate = approvals.find((a: any) => a.scope === 'STAGE_GATE' && a.stageTo === stageCode);
