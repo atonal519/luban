@@ -118,7 +118,7 @@ export function Sidebar({
       {/* Logo */}
       <div className="px-4 pt-5 pb-4 border-b border-[var(--line)]">
         <Link href="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
-          <div className="w-7 h-7 bg-[var(--accent)] rounded-lg flex items-center justify-center text-white text-[11px] font-semibold font-mono">LB</div>
+          <svg width="28" height="28" viewBox="0 0 80 80" fill="none"><rect width="80" height="80" rx="16" fill="#0A58CA"/><path d="M10 62L28 24l18 38H10z" fill="white" opacity="0.08"/><path d="M42 62L60 20l18 42H42z" fill="white" opacity="0.06"/><path d="M12 52 C20 52, 24 34, 30 32 C36 30, 42 52, 50 40 C56 32, 60 22, 64 20" stroke="white" strokeWidth="3.5" strokeLinecap="round" fill="none" opacity="0.95"/><circle cx="30" cy="32" r="4" fill="white"/><circle cx="64" cy="20" r="4.5" fill="white"/></svg>
           <span className="font-mono text-[15px] font-semibold text-[var(--txt-0)] tracking-wide">鲁班</span>
         </Link>
       </div>
