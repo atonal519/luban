@@ -1022,10 +1022,10 @@ export function Drawer({ item, initialStage, onClose, currentUser }: { item: Ite
           <div className="px-5 py-4 border-b border-[var(--line)]">
             <div className="text-[13px] font-semibold text-[var(--txt-0)] mb-3">MOKRA</div>
             <div className="flex flex-col gap-2.5">
-              <MokraField label="M" color="blue" value={item.mokraMotivation || ""} field="mokraMotivation" onSave={save} placeholder="背景动机…" />
-              <MokraField label="O" color="emerald" value={item.mokraObjects || ""} field="mokraObjects" onSave={save} placeholder="目标…" />
-              <MokraField label="KR" color="amber" value={item.mokraKeyResults || ""} field="mokraKeyResults" onSave={save} placeholder="关键结果…" />
-              <MokraField label="A" color="purple" value={item.mokraActions || ""} field="mokraActions" onSave={save} placeholder="行动项…" />
+              <MokraField label="M" color="blue" value={item.mokraMotivation || ""} field="mokraMotivation" onSave={save} placeholder="Meaning · 为什么做这件事？背景和意义是什么？" />
+              <MokraField label="O" color="emerald" value={item.mokraObjects || ""} field="mokraObjects" onSave={save} placeholder="Object · 要达成什么目标？" />
+              <MokraField label="KR" color="amber" value={item.mokraKeyResults || ""} field="mokraKeyResults" onSave={save} placeholder="Key Result · 可衡量的关键结果/功能效果是什么？" />
+              <MokraField label="A" color="purple" value={item.mokraActions || ""} field="mokraActions" onSave={save} placeholder="Action · 实现路径的逻辑链是什么？" />
             </div>
           </div>
 
