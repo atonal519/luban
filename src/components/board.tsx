@@ -698,13 +698,6 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
                 });
               }
 
-              // Fallback: no tags defined yet
-              if (tags.length === 0) {
-                searchedItems.forEach(item => {
-                  renderItemRows(item, 0).forEach(r => rows.push(r));
-                });
-              }
-
               return rows;
             })()}
           </tbody>
