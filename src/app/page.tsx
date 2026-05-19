@@ -47,6 +47,10 @@ export default async function Home({
         priority: true,
         tag: true,
         modules: { include: { module: true } },
+        approvals: {
+          where: { scope: "STAGE_GATE" },
+          include: { events: { include: { actor: true }, orderBy: { createdAt: "asc" } } },
+        },
         children: buildChildrenInclude(4), // up to depth 5
         dailyLogs: {
           include: { author: true },
