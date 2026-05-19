@@ -16,6 +16,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "鲁班",
   description: "Luban Project Management",
+  icons: { icon: "/icon.svg" },
 };
 
 export default function RootLayout({
