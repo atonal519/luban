@@ -885,7 +885,13 @@ function LogItem({ log, itemId, onChanged }: { log: any; itemId: string; onChang
             </div>
           </div>
         ) : (
-          <div className="text-[12px] text-[var(--txt-1)] leading-relaxed whitespace-pre-wrap">{log.content}</div>
+          <div className="text-[12px] text-[var(--txt-1)] leading-relaxed whitespace-pre-wrap">
+                    {log.content.split(/(\[图片\]\([^)]+\))/g).map((part, i) => {
+                      const m = part.match(/^\[图片\]\(([^)]+)\)$/);
+                      if (m) return <img key={i} src={m[1]} alt="附图" className="max-w-[200px] max-h-[150px] rounded border border-[var(--line-2)] cursor-pointer mt-1 block" onClick={() => window.open(m[1], '_blank')} />;
+                      return part;
+                    })}
+                  </div>
         )}
       </div>
     </div>
@@ -899,6 +905,37 @@ export function Drawer({ item, initialStage, onClose, currentUser }: { item: Ite
   const [logContent, setLogContent] = useState("");
   const [logSubmitting, setLogSubmitting] = useState(false);
   const [logImages, setLogImages] = useState<string[]>([]);
+  const logTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    function handleGlobalPaste(e: ClipboardEvent) {
+      if (!logTextareaRef.current) return;
+      const files = Array.from(e.clipboardData?.files || []);
+      const imageFiles = files.filter(f => f.type.startsWith('image/'));
+      if (imageFiles.length === 0) return;
+      e.preventDefault();
+      imageFiles.forEach(file => {
+        const fd = new FormData();
+        fd.append('file', file);
+        fetch('/api/upload', { method: 'POST', body: fd })
+          .then(res => res.json())
+          .then(data => {
+            if (data.url) {
+              const ta = logTextareaRef.current;
+              if (ta) {
+                const setter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value')?.set;
+                if (setter) {
+                  setter.call(ta, ta.value + ' [图片](' + data.url + ')');
+                  ta.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+              }
+            }
+          });
+      });
+    }
+    document.addEventListener('paste', handleGlobalPaste);
+    return () => document.removeEventListener('paste', handleGlobalPaste);
+  }, []);
 
   useEffect(() => {
     fetch("/api/options").then(r => r.json()).then(setOptions);
@@ -922,23 +959,7 @@ export function Drawer({ item, initialStage, onClose, currentUser }: { item: Ite
     router.refresh();
   }
 
-  function handleLogPaste(e: React.ClipboardEvent) {
-    const items = Array.from(e.clipboardData?.items || []);
-    const files = Array.from(e.clipboardData?.files || []);
-    // Handle both image/xxx items and Files (Snipaste style)
-    const imageFiles: File[] = [];
-    items.forEach(item => { if (item.type.startsWith('image/')) { const f = item.getAsFile(); if (f) imageFiles.push(f); } });
-    files.forEach(f => { if (f.type.startsWith('image/')) imageFiles.push(f); });
-    if (imageFiles.length === 0) return;
-    e.preventDefault();
-    imageFiles.forEach(file => {
-      const fd = new FormData();
-      fd.append('file', file);
-      fetch('/api/upload', { method: 'POST', body: fd })
-        .then(res => res.json())
-        .then(data => { if (data.url) setLogImages(prev => [...prev, data.url]); });
-    });
-  }
+  function handleLogPaste() {}
 
   async function submitLog() {
     if (!logContent.trim() || logSubmitting) return;
@@ -1095,12 +1116,12 @@ export function Drawer({ item, initialStage, onClose, currentUser }: { item: Ite
         {/* Log input */}
         <div className="px-5 py-3 border-t border-[var(--line)] flex gap-2 items-end flex-shrink-0">
           <textarea
+            ref={logTextareaRef}
             value={logContent}
             onChange={(e) => setLogContent(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submitLog(); } }}
-            onPaste={handleLogPaste}
             className="flex-1 bg-[var(--bg-2)] border border-[var(--line-2)] rounded-lg px-3 py-2 text-[12px] text-[var(--txt-0)] outline-none resize-none min-h-[40px] focus:border-[var(--accent)] transition-colors placeholder:text-[var(--txt-3)]"
-            placeholder="记录今日进展… (Enter 提交, Shift+Enter 换行)"
+            placeholder="记录今日进展… (Enter 提交, Shift+Enter 换行, Ctrl+V 粘贴图片)"
           />
           <button
             onClick={submitLog}
