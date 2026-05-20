@@ -85,7 +85,7 @@ export function Sidebar({
         onClick={() => toggleOpen(id)}
       >
         <div className="flex items-center gap-1.5">
-          <span className="text-[10px] text-[var(--txt-3)]">{open[id] ? "▼" : "▶"}</span>
+          <span className={`block w-0 h-0 border-[5px] border-transparent ${open[id] ? "border-t-[var(--txt-3)] translate-y-[2px]" : "border-l-[var(--txt-3)] translate-x-[1px]"}`} />
           <span className="text-[13px] font-semibold text-[var(--txt-0)]">{label}</span>
           {count > 0 && (
             <span className="text-[10px] font-mono bg-[var(--accent-dim)] text-[var(--accent)] px-1.5 rounded-full">{count}</span>
