@@ -196,7 +196,7 @@ function AlertBar({ items }: { items: Item[] }) {
 }
 
 
-export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGroups: propGroups, tags = [], milestones = [], selectedMilestone = "" }: { items: Item[]; stageFilter?: string; stageGroupMap?: Record<string, string>; stageGroups?: { code: string; label: string }[]; tags?: { id: string; name: string; color: string }[]; milestones?: { id: string; name: string }[]; selectedMilestone?: string }) {
+export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGroups: propGroups, tags = [], milestones = [], selectedMilestone = "" }: { items: Item[]; stageFilter?: string; stageGroupMap?: Record<string, string>; stageGroups?: { code: string; label: string }[]; tags?: { id: string; name: string; color: string }[]; milestones?: { id: string; name: string; archived?: boolean }[]; selectedMilestone?: string }) {
   const STAGE_GROUPS = propGroups || DEFAULT_STAGE_GROUPS;
   const STAGE_GROUP_MAP = propMap || DEFAULT_STAGE_GROUP_MAP;
   const router = useRouter();
@@ -344,31 +344,35 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
     router.refresh();
   }
 
-  // Stage filter: only show versions that have children in the selected stage
+  // Stage filter: match active stage (first non-completed child)
+  function getActiveStageGroup(item: Item): string {
+    const children = item.children || [];
+    const active = children.find((c: Item) =>
+      c.status?.code && c.status.code !== 'DELIVERED' && c.status.code !== 'ABORTED' && c.status.code !== 'REJECTED'
+    );
+    if (active?.stageType) return active.stageType;
+    if (active?.status?.code) return STAGE_GROUP_MAP[active.status.code] || '';
+    return '';
+  }
+
   const filteredItems = stageFilter
-    ? items.filter((item: Item) => {
-        // Check if item itself belongs to this stage
-        const itemStageGroup = item.status?.code ? STAGE_GROUP_MAP[item.status.code] : item.stageType;
-        if (itemStageGroup === stageFilter) return true;
-        // Check if any child belongs to this stage
-        return (item.children || []).some((c: Item) => {
-          if (c.stageType === stageFilter) return true;
-          if (c.status?.code && STAGE_GROUP_MAP[c.status.code] === stageFilter) return true;
-          return false;
-        });
-      })
+    ? items.filter((item: Item) => getActiveStageGroup(item) === stageFilter)
     : items;
+
+  // Milestone filter
+  const milestoneFiltered = selectedMilestone
+    ? filteredItems.filter((item: Item) => item.milestoneId === selectedMilestone)
+    : filteredItems;
 
   // Search filter
   const searchedItems = searchQuery.trim()
-    ? filteredItems.filter((item: Item) => {
+    ? milestoneFiltered.filter((item: Item) => {
         const q = searchQuery.toLowerCase();
         return (item.versionNo || "").toLowerCase().includes(q)
           || (item.title || "").toLowerCase().includes(q)
           || (item.owner?.name || "").toLowerCase().includes(q);
       })
-    : filteredItems;
-
+    : milestoneFiltered;
   const boardTitle = stageFilter ? (STAGE_GROUPS.find(g => g.code === stageFilter)?.label || "看板") : "全部版本";
 
   function openDrawer(item: Item, stageIdx?: number) {
@@ -393,7 +397,7 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
         </span>
         {milestones.length > 0 && (
           <div className="flex items-center gap-1 overflow-x-auto max-w-[280px] flex-shrink-0" style={{ scrollbarWidth: 'none' }}>
-            {milestones.map((m: any) => {
+            {milestones.filter((m: any) => !m.archived).map((m: any) => {
               const isActive = selectedMilestone === m.id;
               const href = isActive
                 ? (stageFilter ? `/?stage=${stageFilter}` : '/')

@@ -11,6 +11,7 @@ const TABS = [
   { key: "natures", label: "类型", fields: ["label", "color"] },
   { key: "statuses", label: "节点状态", fields: ["label", "color"] },
   { key: "tags", label: "帽子", fields: ["name", "color"] },
+  { key: "milestones", label: "里程碑", fields: ["name"] },
 ];
 
 export default function SettingsPage() {
@@ -339,6 +340,18 @@ export default function SettingsPage() {
                         <button onClick={() => handleMove(item.id, "down")} className="text-[10px] text-[var(--txt-3)] hover:text-[var(--txt-0)]">↓</button>
                         <button onClick={() => { setEditingId(item.id); setEditData({}); }} className="text-[10px] text-[var(--txt-3)] hover:text-[var(--accent)]">✎</button>
                         {activeTab === "users" && <button onClick={() => { setPwdUserId(item.id); setPwdValue(""); setPwdMsg(""); }} className="text-[10px] text-[var(--txt-3)] hover:text-[var(--active)]">设密码</button>}
+                        {activeTab === "milestones" && (
+                          <button
+                            onClick={async () => {
+                              await fetch(`/api/settings/milestones/${item.id}`, {
+                                method: "PATCH", headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ archived: !item.archived }),
+                              });
+                              loadItems();
+                            }}
+                            className={`text-[10px] ${item.archived ? "text-green-600 hover:text-green-700" : "text-amber-500 hover:text-amber-600"}`}
+                          >{item.archived ? "恢复" : "归档"}</button>
+                        )}
                         <button onClick={() => handleDelete(item.id)} className="text-[10px] text-[var(--txt-3)] hover:text-[var(--late)]">✕</button>
                       </div>
                     )}
