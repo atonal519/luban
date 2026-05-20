@@ -70,7 +70,7 @@ export function StagePopover({
       </div>
       {open && stageChildren.length > 0 && (
         <div className="absolute top-full left-0 mt-1 z-50 bg-[var(--bg-1)] border border-[var(--line-2)] rounded-lg shadow-xl p-2 min-w-[220px]" onClick={(e) => e.stopPropagation()}>
-          <div className="text-[10px] text-[var(--txt-3)] font-mono uppercase tracking-wider px-1 mb-1.5">节点状态</div>
+          <div className="text-[10px] text-[var(--txt-3)] uppercase tracking-wider px-1 mb-1.5">节点状态</div>
           <div className="flex flex-col gap-1">
             {stageChildren.map((node) => {
               const sc = node.status?.code || "";

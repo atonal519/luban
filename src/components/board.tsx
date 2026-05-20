@@ -506,7 +506,7 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
                             onClick={(e) => toggleExpand(item.id, e)}
                             className="text-[10px] text-[var(--txt-3)] hover:text-[var(--accent)] transition-colors flex-shrink-0 w-3"
                           >
-                            {isExpanded ? "▼" : "▶"}
+                            <span className={`block w-0 h-0 border-[5px] border-transparent ${isExpanded ? "border-t-[var(--txt-3)] translate-y-[2px]" : "border-l-[var(--txt-3)] translate-x-[1px]"}`} />
                           </button>
                         ) : (
                           <span className="w-3 flex-shrink-0" />
@@ -680,7 +680,7 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
                       >
                         <button onClick={() => toggleTag(tag.id)} className="flex items-center gap-2 flex-1 text-left hover:opacity-80 transition-opacity">
                           <span className="text-[11px]" style={{ color: tag.color }}>
-                            {collapsedTags.has(tag.id) ? "▶" : "▼"}
+                            <span className={`block w-0 h-0 border-[5px] border-transparent ${collapsedTags.has(tag.id) ? "border-l-[var(--txt-2)] translate-x-[1px]" : "border-t-[var(--txt-2)] translate-y-[2px]"}`} />
                           </span>
                           <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: tag.color }} />
                           <span className="text-[12px] font-semibold" style={{ color: tag.color }}>{tag.name}</span>
