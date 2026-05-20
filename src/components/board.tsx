@@ -196,7 +196,7 @@ function AlertBar({ items }: { items: Item[] }) {
 }
 
 
-export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGroups: propGroups, tags = [] }: { items: Item[]; stageFilter?: string; stageGroupMap?: Record<string, string>; stageGroups?: { code: string; label: string }[]; tags?: { id: string; name: string; color: string }[] }) {
+export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGroups: propGroups, tags = [], milestones = [], selectedMilestone = "" }: { items: Item[]; stageFilter?: string; stageGroupMap?: Record<string, string>; stageGroups?: { code: string; label: string }[]; tags?: { id: string; name: string; color: string }[]; milestones?: { id: string; name: string; archived?: boolean }[]; selectedMilestone?: string }) {
   const STAGE_GROUPS = propGroups || DEFAULT_STAGE_GROUPS;
   const STAGE_GROUP_MAP = propMap || DEFAULT_STAGE_GROUP_MAP;
   const router = useRouter();
@@ -344,31 +344,35 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
     router.refresh();
   }
 
-  // Stage filter: only show versions that have children in the selected stage
+  // Stage filter: match active stage (first non-completed child)
+  function getActiveStageGroup(item: Item): string {
+    const children = item.children || [];
+    const active = children.find((c: Item) =>
+      c.status?.code && c.status.code !== 'DELIVERED' && c.status.code !== 'ABORTED' && c.status.code !== 'REJECTED'
+    );
+    if (active?.stageType) return active.stageType;
+    if (active?.status?.code) return STAGE_GROUP_MAP[active.status.code] || '';
+    return '';
+  }
+
   const filteredItems = stageFilter
-    ? items.filter((item: Item) => {
-        // Check if item itself belongs to this stage
-        const itemStageGroup = item.status?.code ? STAGE_GROUP_MAP[item.status.code] : item.stageType;
-        if (itemStageGroup === stageFilter) return true;
-        // Check if any child belongs to this stage
-        return (item.children || []).some((c: Item) => {
-          if (c.stageType === stageFilter) return true;
-          if (c.status?.code && STAGE_GROUP_MAP[c.status.code] === stageFilter) return true;
-          return false;
-        });
-      })
+    ? items.filter((item: Item) => getActiveStageGroup(item) === stageFilter)
     : items;
+
+  // Milestone filter
+  const milestoneFiltered = selectedMilestone
+    ? filteredItems.filter((item: Item) => item.milestoneId === selectedMilestone)
+    : filteredItems;
 
   // Search filter
   const searchedItems = searchQuery.trim()
-    ? filteredItems.filter((item: Item) => {
+    ? milestoneFiltered.filter((item: Item) => {
         const q = searchQuery.toLowerCase();
         return (item.versionNo || "").toLowerCase().includes(q)
           || (item.title || "").toLowerCase().includes(q)
           || (item.owner?.name || "").toLowerCase().includes(q);
       })
-    : filteredItems;
-
+    : milestoneFiltered;
   const boardTitle = stageFilter ? (STAGE_GROUPS.find(g => g.code === stageFilter)?.label || "看板") : "全部版本";
 
   function openDrawer(item: Item, stageIdx?: number) {
@@ -384,17 +388,36 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
 
   return (
     <>
-      {/* Topbar: 左=标题  中=快速新建  右=看板筛选+搜索 */}
-      <div className="h-[52px] min-h-[52px] flex items-center px-5 border-b border-[var(--line)] bg-[var(--bg-1)] gap-3">
-        {/* Left: title */}
+      {/* Topbar */}
+      <div className="h-[52px] min-h-[52px] flex items-center px-5 border-b border-[var(--line)] bg-[var(--bg-1)] gap-2">
+        {/* Left: title + count + milestone pills */}
         <span className="text-[15px] font-semibold flex-shrink-0">{boardTitle}</span>
         <span className="font-mono text-[11px] text-[var(--txt-2)] bg-[var(--bg-3)] px-2 py-0.5 rounded flex-shrink-0">
           {searchedItems.length} 个版本
         </span>
+        {milestones.length > 0 && (
+          <div className="flex items-center gap-1 overflow-x-auto max-w-[280px] flex-shrink-0" style={{ scrollbarWidth: 'none' }}>
+            {milestones.filter((m: any) => !m.archived).map((m: any) => {
+              const isActive = selectedMilestone === m.id;
+              const href = isActive
+                ? (stageFilter ? `/?stage=${stageFilter}` : '/')
+                : (stageFilter ? `/?stage=${stageFilter}&milestone=${m.id}` : `/?milestone=${m.id}`);
+              return (
+                <a key={m.id} href={href}
+                  className={`px-2 py-0.5 rounded-full text-[11px] whitespace-nowrap transition-colors ${
+                    isActive
+                      ? 'bg-[var(--accent)] text-white font-medium'
+                      : 'border border-[var(--line-2)] text-[var(--txt-2)] hover:border-[var(--accent)] hover:text-[var(--txt-0)]'
+                  }`}
+                >{m.name}</a>
+              );
+            })}
+          </div>
+        )}
 
         {/* Center: quick create */}
         <div className="flex-1 flex justify-center">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] w-[420px] focus-within:border-[var(--accent)] transition-colors">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] w-[380px] focus-within:border-[var(--accent)] transition-colors">
             <span className="text-[var(--accent)] text-[14px] font-bold flex-shrink-0">+</span>
             <input
               type="text"
@@ -418,23 +441,25 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
           ].map(tab => (
             <a
               key={tab.code}
-              href={tab.code ? `/?stage=${tab.code}` : "/"}
+              href={tab.code
+                ? (selectedMilestone ? `/?stage=${tab.code}&milestone=${selectedMilestone}` : `/?stage=${tab.code}`)
+                : (selectedMilestone ? `/?milestone=${selectedMilestone}` : '/')
+              }
               className={`px-2.5 py-1.5 rounded-md text-[12px] transition-colors ${
                 stageFilter === tab.code
-                  ? "bg-[var(--accent)] text-white font-medium"
-                  : "border border-[var(--line-2)] bg-[var(--bg-1)] text-[var(--txt-1)] hover:border-[var(--accent)] hover:text-[var(--txt-0)]"
+                  ? 'bg-[var(--accent)] text-white font-medium'
+                  : 'border border-[var(--line-2)] bg-[var(--bg-1)] text-[var(--txt-1)] hover:border-[var(--accent)] hover:text-[var(--txt-0)]'
               }`}
             >
               {tab.label}
             </a>
           ))}
-          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-[var(--line-2)] bg-[var(--bg-1)] text-[12px] w-[220px] ml-1">
-            <span className="text-[var(--txt-3)]">🔍</span>
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-[var(--line-2)] bg-[var(--bg-1)] text-[12px] w-[200px] ml-1">
+            <span className="text-[var(--txt-3)] text-[11px]">⌕</span>
             <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="搜索版本 / 项目名 / 责任人" className="bg-transparent outline-none text-[12px] text-[var(--txt-0)] w-full placeholder:text-[var(--txt-3)]" />
           </div>
         </div>
       </div>
-
       <AlertBar items={searchedItems} />
 
       {/* Table */}

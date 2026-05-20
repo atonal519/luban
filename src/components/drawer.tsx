@@ -886,7 +886,7 @@ function LogItem({ log, itemId, onChanged }: { log: any; itemId: string; onChang
           </div>
         ) : (
           <div className="text-[12px] text-[var(--txt-1)] leading-relaxed whitespace-pre-wrap">
-                    {log.content.split(/(\[图片\]\([^)]+\))/g).map((part, i) => {
+                    {log.content.split(/(\[图片\]\([^)]+\))/g).map((part: string, i: number) => {
                       const m = part.match(/^\[图片\]\(([^)]+)\)$/);
                       if (m) return <img key={i} src={m[1]} alt="附图" className="max-w-[200px] max-h-[150px] rounded border border-[var(--line-2)] cursor-pointer mt-1 block" onClick={() => window.open(m[1], '_blank')} />;
                       return part;
@@ -1005,7 +1005,7 @@ export function Drawer({ item, initialStage, onClose, currentUser }: { item: Ite
             <div className="grid grid-cols-2 gap-x-4 gap-y-3">
               <div>
                 <div className="text-[11px] text-[var(--txt-2)] mb-1">创建日期</div>
-                <div className="text-[12px] font-mono text-[var(--txt-1)]">{item.createdAt?.slice(0, 10) || "—"}</div>
+                <div className="text-[12px] font-mono text-[var(--txt-1)] bg-[var(--bg-2)] border border-[var(--line-2)] rounded-md px-2 h-[30px] leading-[30px] overflow-hidden">{item.createdAt?.slice(0, 10) || "—"}</div>
               </div>
               <div>
                 <div className="text-[11px] text-[var(--txt-2)] mb-1">预计交付</div>
@@ -1014,12 +1014,12 @@ export function Drawer({ item, initialStage, onClose, currentUser }: { item: Ite
                   defaultValue={item.plannedEnd?.slice(0, 10) || ""}
                   onBlur={(e) => save("plannedEnd", e.target.value || null)}
                   onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
-                  className="text-[12px] font-mono bg-[var(--bg-2)] border border-[var(--line-2)] rounded-md px-2 py-0.5 outline-none w-full focus:border-[var(--accent)] transition-colors leading-[22px]"
+                  className="text-[12px] font-mono bg-[var(--bg-2)] border border-[var(--line-2)] rounded-md px-2 outline-none w-full focus:border-[var(--accent)] transition-colors h-[30px] leading-[30px]"
                 />
               </div>
               <div>
                 <div className="text-[11px] text-[var(--txt-2)] mb-1">计划起止</div>
-                <div className="text-[12px] font-mono text-[var(--txt-1)]">
+                <div className="text-[12px] font-mono text-[var(--txt-1)] bg-[var(--bg-2)] border border-[var(--line-2)] rounded-md px-2 h-[30px] leading-[30px] overflow-hidden whitespace-nowrap">
                   {item.plannedStart ? item.plannedStart.slice(0, 10) : "—"}
                   {" ~ "}
                   {item.plannedEnd ? item.plannedEnd.slice(0, 10) : "—"}
@@ -1027,7 +1027,7 @@ export function Drawer({ item, initialStage, onClose, currentUser }: { item: Ite
               </div>
               <div>
                 <div className="text-[11px] text-[var(--txt-2)] mb-1">回溯历史</div>
-                <div className="text-[12px] font-mono leading-[22px]">
+                <div className="text-[12px] font-mono leading-[30px] h-[30px] flex items-center">
                   {(item.rejections?.length || 0) > 0
                     ? <span className="text-[var(--late)] font-medium">打回 {item.rejections.length} 次</span>
                     : <span className="text-[var(--txt-3)]">0 次</span>
@@ -1049,6 +1049,20 @@ export function Drawer({ item, initialStage, onClose, currentUser }: { item: Ite
                 allModules={options?.modules || []}
                 onSave={saveModules}
               />
+              <div>
+                <div className="text-[11px] text-[var(--txt-2)] mb-1">里程碑</div>
+                <SearchSelect
+                  value={item.milestoneId || ""}
+                  displayText={item.milestone?.name || "—"}
+                  options={[
+                    { value: "", label: "无" },
+                    ...(options?.milestones?.filter((m: any) => !m.archived || m.id === item.milestoneId)
+                      .map((m: any) => ({ value: m.id, label: m.archived ? m.name + " (已归档)" : m.name })) || [])
+                  ]}
+                  placeholder="选择里程碑…"
+                  onSelect={(v) => save("milestoneId", v || null)}
+                />
+              </div>
             </div>
           </div>
 

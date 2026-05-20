@@ -10,6 +10,7 @@ const MODELS: Record<string, any> = {
   stageTemplates: prisma.stageTemplate,
   users: prisma.user,
   tags: prisma.tag,
+  milestones: prisma.milestone,
 };
 
 const HAS_ORDER = new Set(['modules', 'natures', 'statuses', 'priorities', 'stageGroups', 'stageTemplates']);
@@ -39,6 +40,10 @@ export async function POST(
   if (!model) return NextResponse.json({ error: 'Invalid type' }, { status: 400 });
 
   const body = await req.json();
+  // 新建用户时补默认密码，统一为 luban2026
+  if (type === 'users' && !body.password) {
+    body.password = 'luban2026';
+  }
   const item = await model.create({ data: body });
   return NextResponse.json(item, { status: 201 });
 }

@@ -14,7 +14,7 @@ export async function PATCH(
     'ownerId', 'description', 'stageType', 'progress',
     'plannedStart', 'plannedEnd', 'actualStart', 'actualEnd',
     'mokraMotivation', 'mokraObjects', 'mokraKeyResults', 'mokraActions',
-    'applicationScope', 'tagId', 'focus',
+    'applicationScope', 'tagId', 'focus', 'milestoneId',
   ];
 
   const data: Record<string, unknown> = {};

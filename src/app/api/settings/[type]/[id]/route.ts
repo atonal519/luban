@@ -10,6 +10,7 @@ const MODELS: Record<string, any> = {
   stageTemplates: prisma.stageTemplate,
   users: prisma.user,
   tags: prisma.tag,
+  milestones: prisma.milestone,
 };
 
 export async function PATCH(

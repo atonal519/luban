@@ -18,8 +18,6 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedPriorities, setSelectedPriorities] = useState<string[]>([]);
   const [selectedFocus, setSelectedFocus] = useState<string[]>([]);
-  const [dateFrom, setDateFrom] = useState<string>("");
-  const [dateTo, setDateTo] = useState<string>("");
 
   useEffect(() => {
     if (isLogin) return;
@@ -35,8 +33,6 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
       setSelectedTags(prefs.tags || []);
       setSelectedPriorities(prefs.priorities || []);
       setSelectedFocus(prefs.focus || []);
-      setDateFrom(prefs.dateFrom?.[0] || "");
-      setDateTo(prefs.dateTo?.[0] || "");
     });
   }, [isLogin]);
 
@@ -47,8 +43,6 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
       tags: selectedTags,
       priorities: selectedPriorities,
       focus: selectedFocus ? [selectedFocus] : [],
-      dateFrom: dateFrom ? [dateFrom] : [],
-      dateTo: dateTo ? [dateTo] : [],
       ...overrides,
     };
     for (const [k, v] of Object.entries(all)) {
@@ -71,31 +65,23 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
   const handleModuleChange = useCallback((ids: string[]) => {
     setSelectedModules(ids);
     saveAndNavigate("modules", ids);
-  }, [selectedModules, selectedTags, selectedPriorities, selectedFocus, dateFrom, dateTo, pathname, router, searchParams]);
+  }, [selectedModules, selectedTags, selectedPriorities, selectedFocus, pathname, router, searchParams]);
 
   const handleTagChange = useCallback((ids: string[]) => {
     setSelectedTags(ids);
     saveAndNavigate("tags", ids);
-  }, [selectedModules, selectedTags, selectedPriorities, selectedFocus, dateFrom, dateTo, pathname, router, searchParams]);
+  }, [selectedModules, selectedTags, selectedPriorities, selectedFocus, pathname, router, searchParams]);
 
   const handlePriorityChange = useCallback((ids: string[]) => {
     setSelectedPriorities(ids);
     saveAndNavigate("priorities", ids);
-  }, [selectedModules, selectedTags, selectedPriorities, selectedFocus, dateFrom, dateTo, pathname, router, searchParams]);
+  }, [selectedModules, selectedTags, selectedPriorities, selectedFocus, pathname, router, searchParams]);
 
   const handleFocusChange = useCallback((val: string[]) => {
     setSelectedFocus(val);
     saveAndNavigate("focus", val);
-  }, [selectedModules, selectedTags, selectedPriorities, selectedFocus, dateFrom, dateTo, pathname, router, searchParams]);
+  }, [selectedModules, selectedTags, selectedPriorities, selectedFocus, pathname, router, searchParams]);
 
-  const handleDateChange = useCallback((from: string, to: string) => {
-    setDateFrom(from);
-    setDateTo(to);
-    const params = buildParams({ dateFrom: from ? [from] : [], dateTo: to ? [to] : [] });
-    fetch("/api/filter-prefs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ filterKey: "dateFrom", values: from ? [from] : [] }) });
-    fetch("/api/filter-prefs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ filterKey: "dateTo", values: to ? [to] : [] }) });
-    router.replace(`${pathname}?${params.toString()}`);
-  }, [selectedModules, selectedTags, selectedPriorities, selectedFocus, dateFrom, dateTo, pathname, router, searchParams]);
 
   if (isLogin) return <>{children}</>;
 
@@ -109,13 +95,10 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
         selectedTags={selectedTags}
         selectedPriorities={selectedPriorities}
         selectedFocus={selectedFocus}
-        dateFrom={dateFrom}
-        dateTo={dateTo}
         onModuleChange={handleModuleChange}
         onTagChange={handleTagChange}
         onPriorityChange={handlePriorityChange}
         onFocusChange={handleFocusChange}
-        onDateChange={handleDateChange}
       />
       <main className="flex-1 flex flex-col overflow-hidden">
         {children}

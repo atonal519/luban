@@ -12,7 +12,8 @@ export async function POST(req: NextRequest) {
   }
 
   const bytes = await file.arrayBuffer();
-  const buffer = Buffer.from(bytes);
+  const inputBuffer = Buffer.from(new Uint8Array(bytes));
+  const isImage = file.type.startsWith('image/');
 
   // Generate unique filename
   const ext = isImage ? 'webp' : (file.name.split('.').pop() || 'bin');
