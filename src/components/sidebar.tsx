@@ -65,7 +65,7 @@ export function Sidebar({
   }
 
   function toggle(arr: string[], id: string) {
-    return arr.includes(id) ? arr.filter(x => x !== id) : [...arr, id];
+    return arr.includes(id) ? [] : [id];
   }
 
   // Count total active filters
