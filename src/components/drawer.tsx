@@ -717,7 +717,7 @@ function RejectionItem({ rejection: r, index, itemId, options, onChanged }: { re
           </div>
         ) : (
           <>
-            <div className="text-[12px] text-[var(--txt-1)] leading-relaxed">{r.reason}</div>
+            <div className="text-[12px] text-[var(--txt-1)] leading-relaxed whitespace-pre-wrap">{r.reason}</div>
             {r.docLink && (
               <a href={r.docLink} target="_blank" rel="noopener noreferrer" className="text-[11px] text-[var(--accent)] hover:underline mt-1 block truncate">
                 📎 {r.docLink}
