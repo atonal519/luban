@@ -898,6 +898,7 @@ export function Drawer({ item, initialStage, onClose, currentUser }: { item: Ite
   const [options, setOptions] = useState<any>(null);
   const [logContent, setLogContent] = useState("");
   const [logSubmitting, setLogSubmitting] = useState(false);
+  const [logImages, setLogImages] = useState<string[]>([]);
 
   useEffect(() => {
     fetch("/api/options").then(r => r.json()).then(setOptions);
@@ -921,13 +922,31 @@ export function Drawer({ item, initialStage, onClose, currentUser }: { item: Ite
     router.refresh();
   }
 
+  function handleLogPaste(e: React.ClipboardEvent) {
+    const items = Array.from(e.clipboardData?.items || []);
+    const files = Array.from(e.clipboardData?.files || []);
+    // Handle both image/xxx items and Files (Snipaste style)
+    const imageFiles: File[] = [];
+    items.forEach(item => { if (item.type.startsWith('image/')) { const f = item.getAsFile(); if (f) imageFiles.push(f); } });
+    files.forEach(f => { if (f.type.startsWith('image/')) imageFiles.push(f); });
+    if (imageFiles.length === 0) return;
+    e.preventDefault();
+    imageFiles.forEach(file => {
+      const fd = new FormData();
+      fd.append('file', file);
+      fetch('/api/upload', { method: 'POST', body: fd })
+        .then(res => res.json())
+        .then(data => { if (data.url) setLogImages(prev => [...prev, data.url]); });
+    });
+  }
+
   async function submitLog() {
     if (!logContent.trim() || logSubmitting) return;
     setLogSubmitting(true);
     await fetch(`/api/versions/${item.id}/logs`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content: logContent.trim(), authorId: currentUser?.id || item.ownerId || "" }),
+      body: JSON.stringify({ content: logContent.trim() + (logImages.length > 0 ? " " + logImages.map(u => "[图片](" + u + ")").join(" ") : ""), authorId: currentUser?.id || item.ownerId || "" }),
     });
     setLogContent("");
     setLogSubmitting(false);
@@ -1079,6 +1098,7 @@ export function Drawer({ item, initialStage, onClose, currentUser }: { item: Ite
             value={logContent}
             onChange={(e) => setLogContent(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submitLog(); } }}
+            onPaste={handleLogPaste}
             className="flex-1 bg-[var(--bg-2)] border border-[var(--line-2)] rounded-lg px-3 py-2 text-[12px] text-[var(--txt-0)] outline-none resize-none min-h-[40px] focus:border-[var(--accent)] transition-colors placeholder:text-[var(--txt-3)]"
             placeholder="记录今日进展… (Enter 提交, Shift+Enter 换行)"
           />
