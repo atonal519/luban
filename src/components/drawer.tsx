@@ -886,7 +886,7 @@ function LogItem({ log, itemId, onChanged }: { log: any; itemId: string; onChang
           </div>
         ) : (
           <div className="text-[12px] text-[var(--txt-1)] leading-relaxed whitespace-pre-wrap">
-                    {log.content.split(/(\[图片\]\([^)]+\))/g).map((part, i) => {
+                    {log.content.split(/(\[图片\]\([^)]+\))/g).map((part: string, i: number) => {
                       const m = part.match(/^\[图片\]\(([^)]+)\)$/);
                       if (m) return <img key={i} src={m[1]} alt="附图" className="max-w-[200px] max-h-[150px] rounded border border-[var(--line-2)] cursor-pointer mt-1 block" onClick={() => window.open(m[1], '_blank')} />;
                       return part;

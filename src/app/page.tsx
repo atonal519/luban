@@ -18,14 +18,14 @@ function buildChildrenInclude(depth: number): any {
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ stage?: string; modules?: string; tags?: string; priorities?: string; focus?: string; dateFrom?: string; dateTo?: string }>;
+  searchParams: Promise<{ stage?: string; modules?: string; tags?: string; priorities?: string; focus?: string; milestone?: string }>;
 }) {
-  const { stage, modules: modulesParam, tags: tagsParam, priorities: prioritiesParam, focus, dateFrom, dateTo } = await searchParams;
+  const { stage, modules: modulesParam, tags: tagsParam, priorities: prioritiesParam, focus, milestone } = await searchParams;
   const selectedModuleIds = modulesParam ? modulesParam.split(",").filter(Boolean) : [];
   const selectedTagIds = tagsParam ? tagsParam.split(",").filter(Boolean) : [];
   const selectedPriorityIds = prioritiesParam ? prioritiesParam.split(",").filter(Boolean) : [];
 
-  const [items, statuses, stageGroups, tags] = await Promise.all([
+  const [items, statuses, stageGroups, tags, milestones] = await Promise.all([
     prisma.item.findMany({
       where: {
         parentId: null,
@@ -33,12 +33,7 @@ export default async function Home({
         ...(selectedTagIds.length > 0 ? { tagId: { in: selectedTagIds } } : {}),
         ...(selectedPriorityIds.length > 0 ? { priorityId: { in: selectedPriorityIds } } : {}),
         ...(focus ? { focus: { in: focus.split(",").filter(Boolean) } } : {}),
-        ...(dateFrom || dateTo ? {
-          OR: [
-            { plannedStart: { gte: dateFrom ? new Date(dateFrom) : undefined, lte: dateTo ? new Date(dateTo) : undefined } },
-            { plannedEnd: { gte: dateFrom ? new Date(dateFrom) : undefined, lte: dateTo ? new Date(dateTo) : undefined } },
-          ]
-        } : {}),
+        ...(milestone ? { milestoneId: milestone } : {}),
       },
       include: {
         nature: true,
@@ -46,12 +41,13 @@ export default async function Home({
         owner: true,
         priority: true,
         tag: true,
+        milestone: true,
         modules: { include: { module: true } },
         approvals: {
           where: { scope: "STAGE_GATE" },
           include: { events: { include: { actor: true }, orderBy: { createdAt: "asc" } } },
         },
-        children: buildChildrenInclude(4), // up to depth 5
+        children: buildChildrenInclude(4),
         dailyLogs: {
           include: { author: true },
           orderBy: { logDate: "desc" },
@@ -71,9 +67,9 @@ export default async function Home({
     prisma.statusDef.findMany({ orderBy: { order: "asc" } }),
     prisma.stageGroup.findMany({ orderBy: { order: "asc" } }),
     prisma.tag.findMany({ orderBy: { name: "asc" } }),
+    prisma.milestone.findMany({ orderBy: { createdAt: "asc" } }),
   ]);
 
-  // Build dynamic stage group map from DB
   const stageGroupMap: Record<string, string> = {};
   for (const s of statuses) {
     stageGroupMap[s.code] = s.stageGroup;
@@ -88,6 +84,8 @@ export default async function Home({
       stageGroupMap={stageGroupMap}
       stageGroups={stageGroupsList}
       tags={JSON.parse(JSON.stringify(tags))}
+      milestones={JSON.parse(JSON.stringify(milestones))}
+      selectedMilestone={milestone || ""}
     />
   );
 }

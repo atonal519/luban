@@ -31,6 +31,15 @@ model User {
   filterPrefs     UserFilterPref[]
 }
 
+// ── 里程碑 ───────────────────────────────────────────
+model Milestone {
+  id        String   @id @default(cuid())
+  name      String                    // 自由命名，如 "V615"、"Q2冲刺"
+  createdAt DateTime @default(now())
+
+  items     Item[]
+}
+
 // ── Tag 帽子 ─────────────────────────────────────────
 model Tag {
   id        String    @id @default(cuid())
@@ -170,6 +179,10 @@ model Item {
   // 帽子 Tag（顶层版本归类）
   tagId            String?
   tag              Tag?      @relation(fields: [tagId], references: [id])
+
+  // 里程碑
+  milestoneId      String?
+  milestone        Milestone? @relation(fields: [milestoneId], references: [id])
 
   // 审核
   requiresApproval Boolean   @default(false)

@@ -12,18 +12,15 @@ type FilterBlock = {
 
 export function Sidebar({
   modules, tags, priorities,
-  selectedModules, selectedTags, selectedPriorities, selectedFocus, dateFrom, dateTo,
-  onModuleChange, onTagChange, onPriorityChange, onFocusChange, onDateChange,
+  selectedModules, selectedTags, selectedPriorities, selectedFocus,
+  onModuleChange, onTagChange, onPriorityChange, onFocusChange,
 }: {
   modules: any[]; tags: any[]; priorities: any[];
   selectedModules: string[]; selectedTags: string[]; selectedPriorities: string[];
-  selectedFocus: string[]; dateFrom: string; dateTo: string;
-  onModuleChange: (ids: string[]) => void;
+  selectedFocus: string[];onModuleChange: (ids: string[]) => void;
   onTagChange: (ids: string[]) => void;
   onPriorityChange: (ids: string[]) => void;
-  onFocusChange: (vals: string[]) => void;
-  onDateChange: (from: string, to: string) => void;
-}) {
+  onFocusChange: (vals: string[]) => void;}) {
   const router = useRouter();
   const pathname = usePathname();
   const [user, setUser] = useState<any>(null);
@@ -70,10 +67,10 @@ export function Sidebar({
 
   // Count total active filters
   const activeCount = selectedModules.length + selectedTags.length + selectedPriorities.length
-    + selectedFocus.length + (dateFrom || dateTo ? 1 : 0);
+    + selectedFocus.length;
 
   function clearAll() {
-    onModuleChange([]); onTagChange([]); onPriorityChange([]); onFocusChange([]); onDateChange("", "");
+    onModuleChange([]); onTagChange([]); onPriorityChange([]); onFocusChange([]);
   }
 
   const FOCUS_OPTIONS = [
@@ -102,7 +99,7 @@ export function Sidebar({
               else if (id === "tags") onTagChange([]);
               else if (id === "priorities") onPriorityChange([]);
               else if (id === "focus") onFocusChange([]);
-              else if (id === "date") onDateChange("", "");
+
             }}
             className="text-[10px] text-[var(--txt-3)] hover:text-[var(--late)]"
           >
@@ -220,29 +217,6 @@ export function Sidebar({
           )}
         </div>
 
-        {/* 时间范围 */}
-        <div className="mb-1">
-          <FilterSection id="date" label="时间范围" count={dateFrom || dateTo ? 1 : 0} />
-          {open.date && (
-            <div className="mt-1 px-2 flex flex-col gap-1.5">
-              <div>
-                <div className="text-[10px] text-[var(--txt-3)] mb-0.5">开始 ≥</div>
-                <input type="date" value={dateFrom} onChange={(e) => onDateChange(e.target.value, dateTo)}
-                  className="w-full px-2 py-1 rounded-md border border-[var(--line-2)] bg-[var(--bg-2)] text-[11px] text-[var(--txt-0)] outline-none focus:border-[var(--accent)]"
-                />
-              </div>
-              <div>
-                <div className="text-[10px] text-[var(--txt-3)] mb-0.5">结束 ≤</div>
-                <input type="date" value={dateTo} onChange={(e) => onDateChange(dateFrom, e.target.value)}
-                  className="w-full px-2 py-1 rounded-md border border-[var(--line-2)] bg-[var(--bg-2)] text-[11px] text-[var(--txt-0)] outline-none focus:border-[var(--accent)]"
-                />
-              </div>
-              {(dateFrom || dateTo) && (
-                <button onClick={() => onDateChange("", "")} className="text-[10px] text-[var(--txt-3)] hover:text-[var(--late)] self-end">清除</button>
-              )}
-            </div>
-          )}
-        </div>
       </div>
 
       {/* Bottom */}
