@@ -517,7 +517,7 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
                           field="versionNo"
                           onSave={saveField}
                           displayNode={
-                            <span className={`font-mono font-semibold ${indentLevel === 0 ? "text-[12px]" : "text-[11px] text-[var(--txt-1)]"}`}>
+                            <span title={item.versionNo || ""} className={`font-mono font-semibold block max-w-[56px] truncate ${indentLevel === 0 ? "text-[12px]" : "text-[11px] text-[var(--txt-1)]"}`}>
                               {item.versionNo || "—"}
                             </span>
                           }

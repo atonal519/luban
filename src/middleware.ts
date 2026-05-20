@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { verifyToken } from '@/lib/jwt';
 
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Allow login page, auth API, static assets
   if (
     pathname.startsWith('/login') ||
     pathname.startsWith('/api/auth') ||
@@ -15,7 +15,12 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  const userId = req.cookies.get('userId')?.value;
+  const token = req.cookies.get('session')?.value;
+  if (!token) {
+    return NextResponse.redirect(new URL('/login', req.url));
+  }
+
+  const userId = await verifyToken(token);
   if (!userId) {
     return NextResponse.redirect(new URL('/login', req.url));
   }
