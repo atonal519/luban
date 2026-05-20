@@ -12,11 +12,6 @@ const STAGE_GROUPS = [
   { code: "DELIVERY", label: "版本交付" },
 ];
 
-const STAGE_GROUP_MAP: Record<string, string> = {
-  DESIGN: "REQUIREMENT",
-  DEVELOPING: "DEVELOPMENT", REJECTED: "DEVELOPMENT",
-  ABORTED: "DELIVERY", DELIVERED: "DELIVERY",
-};
 
 function ApprovalChain({ approval, nodeId, options, onChanged, stageType }: { approval: any; nodeId: string; options: any; onChanged: () => void; stageType?: string }) {
   const [actionForm, setActionForm] = useState<string | null>(null);
@@ -904,12 +899,10 @@ export function Drawer({ item, initialStage, onClose, currentUser }: { item: Ite
   const [options, setOptions] = useState<any>(null);
   const [logContent, setLogContent] = useState("");
   const [logSubmitting, setLogSubmitting] = useState(false);
-  const [logImages, setLogImages] = useState<string[]>([]);
   const logTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     function handleGlobalPaste(e: ClipboardEvent) {
-      if (!logTextareaRef.current) return;
       const files = Array.from(e.clipboardData?.files || []);
       const imageFiles = files.filter(f => f.type.startsWith('image/'));
       if (imageFiles.length === 0) return;
@@ -959,15 +952,13 @@ export function Drawer({ item, initialStage, onClose, currentUser }: { item: Ite
     router.refresh();
   }
 
-  function handleLogPaste() {}
 
   async function submitLog() {
     if (!logContent.trim() || logSubmitting) return;
     setLogSubmitting(true);
     await fetch(`/api/versions/${item.id}/logs`, {
-      method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content: logContent.trim() + (logImages.length > 0 ? " " + logImages.map(u => "[图片](" + u + ")").join(" ") : ""), authorId: currentUser?.id || item.ownerId || "" }),
+      body: JSON.stringify({ content: logContent.trim(), authorId: currentUser?.id || item.ownerId || "" }),
     });
     setLogContent("");
     setLogSubmitting(false);

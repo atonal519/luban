@@ -13,6 +13,28 @@ const MODELS: Record<string, any> = {
   milestones: prisma.milestone,
 };
 
+const ALLOWED_FIELDS: Record<string, string[]> = {
+  modules: ['name', 'color', 'order'],
+  natures: ['code', 'label', 'color', 'order'],
+  statuses: ['code', 'label', 'stageGroup', 'color', 'order'],
+  priorities: ['code', 'label', 'color', 'order'],
+  stageGroups: ['code', 'label', 'order'],
+  stageTemplates: ['name', 'stageGroupId', 'isParallel', 'parallelGroup', 'order'],
+  users: ['name', 'email', 'role'],
+  tags: ['name', 'color'],
+  milestones: ['name', 'archived'],
+};
+
+function filterBody(type: string, body: Record<string, any>): Record<string, any> {
+  const allowed = ALLOWED_FIELDS[type];
+  if (!allowed) return body;
+  const filtered: Record<string, any> = {};
+  for (const key of allowed) {
+    if (key in body) filtered[key] = body[key];
+  }
+  return filtered;
+}
+
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ type: string; id: string }> }
@@ -21,9 +43,14 @@ export async function PATCH(
   const model = MODELS[type];
   if (!model) return NextResponse.json({ error: 'Invalid type' }, { status: 400 });
 
-  const body = await req.json();
-  const item = await model.update({ where: { id }, data: body });
-  return NextResponse.json(item);
+  try {
+    const raw = await req.json();
+    const data = filterBody(type, raw);
+    const item = await model.update({ where: { id }, data });
+    return NextResponse.json(item);
+  } catch {
+    return NextResponse.json({ error: '更新失败' }, { status: 400 });
+  }
 }
 
 export async function DELETE(
@@ -34,6 +61,10 @@ export async function DELETE(
   const model = MODELS[type];
   if (!model) return NextResponse.json({ error: 'Invalid type' }, { status: 400 });
 
-  await model.delete({ where: { id } });
-  return NextResponse.json({ ok: true });
+  try {
+    await model.delete({ where: { id } });
+    return NextResponse.json({ ok: true });
+  } catch {
+    return NextResponse.json({ error: '删除失败' }, { status: 400 });
+  }
 }

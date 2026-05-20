@@ -13,7 +13,29 @@ const MODELS: Record<string, any> = {
   milestones: prisma.milestone,
 };
 
+const ALLOWED_FIELDS: Record<string, string[]> = {
+  modules: ['name', 'color', 'order'],
+  natures: ['code', 'label', 'color', 'order'],
+  statuses: ['code', 'label', 'stageGroup', 'color', 'order'],
+  priorities: ['code', 'label', 'color', 'order'],
+  stageGroups: ['code', 'label', 'order'],
+  stageTemplates: ['name', 'stageGroupId', 'isParallel', 'parallelGroup', 'order'],
+  users: ['name', 'email', 'role'],
+  tags: ['name', 'color'],
+  milestones: ['name', 'archived'],
+};
+
 const HAS_ORDER = new Set(['modules', 'natures', 'statuses', 'priorities', 'stageGroups', 'stageTemplates']);
+
+function filterBody(type: string, body: Record<string, any>): Record<string, any> {
+  const allowed = ALLOWED_FIELDS[type];
+  if (!allowed) return body;
+  const filtered: Record<string, any> = {};
+  for (const key of allowed) {
+    if (key in body) filtered[key] = body[key];
+  }
+  return filtered;
+}
 
 export async function GET(
   req: NextRequest,
@@ -23,12 +45,15 @@ export async function GET(
   const model = MODELS[type];
   if (!model) return NextResponse.json({ error: 'Invalid type' }, { status: 400 });
 
-  const items = await model.findMany({
-    orderBy: HAS_ORDER.has(type) ? { order: 'asc' } : { createdAt: 'desc' },
-    ...(type === 'stageTemplates' ? { include: { stageGroup: true } } : {}),
-  });
-
-  return NextResponse.json(items);
+  try {
+    const items = await model.findMany({
+      orderBy: HAS_ORDER.has(type) ? { order: 'asc' } : { createdAt: 'desc' },
+      ...(type === 'stageTemplates' ? { include: { stageGroup: true } } : {}),
+    });
+    return NextResponse.json(items);
+  } catch {
+    return NextResponse.json({ error: '查询失败' }, { status: 500 });
+  }
 }
 
 export async function POST(
@@ -39,11 +64,17 @@ export async function POST(
   const model = MODELS[type];
   if (!model) return NextResponse.json({ error: 'Invalid type' }, { status: 400 });
 
-  const body = await req.json();
-  // 新建用户时补默认密码，统一为 luban2026
-  if (type === 'users' && !body.password) {
-    body.password = 'luban2026';
+  try {
+    const raw = await req.json();
+    const data = filterBody(type, raw);
+    // 新建用户时补默认密码
+    if (type === 'users') {
+      const bcrypt = await import('bcryptjs');
+      data.password = await bcrypt.hash('luban2026', 10);
+    }
+    const item = await model.create({ data });
+    return NextResponse.json(item, { status: 201 });
+  } catch {
+    return NextResponse.json({ error: '新增失败，请检查必填字段' }, { status: 400 });
   }
-  const item = await model.create({ data: body });
-  return NextResponse.json(item, { status: 201 });
 }

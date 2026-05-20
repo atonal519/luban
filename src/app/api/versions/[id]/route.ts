@@ -6,51 +6,48 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const body = await req.json();
 
-  // Only allow updating specific fields
-  const allowed = [
-    'title', 'versionNo', 'priorityId', 'natureId', 'statusId',
-    'ownerId', 'description', 'stageType', 'progress',
-    'plannedStart', 'plannedEnd', 'actualStart', 'actualEnd',
-    'mokraMotivation', 'mokraObjects', 'mokraKeyResults', 'mokraActions',
-    'applicationScope', 'tagId', 'focus', 'milestoneId',
-  ];
+  try {
+    const body = await req.json();
 
-  const data: Record<string, unknown> = {};
-  for (const key of allowed) {
-    if (key in body) {
-      // Handle date fields
-      if (['plannedStart', 'plannedEnd', 'actualStart', 'actualEnd'].includes(key)) {
-        data[key] = body[key] ? new Date(body[key]) : null;
-      } else {
-        data[key] = body[key];
+    const allowed = [
+      'title', 'versionNo', 'priorityId', 'natureId', 'statusId',
+      'ownerId', 'description', 'stageType', 'progress',
+      'plannedStart', 'plannedEnd', 'actualStart', 'actualEnd',
+      'mokraMotivation', 'mokraObjects', 'mokraKeyResults', 'mokraActions',
+      'applicationScope', 'tagId', 'focus', 'milestoneId',
+    ];
+
+    const data: Record<string, unknown> = {};
+    for (const key of allowed) {
+      if (key in body) {
+        if (['plannedStart', 'plannedEnd', 'actualStart', 'actualEnd'].includes(key)) {
+          data[key] = body[key] ? new Date(body[key]) : null;
+        } else {
+          data[key] = body[key];
+        }
       }
     }
-  }
 
-  // Handle moduleIds separately (many-to-many)
-  if ('moduleIds' in body) {
-    await prisma.itemModule.deleteMany({ where: { itemId: id } });
-    if (Array.isArray(body.moduleIds) && body.moduleIds.length > 0) {
-      await prisma.itemModule.createMany({
-        data: body.moduleIds.map((mid: string) => ({ itemId: id, moduleId: mid })),
-      });
+    if ('moduleIds' in body) {
+      await prisma.itemModule.deleteMany({ where: { itemId: id } });
+      if (Array.isArray(body.moduleIds) && body.moduleIds.length > 0) {
+        await prisma.itemModule.createMany({
+          data: body.moduleIds.map((mid: string) => ({ itemId: id, moduleId: mid })),
+        });
+      }
     }
+
+    const updated = await prisma.item.update({
+      where: { id },
+      data,
+      include: { nature: true, status: true, owner: true, modules: { include: { module: true } } },
+    });
+
+    return NextResponse.json(updated);
+  } catch {
+    return NextResponse.json({ error: '更新失败' }, { status: 500 });
   }
-
-  const updated = await prisma.item.update({
-    where: { id },
-    data,
-    include: {
-      nature: true,
-      status: true,
-      owner: true,
-      modules: { include: { module: true } },
-    },
-  });
-
-  return NextResponse.json(updated);
 }
 
 export async function DELETE(
@@ -59,33 +56,34 @@ export async function DELETE(
 ) {
   const { id } = await params;
 
-  // Cascade: delete children's approvals/events, then children, then parent's related data
-  const children = await prisma.item.findMany({ where: { parentId: id }, select: { id: true } });
-  const childIds = children.map(c => c.id);
+  try {
+    const children = await prisma.item.findMany({ where: { parentId: id }, select: { id: true } });
+    const childIds = children.map(c => c.id);
 
-  // Delete approval events and approvals for children
-  const childApprovals = await prisma.approval.findMany({ where: { itemId: { in: childIds } } });
-  if (childApprovals.length > 0) {
-    await prisma.approvalEvent.deleteMany({ where: { approvalId: { in: childApprovals.map(a => a.id) } } });
-    await prisma.approval.deleteMany({ where: { itemId: { in: childIds } } });
+    await prisma.$transaction(async (tx) => {
+      // Children's approvals
+      const childApprovals = await tx.approval.findMany({ where: { itemId: { in: childIds } } });
+      if (childApprovals.length > 0) {
+        await tx.approvalEvent.deleteMany({ where: { approvalId: { in: childApprovals.map(a => a.id) } } });
+        await tx.approval.deleteMany({ where: { itemId: { in: childIds } } });
+      }
+      await tx.item.deleteMany({ where: { parentId: id } });
+
+      // Parent's related data
+      const parentApprovals = await tx.approval.findMany({ where: { itemId: id } });
+      if (parentApprovals.length > 0) {
+        await tx.approvalEvent.deleteMany({ where: { approvalId: { in: parentApprovals.map(a => a.id) } } });
+        await tx.approval.deleteMany({ where: { itemId: id } });
+      }
+      await tx.dailyLog.deleteMany({ where: { itemId: id } });
+      await tx.rejection.deleteMany({ where: { itemId: id } });
+      await tx.alert.deleteMany({ where: { itemId: id } });
+      await tx.itemModule.deleteMany({ where: { itemId: id } });
+      await tx.item.delete({ where: { id } });
+    });
+
+    return NextResponse.json({ ok: true });
+  } catch {
+    return NextResponse.json({ error: '删除失败' }, { status: 500 });
   }
-
-  // Delete children
-  await prisma.item.deleteMany({ where: { parentId: id } });
-
-  // Delete parent's related data
-  const parentApproval = await prisma.approval.findFirst({ where: { itemId: id } });
-  if (parentApproval) {
-    await prisma.approvalEvent.deleteMany({ where: { approvalId: parentApproval.id } });
-    await prisma.approval.delete({ where: { id: parentApproval.id } });
-  }
-  await prisma.dailyLog.deleteMany({ where: { itemId: id } });
-  await prisma.rejection.deleteMany({ where: { itemId: id } });
-  await prisma.alert.deleteMany({ where: { itemId: id } });
-  await prisma.itemModule.deleteMany({ where: { itemId: id } });
-
-  // Delete the item itself
-  await prisma.item.delete({ where: { id } });
-
-  return NextResponse.json({ ok: true });
 }
