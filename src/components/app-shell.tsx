@@ -18,6 +18,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedPriorities, setSelectedPriorities] = useState<string[]>([]);
   const [selectedFocus, setSelectedFocus] = useState<string[]>([]);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     if (isLogin) return;
@@ -88,6 +89,8 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-full">
       <Sidebar
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed(prev => !prev)}
         modules={modules}
         tags={tags}
         priorities={priorities}

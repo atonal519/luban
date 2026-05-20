@@ -11,16 +11,19 @@ type FilterBlock = {
 };
 
 export function Sidebar({
+  collapsed, onToggleCollapse,
   modules, tags, priorities,
   selectedModules, selectedTags, selectedPriorities, selectedFocus,
   onModuleChange, onTagChange, onPriorityChange, onFocusChange,
 }: {
+  collapsed: boolean; onToggleCollapse: () => void;
   modules: any[]; tags: any[]; priorities: any[];
   selectedModules: string[]; selectedTags: string[]; selectedPriorities: string[];
-  selectedFocus: string[];onModuleChange: (ids: string[]) => void;
+  selectedFocus: string[]; onModuleChange: (ids: string[]) => void;
   onTagChange: (ids: string[]) => void;
   onPriorityChange: (ids: string[]) => void;
-  onFocusChange: (vals: string[]) => void;}) {
+  onFocusChange: (vals: string[]) => void;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const [user, setUser] = useState<any>(null);
@@ -111,15 +114,28 @@ export function Sidebar({
   }
 
   return (
-    <aside className="w-[220px] min-w-[220px] bg-[var(--bg-1)] border-r border-[var(--line)] flex flex-col h-full">
-      {/* Logo */}
+    <aside className={`${collapsed ? "w-[48px] min-w-[48px]" : "w-[220px] min-w-[220px]"} bg-[var(--bg-1)] border-r border-[var(--line)] flex flex-col h-full transition-all duration-200 overflow-hidden`}>
+      {/* Logo + collapse toggle */}
       <div className="px-4 pt-5 pb-4 border-b border-[var(--line)]">
-        <Link href="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
-          <svg width="28" height="28" viewBox="0 0 80 80" fill="none"><rect width="80" height="80" rx="16" fill="#0A58CA"/><path d="M10 62L28 24l18 38H10z" fill="white" opacity="0.08"/><path d="M42 62L60 20l18 42H42z" fill="white" opacity="0.06"/><path d="M12 52 C20 52, 24 34, 30 32 C36 30, 42 52, 50 40 C56 32, 60 22, 64 20" stroke="white" strokeWidth="3.5" strokeLinecap="round" fill="none" opacity="0.95"/><circle cx="30" cy="32" r="4" fill="white"/><circle cx="64" cy="20" r="4.5" fill="white"/></svg>
-          <span className="font-mono text-[15px] font-semibold text-[var(--txt-0)] tracking-wide">鲁班</span>
-        </Link>
+        {collapsed ? (
+          <button onClick={onToggleCollapse} className="w-full flex justify-center text-[var(--txt-2)] hover:text-[var(--accent)] transition-colors" title="展开侧边栏">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
+        ) : (
+          <div className="flex items-center justify-between">
+            <Link href="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
+              <svg width="28" height="28" viewBox="0 0 80 80" fill="none"><rect width="80" height="80" rx="16" fill="#0A58CA"/><path d="M10 62L28 24l18 38H10z" fill="white" opacity="0.08"/><path d="M42 62L60 20l18 42H42z" fill="white" opacity="0.06"/><path d="M12 52 C20 52, 24 34, 30 32 C36 30, 42 52, 50 40 C56 32, 60 22, 64 20" stroke="white" strokeWidth="3.5" strokeLinecap="round" fill="none" opacity="0.95"/><circle cx="30" cy="32" r="4" fill="white"/><circle cx="64" cy="20" r="4.5" fill="white"/></svg>
+              <span className="font-mono text-[15px] font-semibold text-[var(--txt-0)] tracking-wide">鲁班</span>
+            </Link>
+            <button onClick={onToggleCollapse} className="text-[var(--txt-3)] hover:text-[var(--accent)] transition-colors" title="收起侧边栏">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+          </div>
+        )}
       </div>
 
+      {collapsed ? null : (<>
+      {!collapsed && (<>
       {/* Filter header */}
       <div className="px-4 pt-3 pb-1 flex items-center justify-between">
         <span className="text-[10px] text-[var(--txt-3)] tracking-widest uppercase font-mono">
@@ -255,6 +271,8 @@ export function Sidebar({
           </div>
         </>
       )}
+      </>)}
+      </>)}
     </aside>
   );
 }

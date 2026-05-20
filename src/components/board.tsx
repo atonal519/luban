@@ -791,7 +791,7 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
               )}
               <div>
                 <label className="text-[11px] text-[var(--txt-2)] block mb-1">{gateModal.state === "SUBMITTED" ? "审批意见" : "备注"}</label>
-                <textarea value={gateNote} onChange={(e) => setGateNote(e.target.value)} className="w-full px-2.5 py-2 rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] text-[12px] outline-none resize-none min-h-[48px] focus:border-[var(--accent)]" placeholder="备注…（可选）" />
+                <textarea value={gateNote} onChange={(e) => setGateNote(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); } }} className="w-full px-2.5 py-2 rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] text-[12px] outline-none resize-none min-h-[48px] focus:border-[var(--accent)]" placeholder="备注…（可选，Shift+Enter 换行）" />
               </div>
               <div className="flex gap-2 justify-end">
                 <button onClick={() => { setGateModal(null); setGateImages([]); setGateBranch(""); setGateCommit(""); }} className="px-3 py-1.5 rounded-lg text-[12px] text-[var(--txt-1)] border border-[var(--line-2)]">取消</button>
