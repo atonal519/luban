@@ -319,3 +319,93 @@ model CustomFieldValue {
   @@unique([itemId, fieldId])
   @@index([fieldId])
 }
+
+model Meeting {
+  id           String   @id @default(cuid())
+  title        String
+  type         String   @default("WORKSHOP") // TMG / PRETEST / RELEASE / STANDUP / WORKSHOP
+  status       String   @default("PLANNED")  // PLANNED / IN_PROGRESS / COMPLETED
+  scheduledAt  DateTime
+  summary      String   @default("")         // 纪要正文（Markdown）
+  hostId       String?
+  host         User?    @relation("MeetingHost", fields: [hostId], references: [id])
+  recorderId   String?
+  recorder     User?    @relation("MeetingRecorder", fields: [recorderId], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  items        MeetingItem[]
+  actionItems  ActionItem[]
+  files        MeetingFile[]
+}
+
+// ── 会议↔版本 关联（多对多）─────────────────────────
+
+model MeetingItem {
+  id        String  @id @default(cuid())
+  meetingId String
+  meeting   Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  itemId    String
+  item      Item    @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@unique([meetingId, itemId])
+}
+
+// ── 待办项 / 遗留项 ──────────────────────────────────
+
+model ActionItem {
+  id         String   @id @default(cuid())
+  meetingId  String
+  meeting    Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  content    String
+  sourceType String   @default("TODO") // TODO / LEGACY
+  status     String   @default("OPEN") // OPEN / IN_PROGRESS / DONE
+  assigneeId String?
+  assignee   User?    @relation(fields: [assigneeId], references: [id])
+  deadline   DateTime?
+  createdAt  DateTime @default(now())
+
+  @@index([meetingId])
+}
+
+// ── 过程文件 ─────────────────────────────────────────
+
+model MeetingFile {
+  id        String  @id @default(cuid())
+  meetingId String
+  meeting   Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  title     String
+  url       String
+  fileType  String  @default("OTHER") // REPORT / DESIGN / PPT / DINGTALK / OTHER
+  createdAt DateTime @default(now())
+
+  @@index([meetingId])
+}
+
+// ── 门禁跳过记录 ─────────────────────────────────
+
+model GateSkip {
+  id          String   @id @default(cuid())
+  itemId      String
+  item        Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  stageFrom   String
+  stageTo     String
+  meetingType String   // TMG / PRETEST / RELEASE
+  reason      String
+  actorId     String
+  actor       User     @relation(fields: [actorId], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@index([itemId])
+}
+
+// ── 门禁会议规则（可配置）──────────────────────────
+
+model GateMeetingRule {
+  id          String  @id @default(cuid())
+  stageFrom   String  // REQUIREMENT / DEVELOPMENT / TEST
+  stageTo     String  // DEVELOPMENT / TEST / DELIVERY
+  meetingType String  // TMG / PRETEST / RELEASE / WORKSHOP / STANDUP
+  enabled     Boolean @default(true)
+  order       Int     @default(0)
+}
