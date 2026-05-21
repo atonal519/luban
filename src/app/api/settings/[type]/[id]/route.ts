@@ -12,6 +12,12 @@ const MODELS: Record<string, any> = {
   tags: prisma.tag,
   milestones: prisma.milestone,
   customFields: prisma.customFieldDef,
+  meetings: prisma.meeting,
+  meetingItems: prisma.meetingItem,
+  actionItems: prisma.actionItem,
+  meetingFiles: prisma.meetingFile,
+  gateSkips: prisma.gateSkip,
+  gateMeetingRules: prisma.gateMeetingRule,
 };
 
 const ALLOWED_FIELDS: Record<string, string[]> = {

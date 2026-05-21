@@ -1,6 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  try {
+    const item = await prisma.item.findUnique({
+      where: { id },
+      include: {
+        owner: { select: { id: true, name: true } },
+        status: true,
+        priority: true,
+        nature: true,
+        modules: { include: { module: true } },
+      },
+    });
+    if (!item) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    return NextResponse.json(item);
+  } catch {
+    return NextResponse.json({ error: '查询失败' }, { status: 500 });
+  }
+}
+
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }

@@ -1057,6 +1057,12 @@ export function Drawer({ item, initialStage, onClose, currentUser }: { item: Ite
             </div>
           </div>
 
+          {/* 相关会议 */}
+          <div className="px-5 py-4 border-b border-[var(--line)]">
+            <div className="text-[13px] font-semibold text-[var(--txt-0)] mb-3">相关会议</div>
+            <MeetingLinks itemId={item.id} />
+          </div>
+
           {/* 规格 — editable */}
           <div className="px-5 py-4 border-b border-[var(--line)]">
             <div className="text-[13px] font-semibold text-[var(--txt-0)] mb-3">规格</div>
@@ -1149,4 +1155,118 @@ export function Drawer({ item, initialStage, onClose, currentUser }: { item: Ite
       `}</style>
     </>
   );
+}
+
+// Inject preview styles once
+if (typeof document !== 'undefined' && !document.getElementById('meeting-preview-style')) {
+  const st = document.createElement('style');
+  st.id = 'meeting-preview-style';
+  st.textContent = `.meeting-preview-content { font-size: 12px; line-height: 1.6; }
+    .meeting-preview-content h1 { font-size: 15px; font-weight: 700; margin: 6px 0 3px; }
+    .meeting-preview-content h2 { font-size: 13px; font-weight: 600; margin: 5px 0 3px; }
+    .meeting-preview-content h3 { font-size: 12px; font-weight: 600; margin: 4px 0 2px; }
+    .meeting-preview-content p { margin: 2px 0; }
+    .meeting-preview-content ul { list-style: disc; padding-left: 16px; margin: 2px 0; }
+    .meeting-preview-content ol { list-style: decimal; padding-left: 16px; margin: 2px 0; }
+    .meeting-preview-content strong { font-weight: 600; }
+    .meeting-preview-content em { font-style: italic; }
+    .meeting-preview-content blockquote { border-left: 2px solid #3b6ff0; padding-left: 8px; color: #7e8da8; }
+    .meeting-preview-content table { border-collapse: collapse; width: 100%; font-size: 11px; }
+    .meeting-preview-content td, .meeting-preview-content th { border: 1px solid rgba(0,0,0,0.1); padding: 3px 6px; }`;
+  document.head.appendChild(st);
+}
+
+function MeetingLinks({ itemId }: { itemId: string }) {
+  const [meetings, setMeetings] = useState<any[]>([]);
+  const [preview, setPreview] = useState<any>(null);
+  useEffect(() => {
+    fetch("/api/meetings")
+      .then(r => r.json())
+      .then((all: any[]) => {
+        const linked = all.filter((m: any) => m.items?.some((mi: any) => mi.item?.id === itemId || mi.itemId === itemId));
+        setMeetings(linked);
+      })
+      .catch(() => {});
+  }, [itemId]);
+
+  if (meetings.length === 0) {
+    return <div className="text-[12px] text-[var(--txt-3)]">暂无关联会议</div>;
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      {meetings.map((m: any) => (
+        <div key={m.id} onClick={() => setPreview(m)} className="flex items-center gap-2 text-[12px] hover:bg-[var(--bg-3)] px-2 py-1.5 rounded-md transition-colors cursor-pointer">
+          <span className="px-1.5 py-0.5 rounded text-[10px] font-medium" style={{ background: getTypeColor(m.type) + "15", color: getTypeColor(m.type) }}>
+            {getTypeLabel(m.type)}
+          </span>
+          <span style={{ color: "var(--txt-0)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>{m.title}</span>
+          <span className="text-[10px] text-[var(--txt-3)] ml-auto flex-shrink-0">{m.scheduledAt?.slice(0, 10)}</span>
+        </div>
+      ))}
+      {/* 会议预览弹窗 */}
+      {preview && (
+        <>
+          <div onClick={() => setPreview(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.3)", zIndex: 200 }} />
+          <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", background: "white", borderRadius: "12px", padding: "24px", width: "420px", maxWidth: "90vw", zIndex: 201, boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <span style={{ fontSize: "15px", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "280px", display: "inline-block" }} title={preview.title}>{preview.title}</span>
+                <span style={{ fontSize: "10px", fontWeight: 500, padding: "2px 6px", borderRadius: "4px", background: getTypeColor(preview.type) + "15", color: getTypeColor(preview.type) }}>{getTypeLabel(preview.type)}</span>
+              </div>
+              <button onClick={() => setPreview(null)} style={{ background: "none", border: "none", fontSize: "18px", cursor: "pointer", color: "#7e8da8" }}>✕</button>
+            </div>
+            <div style={{ fontSize: "12px", color: "#7e8da8", marginBottom: "12px" }}>{preview.scheduledAt?.slice(0, 10)} · {preview.host?.name || "未指定主持人"}</div>
+            {/* 纪要摘要 */}
+            {preview.summary && preview.summary.replace(/<[^>]*>/g, '').trim() && (
+              <div style={{ margin: "0 0 12px" }}>
+                <div style={{ fontSize: "11px", color: "#b0b8cc", marginBottom: "4px", fontWeight: 600, letterSpacing: "0.03em" }}>会议纪要</div>
+                <div style={{ fontSize: "12px", color: "#4a5270", background: "#f8f9fb", padding: "10px 12px", borderRadius: "6px", maxHeight: "80px", overflow: "hidden", lineHeight: 1.6 }}>
+                  {preview.summary.replace(/<[^>]*>/g, '').trim().slice(0, 200)}
+                  {preview.summary.replace(/<[^>]*>/g, '').trim().length > 200 ? '…' : ''}
+                </div>
+              </div>
+            )}
+            {/* 待办项 */}
+            {preview.actionItems && preview.actionItems.filter((a: any) => a.status !== 'DONE').length > 0 && (
+              <div style={{ margin: "0 0 12px" }}>
+                <div style={{ fontSize: "11px", color: "#b0b8cc", marginBottom: "6px", fontWeight: 600, letterSpacing: "0.03em" }}>
+                  待办项
+                  <span style={{ marginLeft: "6px", color: "#dc3535", background: "rgba(220,53,53,0.08)", padding: "1px 5px", borderRadius: "3px" }}>
+                    {preview.actionItems.filter((a: any) => a.status !== 'DONE').length} 未完成
+                  </span>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                  {preview.actionItems.filter((a: any) => a.status !== 'DONE').slice(0, 3).map((a: any) => (
+                    <div key={a.id} style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#4a5270" }}>
+                      <span style={{ width: "14px", height: "14px", borderRadius: "3px", border: "1.5px solid #b0b8cc", flexShrink: 0 }} />
+                      <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.content}</span>
+                      {a.assignee && <span style={{ fontSize: "10px", color: "#3b6ff0", background: "rgba(59,111,240,0.08)", padding: "1px 5px", borderRadius: "3px", flexShrink: 0 }}>{a.assignee.name}</span>}
+                    </div>
+                  ))}
+                  {preview.actionItems.filter((a: any) => a.status !== 'DONE').length > 3 && (
+                    <div style={{ fontSize: "11px", color: "#b0b8cc", paddingLeft: "20px" }}>还有 {preview.actionItems.filter((a: any) => a.status !== 'DONE').length - 3} 条…</div>
+                  )}
+                </div>
+              </div>
+            )}
+            <div style={{ borderTop: "1px solid rgba(0,0,0,0.07)", paddingTop: "12px", display: "flex", justifyContent: "flex-end" }}>
+              <a href={"/meetings/" + preview.id} style={{ fontSize: "12px", color: "#3b6ff0", textDecoration: "none", padding: "6px 14px", border: "1px solid rgba(59,111,240,0.2)", borderRadius: "6px", background: "rgba(59,111,240,0.06)" }}>
+                前往会议详情 →
+              </a>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function getTypeColor(type: string) {
+  const map: Record<string, string> = { TMG: "#3b6ff0", PRETEST: "#8b5cf6", RELEASE: "#059669", STANDUP: "#7e8da8", WORKSHOP: "#d97706" };
+  return map[type] || "#6b7280";
+}
+function getTypeLabel(type: string) {
+  const map: Record<string, string> = { TMG: "TMG", PRETEST: "提测会", RELEASE: "发布会", STANDUP: "早例会", WORKSHOP: "研讨" };
+  return map[type] || type;
 }
