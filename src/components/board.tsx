@@ -32,22 +32,63 @@ function priorityTag(p: any) {
 }
 
 function overallStatus(item: Item): { label: string; cls: string } {
-  // 完成：进度100或状态为DELIVERED
+  const children = (item.children || []) as Item[];
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  // 完成
   if (item.progress >= 100 || item.status?.code === "DELIVERED") {
     return { label: "完成", cls: "bg-blue-500/12 text-blue-600" };
   }
-  // 延期：有子节点被驳回，或有告警为LATE
-  const hasLate = (item.children || []).some((c: Item) => c.approvals?.[0]?.state === "REJECTED");
-  const hasLateAlert = (item.alerts || []).some((a: any) => a.level === "LATE");
-  if (hasLate || hasLateAlert) {
-    return { label: "延期", cls: "bg-red-500/12 text-red-600" };
+
+  // 未开始：没有任何子节点有状态
+  const hasAnyStatus = children.some((c: Item) => c.status?.code);
+  if (!hasAnyStatus && !item.status?.code) {
+    return { label: "未开始", cls: "text-[var(--txt-3)] bg-transparent" };
   }
-  // 风险：有告警为RISK，或有子节点有审核卡着
-  const hasRisk = (item.alerts || []).some((a: any) => a.level === "RISK");
-  const hasWaiting = (item.children || []).some((c: Item) => c.approvals?.[0]?.state === "WAITING_SUBMIT");
-  if (hasRisk || hasWaiting) {
-    return { label: "风险", cls: "bg-amber-500/12 text-amber-600" };
+
+  // 找当前活跃阶段（第一个未完成的阶段分组）
+  const STAGE_ORDER = ["REQUIREMENT", "DEVELOPMENT", "TEST", "DELIVERY"];
+  let activeStageCode = "";
+  for (const code of STAGE_ORDER) {
+    const stageChildren = children.filter((c: Item) => c.stageType === code);
+    if (stageChildren.length === 0) continue;
+    const allDone = stageChildren.every((c: Item) => c.status?.code === "DELIVERED");
+    if (!allDone) { activeStageCode = code; break; }
   }
+
+  // 风险判断
+  // 1. 周期不足：立项到预计交付 < 性质最短周期（仅在版本未完成时触发）
+  if (activeStageCode && item.nature?.minDays && item.nature.minDays > 0 && item.plannedEnd && item.createdAt) {
+    const created = new Date(item.createdAt);
+    const planned = new Date(item.plannedEnd);
+    const diffDays = Math.floor((planned.getTime() - created.getTime()) / 86400000);
+    if (diffDays < item.nature.minDays) {
+      return { label: "风险", cls: "bg-red-500/12 text-red-600" };
+    }
+  }
+
+  // 2. 当前活跃阶段的节点超过 plannedEnd 未完成
+  if (activeStageCode) {
+    const activeChildren = children.filter((c: Item) => c.stageType === activeStageCode);
+    const hasOverdue = activeChildren.some((c: Item) => {
+      if (c.status?.code === "DELIVERED" || c.status?.code === "ABORTED") return false;
+      if (!c.plannedEnd) return false;
+      const end = new Date(c.plannedEnd); end.setHours(0,0,0,0);
+      return end < today;
+    });
+    if (hasOverdue) return { label: "风险", cls: "bg-red-500/12 text-red-600" };
+  }
+
+  // 3. 版本本身 plannedEnd 已过
+  if (item.plannedEnd) {
+    const end = new Date(item.plannedEnd); end.setHours(0,0,0,0);
+    if (end < today) return { label: "风险", cls: "bg-red-500/12 text-red-600" };
+  }
+
+  // 4. 有被驳回的节点
+  const hasRejected = children.some((c: Item) => c.approvals?.[0]?.state === "REJECTED" || c.status?.code === "REJECTED");
+  if (hasRejected) return { label: "风险", cls: "bg-red-500/12 text-red-600" };
+
   // 正常
   return { label: "正常", cls: "bg-emerald-500/12 text-emerald-600" };
 }
@@ -867,18 +908,21 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
           <>
             <div className="fixed inset-0 z-50" onClick={() => setTagPickerItemId(null)} />
             <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-[var(--bg-1)] border border-[var(--line-2)] rounded-xl shadow-2xl p-4 w-[280px]">
-              <div className="text-[13px] font-semibold mb-3">🎩 选择帽子</div>
-              <div className="flex flex-col gap-1">
-                <button onClick={() => changeTag(tagPickerItemId, null)} className="flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] text-[var(--txt-2)] hover:bg-[var(--bg-3)] transition-colors">
+              <div className="text-[13px] font-semibold mb-3">选择帽子</div>
+              <div className="flex flex-col gap-0.5">
+                <button onClick={() => changeTag(tagPickerItemId, null)} className="flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] text-[var(--txt-2)] hover:bg-[var(--bg-3)] transition-colors text-left w-full">
                   <span className="w-3 h-3 rounded-full bg-[var(--bg-4)] flex-shrink-0" />
-                  <span>取消帽子（未分类）</span>
+                  <span className="truncate">取消帽子（未分类）</span>
                 </button>
                 {tags.map(tag => (
-                  <button key={tag.id} onClick={() => changeTag(tagPickerItemId, tag.id)} className="flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] text-[var(--txt-0)] hover:bg-[var(--bg-3)] transition-colors">
+                  <button key={tag.id} onClick={() => changeTag(tagPickerItemId, tag.id)} className="flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] text-[var(--txt-0)] hover:bg-[var(--bg-3)] transition-colors text-left w-full" title={tag.name}>
                     <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: tag.color }} />
-                    <span>{tag.name}</span>
+                    <span className="truncate flex-1 min-w-0">{tag.name}</span>
                   </button>
                 ))}
+                <div className="border-t border-[var(--line)] mt-1 pt-1">
+                  <QuickAddTag onCreated={() => router.refresh()} />
+                </div>
               </div>
             </div>
           </>
@@ -898,5 +942,44 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
         />
       )}
     </>
+  );
+}
+
+function QuickAddTag({ onCreated }: { onCreated: () => void }) {
+  const [adding, setAdding] = useState(false);
+  const [name, setName] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  if (!adding) {
+    return (
+      <button onClick={() => setAdding(true)}
+        className="flex items-center gap-1.5 px-3 py-1.5 w-full text-left text-[12px] text-[var(--accent)] hover:bg-[var(--bg-3)] rounded-lg transition-colors">
+        <span>+</span><span>新建帽子</span>
+      </button>
+    );
+  }
+  return (
+    <div className="px-1 py-1 flex items-center gap-1.5">
+      <input autoFocus value={name} onChange={e => setName(e.target.value)}
+        placeholder="帽子名称"
+        onKeyDown={async e => {
+          if (e.key === "Escape") { setAdding(false); setName(""); }
+          if (e.key === "Enter" && name.trim() && !submitting) {
+            setSubmitting(true);
+            try {
+              const hue = Math.floor(Math.random() * 360);
+              const color = `hsl(${hue}, 65%, 45%)`;
+              const res = await fetch("/api/settings/tags", {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name: name.trim(), color }),
+              });
+              if (res.ok) { const t = await res.json(); onCreated(); setAdding(false); setName(""); }
+            } finally { setSubmitting(false); }
+          }
+        }}
+        className="flex-1 text-[12px] px-2 py-1 rounded border border-[var(--line-2)] bg-[var(--bg-2)] outline-none focus:border-[var(--accent)] min-w-0" />
+      <button onClick={() => { setAdding(false); setName(""); }}
+        className="text-[11px] text-[var(--txt-3)] hover:text-[var(--txt-1)] flex-shrink-0">取消</button>
+    </div>
   );
 }

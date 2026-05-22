@@ -74,11 +74,12 @@ model Module {
 
 // ── 性质字典（可自定义）─────────────────────────────
 model Nature {
-  id    String @id @default(cuid())
-  code  String @unique   // FEATURE / BUG / HOTFIX / ...
-  label String           // "Feature" / "Bug" / "Hotfix"
-  color String @default("#6366f1")
-  order Int    @default(0)
+  id      String @id @default(cuid())
+  code    String @unique
+  label   String
+  color   String @default("#6366f1")
+  order   Int    @default(0)
+  minDays Int    @default(0)
 
   items Item[]
 }

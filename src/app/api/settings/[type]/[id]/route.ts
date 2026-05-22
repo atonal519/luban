@@ -15,7 +15,7 @@ const MODELS: Record<string, any> = {
 
 const ALLOWED_FIELDS: Record<string, string[]> = {
   modules: ['name', 'color', 'order'],
-  natures: ['code', 'label', 'color', 'order'],
+  natures: ['code', 'label', 'color', 'order', 'minDays'],
   statuses: ['code', 'label', 'stageGroup', 'color', 'order'],
   priorities: ['code', 'label', 'color', 'order'],
   stageGroups: ['code', 'label', 'order'],
@@ -25,12 +25,16 @@ const ALLOWED_FIELDS: Record<string, string[]> = {
   milestones: ['name', 'archived'],
 };
 
+const INT_FIELDS = new Set(['order', 'minDays']);
+
 function filterBody(type: string, body: Record<string, any>): Record<string, any> {
   const allowed = ALLOWED_FIELDS[type];
   if (!allowed) return body;
   const filtered: Record<string, any> = {};
   for (const key of allowed) {
-    if (key in body) filtered[key] = body[key];
+    if (key in body) {
+      filtered[key] = INT_FIELDS.has(key) ? Number(body[key]) : body[key];
+    }
   }
   return filtered;
 }
@@ -48,8 +52,8 @@ export async function PATCH(
     const data = filterBody(type, raw);
     const item = await model.update({ where: { id }, data });
     return NextResponse.json(item);
-  } catch {
-    return NextResponse.json({ error: '更新失败' }, { status: 400 });
+  } catch (e: any) {
+    return NextResponse.json({ error: '更新失败', detail: e?.message }, { status: 400 });
   }
 }
 
