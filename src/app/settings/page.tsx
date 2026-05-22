@@ -8,7 +8,7 @@ const TABS = [
   { key: "stageGroups", label: "大节点", fields: ["label"] },
   { key: "stageTemplates", label: "子节点模板", fields: ["name", "isParallel", "parallelGroup"], grouped: true },
   { key: "priorities", label: "优先级", fields: ["label", "color"] },
-  { key: "natures", label: "类型", fields: ["label", "color"] },
+  { key: "natures", label: "类型", fields: ["label", "color", "minDays"] },
   { key: "statuses", label: "节点状态", fields: ["label", "color"] },
   { key: "tags", label: "帽子", fields: ["name", "color"] },
   { key: "milestones", label: "里程碑", fields: ["name"] },
@@ -124,10 +124,13 @@ export default function SettingsPage() {
 
   function renderField(field: string, value: any, onChange: (v: any) => void, isEdit = false) {
     if (field === "color") {
+      const randomColor = () => { const h = Math.floor(Math.random() * 360); return `hsl(${h}, 65%, 45%)`; };
+      if (!value) { setTimeout(() => onChange(randomColor()), 0); }
       return (
-        <div className="flex items-center gap-1.5">
-          <input type="color" value={value || "#6366f1"} onChange={(e) => onChange(e.target.value)} className="w-6 h-6 rounded border border-[var(--line-2)] cursor-pointer" />
-          <span className="text-[10px] font-mono text-[var(--txt-2)]">{value}</span>
+        <div className="flex items-center gap-2">
+          <span className="w-5 h-5 rounded flex-shrink-0 border border-[var(--line-2)]" style={{ background: value || "#6366f1" }} />
+          <span className="text-[10px] font-mono text-[var(--txt-2)] flex-1">{value}</span>
+          <button type="button" onClick={() => onChange(randomColor())} className="text-[10px] text-[var(--accent)] hover:underline flex-shrink-0">↻ 换色</button>
         </div>
       );
     }
@@ -216,7 +219,7 @@ export default function SettingsPage() {
         {/* Add button */}
         <div className="flex justify-between items-center mb-3">
           <span className="text-[11px] text-[var(--txt-2)] font-mono uppercase tracking-wider">{tab.label} · {items.length} 条</span>
-          <button onClick={() => { setShowAdd(true); setAddData({}); }} className="text-[11px] text-[var(--accent)] hover:underline">+ 新增</button>
+          <button onClick={() => { { const h = Math.floor(Math.random()*360); setShowAdd(true); setAddData({ color: `hsl(${h}, 65%, 45%)` }); } }} className="text-[11px] text-[var(--accent)] hover:underline">+ 新增</button>
         </div>
 
         {/* Add form */}

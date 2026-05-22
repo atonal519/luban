@@ -15,7 +15,7 @@ const MODELS: Record<string, any> = {
 
 const ALLOWED_FIELDS: Record<string, string[]> = {
   modules: ['name', 'color', 'order'],
-  natures: ['code', 'label', 'color', 'order'],
+  natures: ['code', 'label', 'color', 'order', 'minDays'],
   statuses: ['code', 'label', 'stageGroup', 'color', 'order'],
   priorities: ['code', 'label', 'color', 'order'],
   stageGroups: ['code', 'label', 'order'],
