@@ -10,7 +10,7 @@ const TABS = [
   { key: "priorities", label: "优先级", fields: ["label", "color"] },
   { key: "natures", label: "类型", fields: ["label", "color", "minDays"] },
   { key: "statuses", label: "节点状态", fields: ["label", "color"] },
-  { key: "tags", label: "帽子", fields: ["name", "color"] },
+  { key: "tags", label: "RR", fields: ["name", "color", "parentId"] },
   { key: "milestones", label: "里程碑", fields: ["name"] },
 ];
 
@@ -44,6 +44,7 @@ export default function SettingsPage() {
   }
 
   async function handleAdd() {
+    if (!addData.name?.trim()) { alert("请填写名称"); return; }
     const data = { ...addData };
     // Auto-generate code
     if ((activeTab === "natures" || activeTab === "statuses" || activeTab === "stageGroups") && data.label && !data.code) {
@@ -167,6 +168,15 @@ export default function SettingsPage() {
         </select>
       );
     }
+    if (field === "parentId" && activeTab === "tags") {
+      const parentTags = items.filter((t: any) => !t.parentId && t.id !== editingId);
+      return (
+        <select value={value || ""} onChange={(e) => onChange(e.target.value || null)} className="px-1.5 h-[26px] rounded border border-[var(--line-2)] bg-[var(--bg-2)] text-[12px] outline-none">
+          <option value="">作为 RR（顶层）</option>
+          {parentTags.map((t: any) => <option key={t.id} value={t.id}>FE · {t.name}</option>)}
+        </select>
+      );
+    }
     if (field === "stageGroupId") {
       return (
         <select value={value || ""} onChange={(e) => onChange(e.target.value)} className="px-1.5 h-[26px] rounded border border-[var(--line-2)] bg-[var(--bg-2)] text-[12px] outline-none">
@@ -186,7 +196,7 @@ export default function SettingsPage() {
     name: "名称", label: "名称", color: "颜色", order: "排序",
     email: "邮箱", role: "角色", code: "编码",
     isParallel: "并行", parallelGroup: "并行组",
-    stageGroup: "所属阶段", stageGroupId: "所属阶段",
+    stageGroup: "所属阶段", stageGroupId: "所属阶段", parentId: "父RR",
   };
 
   return (
@@ -325,7 +335,9 @@ export default function SettingsPage() {
                           ? <span className="inline-flex items-center gap-1"><span className="w-3 h-3 rounded" style={{ background: item[f] }} /><span className="font-mono text-[10px]">{item[f]}</span></span>
                           : f === "isParallel"
                             ? item[f] ? "✓" : ""
-                            : f === "stageGroupId"
+                            : f === "parentId"
+                              ? items.find((t: any) => t.id === item.parentId)?.name || ""
+                              : f === "stageGroupId"
                               ? item.stageGroup?.label || item[f]
                               : String(item[f] ?? "")
                       }

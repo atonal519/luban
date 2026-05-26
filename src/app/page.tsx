@@ -25,12 +25,22 @@ export default async function Home({
   const selectedTagIds = tagsParam ? tagsParam.split(",").filter(Boolean) : [];
   const selectedPriorityIds = prioritiesParam ? prioritiesParam.split(",").filter(Boolean) : [];
 
-  const [items, statuses, stageGroups, tags, milestones] = await Promise.all([
+  // Fetch tags first so we can expand RR selection to include FEs
+  const tags = await prisma.tag.findMany({ orderBy: { name: "asc" } });
+
+  // Expand selectedTagIds: if a parent RR is selected, also include its FE children
+  let expandedTagIds = selectedTagIds;
+  if (selectedTagIds.length > 0) {
+    const childIds = tags.filter((t: any) => t.parentId && selectedTagIds.includes(t.parentId)).map((t: any) => t.id);
+    expandedTagIds = [...selectedTagIds, ...childIds];
+  }
+
+  const [items, statuses, stageGroups, milestones] = await Promise.all([
     prisma.item.findMany({
       where: {
         parentId: null,
         ...(selectedModuleIds.length > 0 ? { modules: { some: { moduleId: { in: selectedModuleIds } } } } : {}),
-        ...(selectedTagIds.length > 0 ? { tagId: { in: selectedTagIds } } : {}),
+        ...(expandedTagIds.length > 0 ? { tagId: { in: expandedTagIds } } : {}),
         ...(selectedPriorityIds.length > 0 ? { priorityId: { in: selectedPriorityIds } } : {}),
         ...(focus ? { focus: { in: focus.split(",").filter(Boolean) } } : {}),
         ...(milestone ? { milestoneId: milestone } : {}),
@@ -66,7 +76,6 @@ export default async function Home({
     }),
     prisma.statusDef.findMany({ orderBy: { order: "asc" } }),
     prisma.stageGroup.findMany({ orderBy: { order: "asc" } }),
-    prisma.tag.findMany({ orderBy: { name: "asc" } }),
     prisma.milestone.findMany({ orderBy: { createdAt: "asc" } }),
   ]);
 

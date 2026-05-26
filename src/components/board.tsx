@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Drawer } from "./drawer";
 import { CreateModal } from "./create-modal";
@@ -198,7 +198,7 @@ function ActionMenu({ onDetail, onDelete, onAddChild, onChangeTag, onSetFocus }:
         <div className="absolute right-0 top-full mt-1 z-50 bg-[var(--bg-1)] border border-[var(--line-2)] rounded-lg shadow-lg py-1 min-w-[100px]" onClick={(e) => e.stopPropagation()}>
           <button onClick={() => { onDetail(); setOpen(false); }} className="w-full text-left px-3 py-1.5 text-[12px] text-[var(--txt-0)] hover:bg-[var(--bg-2)]">详情</button>
           {onAddChild && <button onClick={() => { onAddChild(); setOpen(false); }} className="w-full text-left px-3 py-1.5 text-[12px] text-[var(--txt-0)] hover:bg-[var(--bg-2)]">+ 添加子项目</button>}
-          {onChangeTag && <button onClick={() => { onChangeTag(); setOpen(false); }} className="w-full text-left px-3 py-1.5 text-[12px] text-[var(--txt-1)] hover:bg-[var(--bg-2)]">修改帽子</button>}
+          {onChangeTag && <button onClick={() => { onChangeTag(); setOpen(false); }} className="w-full text-left px-3 py-1.5 text-[12px] text-[var(--txt-1)] hover:bg-[var(--bg-2)]">修改RR</button>}
           {onSetFocus && (
             <>
               <button onClick={() => { onSetFocus("this_week"); setOpen(false); }} className="w-full text-left px-3 py-1.5 text-[12px] text-[var(--txt-1)] hover:bg-[var(--bg-2)]">标记本周计划</button>
@@ -246,6 +246,7 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
   const [quickInput, setQuickInput] = useState("");
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [collapsedTags, setCollapsedTags] = useState<Set<string>>(new Set());
+  const [collapsedFEs, setCollapsedFEs] = useState<Set<string>>(new Set());
 
   function toggleExpand(id: string, e: React.MouseEvent) {
     e.stopPropagation();
@@ -260,6 +261,14 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
     setCollapsedTags(prev => {
       const next = new Set(prev);
       if (next.has(tagId)) next.delete(tagId); else next.add(tagId);
+      return next;
+    });
+  }
+
+  function toggleFECollapse(feId: string) {
+    setCollapsedFEs(prev => {
+      const next = new Set(prev);
+      if (next.has(feId)) next.delete(feId); else next.add(feId);
       return next;
     });
   }
@@ -707,31 +716,39 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
 
               const rows: React.ReactNode[] = [];
 
-              // Render tagged groups
-              for (const tag of tags) {
-                const groupItems = taggedItems[tag.id];
-                if (!groupItems || groupItems.length === 0) continue;
-                // Tag banner row
+              // Build hierarchy: RR (parent) → FE (children)
+              const parentTags = tags.filter((t: any) => !t.parentId);
+              const childTags = tags.filter((t: any) => t.parentId);
+
+              // Render RR groups with optional FE sub-groups
+              for (const rr of parentTags) {
+                const directItems = taggedItems[rr.id] || [];
+                const children = childTags.filter((t: any) => t.parentId === rr.id);
+                const feItemCount = children.reduce((s: number, c: any) => s + (taggedItems[c.id]?.length || 0), 0);
+                const totalCount = directItems.length + feItemCount;
+                if (totalCount === 0) continue;
+
+                // RR banner row
                 rows.push(
-                  <tr key={`tag-${tag.id}`}>
+                  <tr key={`tag-${rr.id}`}>
                     <td colSpan={12} className="px-0 border-b border-[var(--line)]">
                       <div
                         className="w-full flex items-center gap-2 px-4 py-2 group/tag"
-                        style={{ background: tag.color + "14" }}
+                        style={{ background: rr.color + "14" }}
                       >
-                        <button onClick={() => toggleTag(tag.id)} className="flex items-center gap-2 flex-1 text-left hover:opacity-80 transition-opacity">
-                          <span className="text-[11px]" style={{ color: tag.color }}>
-                            <span className={`block w-0 h-0 border-[5px] border-transparent ${collapsedTags.has(tag.id) ? "border-l-[var(--txt-2)] translate-x-[1px]" : "border-t-[var(--txt-2)] translate-y-[2px]"}`} />
+                        <button onClick={() => toggleTag(rr.id)} className="flex items-center gap-2 flex-1 text-left hover:opacity-80 transition-opacity">
+                          <span className="text-[11px]" style={{ color: rr.color }}>
+                            <span className={`block w-0 h-0 border-[5px] border-transparent ${collapsedTags.has(rr.id) ? "border-l-[var(--txt-2)] translate-x-[1px]" : "border-t-[var(--txt-2)] translate-y-[2px]"}`} />
                           </span>
-                          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: tag.color }} />
-                          <span className="text-[12px] font-semibold" style={{ color: tag.color }}>{tag.name}</span>
-                          <span className="text-[10px] font-mono ml-1" style={{ color: tag.color + "99" }}>{groupItems.length} 个版本</span>
+                          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: rr.color }} />
+                          <span className="text-[12px] font-semibold" style={{ color: rr.color }}>{rr.name}</span>
+                          <span className="text-[10px] font-mono ml-1" style={{ color: rr.color + "99" }}>{totalCount} 个版本</span>
                         </button>
                         <button
-                          onClick={() => setTagPickerItemId(`__tag__${tag.id}`)}
+                          onClick={() => setTagPickerItemId(`__tag__${rr.id}`)}
                           className="text-[11px] opacity-0 group-hover/tag:opacity-60 hover:!opacity-100 transition-opacity"
-                          style={{ color: tag.color }}
-                          title="修改帽子名称"
+                          style={{ color: rr.color }}
+                          title="修改RR名称"
                         >
                           ✎
                         </button>
@@ -739,13 +756,47 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
                     </td>
                   </tr>
                 );
-                if (!collapsedTags.has(tag.id)) {
-                  groupItems.forEach(item => {
-                    renderItemRows(item, 0).forEach(r => rows.push(r));
+
+                if (!collapsedTags.has(rr.id)) {
+                  // Items directly under RR
+                  directItems.forEach((item: any) => {
+                    renderItemRows(item, 0).forEach((r: any) => rows.push(r));
                   });
+                  // FE sub-groups (indented, subtler)
+                  for (const fe of children) {
+                    const feGroupItems = taggedItems[fe.id] || [];
+                    if (feGroupItems.length === 0) continue;
+                    const feCollapsed = collapsedFEs.has(fe.id);
+                    rows.push(
+                      <tr key={`tag-${fe.id}`}>
+                        <td colSpan={12} className="px-0 border-b border-[var(--line)]">
+                          <div className="w-full flex items-center gap-2 pr-4 py-1.5 group/tag" style={{ background: fe.color + "08", paddingLeft: "48px" }}>
+                            <button onClick={() => toggleFECollapse(fe.id)} className="flex items-center gap-2 flex-1 text-left hover:opacity-80 transition-opacity">
+                              <span className="text-[11px]" style={{ color: fe.color }}>
+                                <span className={`block w-0 h-0 border-[5px] border-transparent ${feCollapsed ? "border-l-[var(--txt-2)] translate-x-[1px]" : "border-t-[var(--txt-2)] translate-y-[2px]"}`} />
+                              </span>
+                              <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: fe.color + "88" }} />
+                              <span className="text-[11px] font-medium" style={{ color: fe.color }}>{fe.name}</span>
+                              <span className="text-[10px] font-mono ml-1" style={{ color: fe.color + "88" }}>{feGroupItems.length} 个版本</span>
+                            </button>
+                            <button
+                              onClick={() => setTagPickerItemId(`__tag__${fe.id}`)}
+                              className="text-[11px] opacity-0 group-hover/tag:opacity-60 hover:!opacity-100 transition-opacity"
+                              style={{ color: fe.color }}
+                              title="修改RR名称"
+                            >✎</button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                    if (!feCollapsed) {
+                      feGroupItems.forEach((item: any) => {
+                        renderItemRows(item, 0).forEach((r: any) => rows.push(r));
+                      });
+                    }
+                  }
                 }
               }
-
               // Untagged
               if (untagged.length > 0) {
                 rows.push(
@@ -864,10 +915,10 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
             <>
               <div className="fixed inset-0 z-50" onClick={() => setTagPickerItemId(null)} />
               <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-[var(--bg-1)] border border-[var(--line-2)] rounded-xl shadow-2xl p-5 w-[320px]" onClick={e => e.stopPropagation()}>
-                <div className="text-[14px] font-semibold mb-4">编辑帽子「{editingTag.name}」</div>
+                <div className="text-[14px] font-semibold mb-4">编辑RR「{editingTag.name}」</div>
                 <div className="flex flex-col gap-3">
                   <div>
-                    <label className="text-[11px] text-[var(--txt-2)] block mb-1">帽子名称</label>
+                    <label className="text-[11px] text-[var(--txt-2)] block mb-1">RR名称</label>
                     <input
                       autoFocus
                       type="text"
@@ -896,7 +947,7 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
                     </div>
                   </div>
                   <div className="flex justify-between pt-1 border-t border-[var(--line)]">
-                    <button onClick={async () => { if (confirm("确认删除此帽子？其下版本将变为未分类。")) { await fetch(`/api/tags/${editingTag.id}`, { method: "DELETE" }); setTagPickerItemId(null); router.refresh(); } }} className="text-[12px] text-[var(--late)] hover:underline">删除帽子</button>
+                    <button onClick={async () => { if (confirm("确认删除此RR？其下版本将变为未分类。")) { await fetch(`/api/tags/${editingTag.id}`, { method: "DELETE" }); setTagPickerItemId(null); router.refresh(); } }} className="text-[12px] text-[var(--late)] hover:underline">删除RR</button>
                     <button onClick={() => setTagPickerItemId(null)} className="text-[12px] text-[var(--txt-2)] hover:underline">关闭</button>
                   </div>
                 </div>
@@ -908,20 +959,29 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
           <>
             <div className="fixed inset-0 z-50" onClick={() => setTagPickerItemId(null)} />
             <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-[var(--bg-1)] border border-[var(--line-2)] rounded-xl shadow-2xl p-4 w-[280px]">
-              <div className="text-[13px] font-semibold mb-3">选择帽子</div>
+              <div className="text-[13px] font-semibold mb-3">选择RR</div>
               <div className="flex flex-col gap-0.5">
                 <button onClick={() => changeTag(tagPickerItemId, null)} className="flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] text-[var(--txt-2)] hover:bg-[var(--bg-3)] transition-colors text-left w-full">
                   <span className="w-3 h-3 rounded-full bg-[var(--bg-4)] flex-shrink-0" />
-                  <span className="truncate">取消帽子（未分类）</span>
+                  <span className="truncate">取消RR（未分类）</span>
                 </button>
-                {tags.map(tag => (
-                  <button key={tag.id} onClick={() => changeTag(tagPickerItemId, tag.id)} className="flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] text-[var(--txt-0)] hover:bg-[var(--bg-3)] transition-colors text-left w-full" title={tag.name}>
-                    <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: tag.color }} />
-                    <span className="truncate flex-1 min-w-0">{tag.name}</span>
-                  </button>
+                {tags.filter((t: any) => !t.parentId).map((rr: any) => (
+                  <React.Fragment key={rr.id}>
+                    <button onClick={() => changeTag(tagPickerItemId, rr.id)} className="flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] text-[var(--txt-0)] hover:bg-[var(--bg-3)] transition-colors text-left w-full" title={rr.name}>
+                      <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: rr.color }} />
+                      <span className="truncate flex-1 min-w-0">{rr.name}</span>
+                    </button>
+                    {tags.filter((t: any) => t.parentId === rr.id).map((fe: any) => (
+                      <button key={fe.id} onClick={() => changeTag(tagPickerItemId, fe.id)} className="flex items-center gap-2 pl-8 pr-3 py-1.5 rounded-lg text-[11px] text-[var(--txt-2)] hover:bg-[var(--bg-3)] transition-colors text-left w-full" title={fe.name}>
+                        <span className="text-[10px]" style={{ color: fe.color + "88" }}>└</span>
+                        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: fe.color, opacity: 0.7 }} />
+                        <span className="truncate flex-1 min-w-0">{fe.name}</span>
+                      </button>
+                    ))}
+                  </React.Fragment>
                 ))}
                 <div className="border-t border-[var(--line)] mt-1 pt-1">
-                  <QuickAddTag onCreated={() => router.refresh()} />
+                  <QuickAddTag onCreated={() => router.refresh()} tags={tags} />
                 </div>
               </div>
             </div>
@@ -945,41 +1005,54 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
   );
 }
 
-function QuickAddTag({ onCreated }: { onCreated: () => void }) {
+function QuickAddTag({ onCreated, tags }: { onCreated: () => void; tags: any[] }) {
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
+  const [parentId, setParentId] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   if (!adding) {
     return (
       <button onClick={() => setAdding(true)}
         className="flex items-center gap-1.5 px-3 py-1.5 w-full text-left text-[12px] text-[var(--accent)] hover:bg-[var(--bg-3)] rounded-lg transition-colors">
-        <span>+</span><span>新建帽子</span>
+        <span>+</span><span>新建RR</span>
       </button>
     );
   }
+  const rrTags = tags.filter((t: any) => !t.parentId);
   return (
-    <div className="px-1 py-1 flex items-center gap-1.5">
-      <input autoFocus value={name} onChange={e => setName(e.target.value)}
-        placeholder="帽子名称"
-        onKeyDown={async e => {
-          if (e.key === "Escape") { setAdding(false); setName(""); }
-          if (e.key === "Enter" && name.trim() && !submitting) {
-            setSubmitting(true);
-            try {
-              const hue = Math.floor(Math.random() * 360);
-              const color = `hsl(${hue}, 65%, 45%)`;
-              const res = await fetch("/api/settings/tags", {
-                method: "POST", headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name: name.trim(), color }),
-              });
-              if (res.ok) { const t = await res.json(); onCreated(); setAdding(false); setName(""); }
-            } finally { setSubmitting(false); }
-          }
-        }}
-        className="flex-1 text-[12px] px-2 py-1 rounded border border-[var(--line-2)] bg-[var(--bg-2)] outline-none focus:border-[var(--accent)] min-w-0" />
-      <button onClick={() => { setAdding(false); setName(""); }}
-        className="text-[11px] text-[var(--txt-3)] hover:text-[var(--txt-1)] flex-shrink-0">取消</button>
+    <div className="px-1 py-1 flex flex-col gap-1.5">
+      <div className="flex items-center gap-1.5">
+        <input autoFocus value={name} onChange={e => setName(e.target.value)}
+          placeholder="RR名称"
+          onKeyDown={async e => {
+            if (e.key === "Escape") { setAdding(false); setName(""); setParentId(""); }
+            if (e.key === "Enter" && name.trim() && !submitting) {
+              setSubmitting(true);
+              try {
+                const hue = Math.floor(Math.random() * 360);
+                const color = `hsl(${hue}, 65%, 45%)`;
+                const res = await fetch("/api/settings/tags", {
+                  method: "POST", headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ name: name.trim(), color, parentId: parentId || null }),
+                });
+                if (res.ok) { onCreated(); setAdding(false); setName(""); setParentId(""); }
+              } finally { setSubmitting(false); }
+            }
+          }}
+          className="flex-1 text-[12px] px-2 py-1 rounded border border-[var(--line-2)] bg-[var(--bg-2)] outline-none focus:border-[var(--accent)] min-w-0" />
+        <button onClick={() => { setAdding(false); setName(""); setParentId(""); }}
+          className="text-[11px] text-[var(--txt-3)] hover:text-[var(--txt-1)] flex-shrink-0">取消</button>
+      </div>
+      {rrTags.length > 0 && (
+        <select value={parentId} onChange={e => setParentId(e.target.value)}
+          className="text-[11px] px-2 py-1 rounded border border-[var(--line-2)] bg-[var(--bg-2)] outline-none text-[var(--txt-2)]">
+          <option value="">作为 RR（顶层）</option>
+          {rrTags.map((t: any) => (
+            <option key={t.id} value={t.id}>FE · {t.name}</option>
+          ))}
+        </select>
+      )}
     </div>
   );
 }
