@@ -21,7 +21,7 @@ const ALLOWED_FIELDS: Record<string, string[]> = {
   stageGroups: ['code', 'label', 'order'],
   stageTemplates: ['name', 'stageGroupId', 'isParallel', 'parallelGroup', 'order'],
   users: ['name', 'email', 'role'],
-  tags: ['name', 'color'],
+  tags: ['name', 'color', 'parentId'],
   milestones: ['name', 'archived'],
 };
 
@@ -67,6 +67,10 @@ export async function POST(
   try {
     const raw = await req.json();
     const data = filterBody(type, raw);
+    // parentId 空字符串或null → 直接从data中删除（避免外键约束错误）
+    if (data.parentId === '' || data.parentId === null || data.parentId === undefined) {
+      delete data.parentId;
+    }
     // 新建用户时补默认密码
     if (type === 'users') {
       const bcrypt = await import('bcryptjs');
@@ -74,7 +78,8 @@ export async function POST(
     }
     const item = await model.create({ data });
     return NextResponse.json(item, { status: 201 });
-  } catch {
-    return NextResponse.json({ error: '新增失败，请检查必填字段' }, { status: 400 });
+  } catch (e: any) {
+    console.error('[settings POST] error:', e?.message, e?.code, e?.meta);
+    return NextResponse.json({ error: '新增失败', detail: e?.message, code: e?.code }, { status: 400 });
   }
 }

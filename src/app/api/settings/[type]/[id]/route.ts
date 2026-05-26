@@ -21,7 +21,7 @@ const ALLOWED_FIELDS: Record<string, string[]> = {
   stageGroups: ['code', 'label', 'order'],
   stageTemplates: ['name', 'stageGroupId', 'isParallel', 'parallelGroup', 'order'],
   users: ['name', 'email', 'role'],
-  tags: ['name', 'color'],
+  tags: ['name', 'color', 'parentId'],
   milestones: ['name', 'archived'],
 };
 
@@ -50,6 +50,10 @@ export async function PATCH(
   try {
     const raw = await req.json();
     const data = filterBody(type, raw);
+    // parentId 空 → 直接从data中删除（避免外键约束错误）
+    if (data.parentId === '' || data.parentId === null || data.parentId === undefined) {
+      delete data.parentId;
+    }
     const item = await model.update({ where: { id }, data });
     return NextResponse.json(item);
   } catch (e: any) {

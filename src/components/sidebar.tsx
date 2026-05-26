@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 
 type FilterBlock = {
   key: string;
@@ -34,8 +34,9 @@ export function Sidebar({
 
   // Collapsible state per block
   const [open, setOpen] = useState<Record<string, boolean>>({
-    focus: true, modules: true, tags: false, priorities: false, date: false,
+    focus: false, modules: false, tags: false, priorities: false, date: false,
   });
+  const [collapsedRRs, setCollapsedRRs] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetch("/api/auth/me").then(r => r.json()).then(setUser);
@@ -190,24 +191,71 @@ export function Sidebar({
           )}
         </div>
 
-        {/* 帽子 Tag */}
+        {/* RR Tag */}
         <div className="mb-1">
-          <FilterSection id="tags" label="帽子" count={selectedTags.length} />
+          <FilterSection id="tags" label="RR" count={selectedTags.length} />
           {open.tags && (
             <div className="mt-0.5 flex flex-col gap-0.5">
-              {tags.map(t => {
-                const sel = selectedTags.includes(t.id);
-                return (
-                  <button key={t.id} onClick={() => onTagChange(toggle(selectedTags, t.id))}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-[12px] transition-colors w-full text-left ${sel ? "bg-[var(--accent-dim)] text-[var(--accent)]" : "text-[var(--txt-1)] hover:bg-[var(--bg-3)]"}`}
-                  >
-                    <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: t.color }} />
-                    <span className="truncate">{t.name}</span>
-                    {sel && <span className="ml-auto text-[10px]">✓</span>}
-                  </button>
-                );
-              })}
-              {tags.length === 0 && <div className="px-3 py-1 text-[11px] text-[var(--txt-3)]">暂无帽子</div>}
+              {(() => {
+                const parentTags = tags.filter((t: any) => !t.parentId);
+                const childTags = tags.filter((t: any) => t.parentId);
+                return parentTags.map(rr => {
+                  const fes = childTags.filter((t: any) => t.parentId === rr.id);
+                  const sel = selectedTags.includes(rr.id);
+                  const isCollapsed = collapsedRRs.has(rr.id);
+                  return (
+                    <React.Fragment key={rr.id}>
+                      <div className="flex items-center gap-0.5">
+                        <button onClick={() => onTagChange(toggle(selectedTags, rr.id))}
+                          className={`flex items-center gap-1.5 px-2 py-1.5 rounded-md text-[12px] transition-colors flex-1 text-left ${sel ? "bg-[var(--accent-dim)] text-[var(--accent)]" : "text-[var(--txt-1)] hover:bg-[var(--bg-3)]"}`}
+                        >
+                          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: rr.color }} />
+                          <span className="truncate">{rr.name}</span>
+                          {sel && <span className="ml-auto text-[10px] flex-shrink-0">✓</span>}
+                        </button>
+                        {fes.length > 0 && (
+                          <button
+                            onClick={() => {
+                              const next = new Set(collapsedRRs);
+                              if (next.has(rr.id)) next.delete(rr.id); else next.add(rr.id);
+                              setCollapsedRRs(next);
+                            }}
+                            className="p-1.5 rounded hover:bg-[var(--bg-3)] text-[var(--txt-2)] hover:text-[var(--txt-0)] flex-shrink-0"
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                              style={{ transform: isCollapsed ? "" : "rotate(90deg)", transition: "transform 0.15s" }}
+                            >
+                              <path d="M9 18l6-6-6-6"/>
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+                      {fes.length > 0 && (
+                        <div
+                          className="overflow-hidden transition-[max-height] duration-200 ease-out"
+                          style={{ maxHeight: isCollapsed ? "0px" : "300px" }}
+                        >
+                          <div className="pl-8 flex flex-col gap-0.5 pt-0.5">
+                            {fes.map(fe => {
+                                const feSel = selectedTags.includes(fe.id);
+                                return (
+                                  <button key={fe.id} onClick={() => onTagChange(toggle(selectedTags, fe.id))}
+                                    className={`flex items-center gap-2 px-2 py-1.5 rounded-md text-[11px] transition-colors w-full text-left ${feSel ? "bg-[var(--accent-dim)] text-[var(--accent)]" : "text-[var(--txt-2)] hover:bg-[var(--bg-3)]"}`}
+                                  >
+                                    <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 opacity-70" style={{ background: fe.color }} />
+                                    <span className="truncate">{fe.name}</span>
+                                    {feSel && <span className="ml-auto text-[10px]">✓</span>}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                        </div>
+                      )}
+                    </React.Fragment>
+                  );
+                });
+              })()}
+              {tags.length === 0 && <div className="px-3 py-1 text-[11px] text-[var(--txt-3)]">暂无RR</div>}
             </div>
           )}
         </div>

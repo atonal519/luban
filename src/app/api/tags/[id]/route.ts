@@ -7,12 +7,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const data: any = {};
   if ('name' in body) data.name = body.name?.trim();
   if ('color' in body) data.color = body.color;
+  if ('parentId' in body) data.parentId = body.parentId || null;
   const tag = await prisma.tag.update({ where: { id }, data });
   return NextResponse.json(tag);
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  // 子Tag 先脱离父关系
+  await prisma.tag.updateMany({ where: { parentId: id }, data: { parentId: null } });
+  // 清空关联Item
   await prisma.item.updateMany({ where: { tagId: id }, data: { tagId: null } });
   await prisma.tag.delete({ where: { id } });
   return NextResponse.json({ ok: true });
