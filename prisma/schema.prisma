@@ -197,6 +197,7 @@ model Item {
   dailyLogs  DailyLog[]
   alerts     Alert[]
   rejections Rejection[]
+  customFieldValues CustomFieldValue[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -290,4 +291,31 @@ model Rejection {
   createdAt   DateTime @default(now()) // 打回时间
 
   @@index([itemId])
+}
+
+// ── 自定义字段定义 ─────────────────────────────────
+model CustomFieldDef {
+  id          String   @id @default(cuid())
+  name        String
+  type        String              // "text" | "select"
+  options     String   @default("") // select 类型选项，JSON 数组
+  order       Int      @default(0)
+  showInBoard Boolean  @default(true)
+  showInDrawer Boolean @default(false)
+  createdAt   DateTime @default(now())
+
+  values CustomFieldValue[]
+}
+
+// ── 自定义字段值 ─────────────────────────────────
+model CustomFieldValue {
+  id      String @id @default(cuid())
+  itemId  String
+  item    Item   @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  fieldId String
+  field   CustomFieldDef @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+  value   String @default("")
+
+  @@unique([itemId, fieldId])
+  @@index([fieldId])
 }

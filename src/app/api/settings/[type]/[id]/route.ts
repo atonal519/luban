@@ -11,6 +11,7 @@ const MODELS: Record<string, any> = {
   users: prisma.user,
   tags: prisma.tag,
   milestones: prisma.milestone,
+  customFields: prisma.customFieldDef,
 };
 
 const ALLOWED_FIELDS: Record<string, string[]> = {
@@ -23,6 +24,7 @@ const ALLOWED_FIELDS: Record<string, string[]> = {
   users: ['name', 'email', 'role'],
   tags: ['name', 'color', 'parentId'],
   milestones: ['name', 'archived'],
+  customFields: ['name', 'type', 'options', 'order', 'showInBoard', 'showInDrawer'],
 };
 
 const INT_FIELDS = new Set(['order', 'minDays']);

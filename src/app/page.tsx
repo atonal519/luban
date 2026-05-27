@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { Board } from "@/components/board";
+import { SplashWrapper } from "@/components/splash-wrapper";
 
 // Build nested children include up to maxDepth levels
 function buildChildrenInclude(depth: number): any {
@@ -35,7 +36,7 @@ export default async function Home({
     expandedTagIds = [...selectedTagIds, ...childIds];
   }
 
-  const [items, statuses, stageGroups, milestones] = await Promise.all([
+  const [items, statuses, stageGroups, milestones, customFields] = await Promise.all([
     prisma.item.findMany({
       where: {
         parentId: null,
@@ -77,6 +78,7 @@ export default async function Home({
     prisma.statusDef.findMany({ orderBy: { order: "asc" } }),
     prisma.stageGroup.findMany({ orderBy: { order: "asc" } }),
     prisma.milestone.findMany({ orderBy: { createdAt: "asc" } }),
+    prisma.customFieldDef.findMany({ where: { showInBoard: true }, orderBy: { order: "asc" } }),
   ]);
 
   const stageGroupMap: Record<string, string> = {};
@@ -87,14 +89,17 @@ export default async function Home({
   const stageGroupsList = stageGroups.map(g => ({ code: g.code, label: g.label }));
 
   return (
-    <Board
-      items={JSON.parse(JSON.stringify(items))}
-      stageFilter={stage || ""}
-      stageGroupMap={stageGroupMap}
-      stageGroups={stageGroupsList}
-      tags={JSON.parse(JSON.stringify(tags))}
-      milestones={JSON.parse(JSON.stringify(milestones))}
-      selectedMilestone={milestone || ""}
-    />
+    <SplashWrapper>
+      <Board
+        items={JSON.parse(JSON.stringify(items))}
+        stageFilter={stage || ""}
+        stageGroupMap={stageGroupMap}
+        stageGroups={stageGroupsList}
+        tags={JSON.parse(JSON.stringify(tags))}
+        milestones={JSON.parse(JSON.stringify(milestones))}
+        customFields={JSON.parse(JSON.stringify(customFields))}
+        selectedMilestone={milestone || ""}
+      />
+    </SplashWrapper>
   );
 }

@@ -55,5 +55,19 @@ export async function POST(req: NextRequest) {
     }
   }
 
+
+
+  // Save custom field values
+  const { customFieldValues } = body;
+  if (customFieldValues && typeof customFieldValues === 'object') {
+    for (const [fieldId, value] of Object.entries(customFieldValues)) {
+      if (value) {
+        await prisma.customFieldValue.create({
+          data: { itemId: item.id, fieldId, value: String(value) },
+        });
+      }
+    }
+  }
+
   return NextResponse.json(item, { status: 201 });
 }

@@ -237,7 +237,7 @@ function AlertBar({ items }: { items: Item[] }) {
 }
 
 
-export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGroups: propGroups, tags = [], milestones = [], selectedMilestone = "" }: { items: Item[]; stageFilter?: string; stageGroupMap?: Record<string, string>; stageGroups?: { code: string; label: string }[]; tags?: { id: string; name: string; color: string }[]; milestones?: { id: string; name: string; archived?: boolean }[]; selectedMilestone?: string }) {
+export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGroups: propGroups, tags = [], milestones = [], selectedMilestone = "", customFields = [] }: { items: Item[]; stageFilter?: string; stageGroupMap?: Record<string, string>; stageGroups?: { code: string; label: string }[]; tags?: { id: string; name: string; color: string }[]; milestones?: { id: string; name: string; archived?: boolean }[]; selectedMilestone?: string; customFields?: any[] }) {
   const STAGE_GROUPS = propGroups || DEFAULT_STAGE_GROUPS;
   const STAGE_GROUP_MAP = propMap || DEFAULT_STAGE_GROUP_MAP;
   const router = useRouter();
@@ -301,6 +301,14 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
     });
     router.refresh();
   }
+  async function saveCustomField(itemId: string, fieldId: string, value: string) {
+    await fetch(`/api/versions/${itemId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ customFieldValues: { [fieldId]: value } }),
+    });
+    router.refresh();
+  }
 
   const [tagPickerItemId, setTagPickerItemId] = useState<string | null>(null);
   const [gateModal, setGateModal] = useState<{ itemId: string; from: string; to: string; state?: string } | null>(null);
@@ -310,6 +318,11 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
   const [gateCommit, setGateCommit] = useState("");
   const [gateImages, setGateImages] = useState<string[]>([]);
   const [gateUploading, setGateUploading] = useState(false);
+  // Get custom field value for an item by fieldId
+  function getCustomFieldValue(item: any, fieldId: string): string {
+    const cv = item.customFieldValues?.find((v: any) => v.fieldId === fieldId);
+    return cv?.value || "";
+  }
 
   async function handleGateUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files;
@@ -514,13 +527,23 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
 
       {/* Table */}
       <div className="flex-1 overflow-auto px-5 py-4">
-        <table className="w-full border-separate border-spacing-0 text-[12px] table-fixed" style={{ minWidth: '1400px' }}>
-          <colgroup><col style={{ width: '90px' }} /><col style={{ width: '200px' }} /><col style={{ width: '120px' }} /><col style={{ width: '80px' }} /><col style={{ width: '80px' }} /><col style={{ width: '90px' }} /><col style={{ width: '140px' }} /><col style={{ width: '140px' }} /><col style={{ width: '140px' }} /><col style={{ width: '140px' }} /><col style={{ width: '80px' }} /><col style={{ width: '50px' }} /></colgroup>
+        <table className="border-separate border-spacing-0 text-[12px] table-fixed" style={{ width: 1350 + customFields.length * 110 }}>
+          <colgroup>
+          <col style={{ width: '90px' }} /><col style={{ width: '200px' }} /><col style={{ width: '120px' }} /><col style={{ width: '80px' }} /><col style={{ width: '80px' }} /><col style={{ width: '90px' }} />
+          {customFields.map((cf: any) => <col key={cf.id} style={{ width: '110px' }} />)}
+          <col style={{ width: '140px' }} /><col style={{ width: '140px' }} /><col style={{ width: '140px' }} /><col style={{ width: '140px' }} />
+          <col style={{ width: '80px' }} /><col style={{ width: '50px' }} />
+        </colgroup>
           <thead>
             <tr>
               {["版本号", "项目名称", "研发模块", "类型", "责任人", "优先级"].map(h => (
                 <th key={h} className="px-3 py-2 text-left text-[11px] text-[var(--txt-2)] font-medium bg-[var(--bg-1)] border-b border-[var(--line-2)] sticky top-0 z-10 whitespace-nowrap">
                   {h}
+                </th>
+              ))}
+              {customFields.map((cf: any) => (
+                <th key={cf.id} className="px-2 py-2 text-left text-[11px] text-[var(--txt-2)] font-medium bg-[var(--bg-1)] border-b border-[var(--line-2)] sticky top-0 z-10 whitespace-nowrap">
+                  {cf.name}
                 </th>
               ))}
               {STAGE_GROUPS.map(g => (
@@ -616,6 +639,29 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
                         displayNode={priorityTag(item.priority)}
                       />
                     </td>
+                    {/* 自定义字段 */}
+                    {customFields.map((cf: any) => {
+                      const cfValue = getCustomFieldValue(item, cf.id);
+                      const options = cf.type === "select" && cf.options
+                        ? (() => { try { return JSON.parse(cf.options).map((o: string) => ({ value: o, label: o })); } catch { return []; } })()
+                        : undefined;
+                      const displayNode = cf.type === "select"
+                        ? <span className={cfValue ? "text-[12px] px-1.5 py-0.5 rounded" : "text-[var(--txt-3)] text-[11px]"} style={cfValue ? { background: "#6366f118", color: "#6366f1" } : {}}>{cfValue || "—"}</span>
+                        : <span className="text-[12px]">{cfValue || "—"}</span>;
+                      return (
+                        <td key={cf.id} className="px-2 py-2 align-top border-b border-[var(--line)] bg-[var(--bg-1)] group-hover:bg-[var(--bg-2)] transition-colors overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                          <EditableCell
+                            value={cfValue}
+                            itemId={item.id}
+                            field={cf.id}
+                            type={cf.type === "select" ? "select" : undefined}
+                            options={options}
+                            onSave={(itemId, _field, value) => saveCustomField(itemId, cf.id, value)}
+                            displayNode={displayNode}
+                          />
+                        </td>
+                      );
+                    })}
                     {/* 阶段格子 */}
                     {STAGE_GROUPS.map((g) => {
                       const st = stageStatus(item, g.code, STAGE_GROUPS, STAGE_GROUP_MAP);
@@ -680,7 +726,7 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
                     <td className="px-2 h-[48px] border-b border-[var(--line)] bg-blue-500/5" style={{ paddingLeft: `${(indentLevel + 1) * 20 + 12}px` }}>
                       <span className="text-[var(--accent)] text-[11px]">└</span>
                     </td>
-                    <td className="px-2 h-[48px] border-b border-[var(--line)] bg-blue-500/5" colSpan={11}>
+                    <td className="px-2 h-[48px] border-b border-[var(--line)] bg-blue-500/5" colSpan={11 + customFields.length}>
                       <input
                         autoFocus
                         type="text"
@@ -731,7 +777,7 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
                 // RR banner row
                 rows.push(
                   <tr key={`tag-${rr.id}`}>
-                    <td colSpan={12} className="px-0 border-b border-[var(--line)]">
+                    <td colSpan={12 + customFields.length} className="px-0 border-b border-[var(--line)]">
                       <div
                         className="w-full flex items-center gap-2 px-4 py-2 group/tag"
                         style={{ background: rr.color + "14" }}
@@ -769,7 +815,7 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
                     const feCollapsed = collapsedFEs.has(fe.id);
                     rows.push(
                       <tr key={`tag-${fe.id}`}>
-                        <td colSpan={12} className="px-0 border-b border-[var(--line)]">
+                        <td colSpan={12 + customFields.length} className="px-0 border-b border-[var(--line)]">
                           <div className="w-full flex items-center gap-2 pr-4 py-1.5 group/tag" style={{ background: fe.color + "08", paddingLeft: "48px" }}>
                             <button onClick={() => toggleFECollapse(fe.id)} className="flex items-center gap-2 flex-1 text-left hover:opacity-80 transition-opacity">
                               <span className="text-[11px]" style={{ color: fe.color }}>
@@ -801,7 +847,7 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
               if (untagged.length > 0) {
                 rows.push(
                   <tr key="tag-untagged">
-                    <td colSpan={12} className="px-0 border-b border-[var(--line)]">
+                    <td colSpan={12 + customFields.length} className="px-0 border-b border-[var(--line)]">
                       <div className="flex items-center gap-2 px-4 py-2 bg-[var(--bg-3)]">
                         <span className="w-2 h-2 rounded-full bg-[var(--txt-3)] flex-shrink-0" />
                         <span className="text-[12px] font-semibold text-[var(--txt-2)]">未分类</span>
