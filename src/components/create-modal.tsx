@@ -25,6 +25,8 @@ export function CreateModal({
   const [natureId, setNatureId] = useState("");
   const [ownerId, setOwnerId] = useState("");
   const [moduleIds, setModuleIds] = useState<string[]>([]);
+  const [customFields, setCustomFields] = useState<any[]>([]);
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -32,6 +34,10 @@ export function CreateModal({
     fetch("/api/options")
       .then((r) => r.json())
       .then(setOptions);
+    fetch("/api/settings/customFields")
+      .then((r) => r.json())
+      .then(setCustomFields)
+      .catch(() => {});
   }, []);
 
   function toggleModule(id: string) {
@@ -59,6 +65,7 @@ export function CreateModal({
           natureId: natureId || null,
           ownerId: ownerId || null,
           moduleIds,
+          customFieldValues: Object.keys(customFieldValues).length > 0 ? customFieldValues : undefined,
         }),
       });
 
@@ -204,6 +211,38 @@ export function CreateModal({
               )}
             </div>
           </div>
+
+          {/* 自定义字段 */}
+          {customFields.length > 0 && (
+            <div className="border-t border-[var(--line)] pt-3 mt-1">
+              <span className="text-[11px] text-[var(--txt-3)] block mb-2">自定义字段</span>
+              {customFields.map((cf) => (
+                <div key={cf.id} className="mb-2">
+                  <label className="text-[11px] text-[var(--txt-2)] block mb-1">{cf.name}</label>
+                  {cf.type === "select" ? (
+                    <select
+                      value={customFieldValues[cf.id] || ""}
+                      onChange={(e) => setCustomFieldValues(prev => ({ ...prev, [cf.id]: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] text-[13px] text-[var(--txt-0)] outline-none focus:border-[var(--accent)]"
+                    >
+                      <option value="">选择{cf.name}</option>
+                      {((): any[] => { try { return JSON.parse(cf.options || "[]"); } catch { return []; } })().map((opt: string) => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      value={customFieldValues[cf.id] || ""}
+                      onChange={(e) => setCustomFieldValues(prev => ({ ...prev, [cf.id]: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-lg border border-[var(--line-2)] bg-[var(--bg-2)] text-[13px] text-[var(--txt-0)] outline-none focus:border-[var(--accent)]"
+                      placeholder={`输入${cf.name}`}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Error */}
           {error && (
