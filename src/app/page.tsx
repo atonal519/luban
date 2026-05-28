@@ -4,11 +4,12 @@ import { SplashWrapper } from "@/components/splash-wrapper";
 
 // Build nested children include up to maxDepth levels
 function buildChildrenInclude(depth: number): any {
-  if (depth === 0) return { include: { status: true, owner: true, priority: true, nature: true, modules: { include: { module: true } } }, orderBy: { order: "asc" } };
+  if (depth === 0) return { include: { status: true, owner: true, priority: true, nature: true, modules: { include: { module: true } }, customFieldValues: { include: { field: true } } }, orderBy: { order: "asc" } };
   return {
     include: {
       status: true, owner: true, priority: true, nature: true,
       modules: { include: { module: true } },
+      customFieldValues: { include: { field: true } },
       approvals: { where: { scope: "NODE" }, include: { events: { include: { actor: true }, orderBy: { createdAt: "asc" } } }, orderBy: { createdAt: "asc" }, take: 1 },
       children: buildChildrenInclude(depth - 1),
     },
@@ -64,6 +65,7 @@ export default async function Home({
           orderBy: { logDate: "desc" },
           take: 5,
         },
+        customFieldValues: { include: { field: true } },
         alerts: {
           where: { dismissedAt: null },
           orderBy: { createdAt: "desc" },

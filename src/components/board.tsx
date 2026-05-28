@@ -43,7 +43,7 @@ function overallStatus(item: Item): { label: string; cls: string } {
   // 未开始：没有任何子节点有状态
   const hasAnyStatus = children.some((c: Item) => c.status?.code);
   if (!hasAnyStatus && !item.status?.code) {
-    return { label: "未开始", cls: "text-[var(--txt-3)] bg-transparent" };
+    return { label: "未开始", cls: "bg-gray-400/10 text-[var(--txt-2)]" };
   }
 
   // 找当前活跃阶段（第一个未完成的阶段分组）
@@ -527,12 +527,12 @@ export function Board({ items, stageFilter = "", stageGroupMap: propMap, stageGr
 
       {/* Table */}
       <div className="flex-1 overflow-auto px-5 py-4">
-        <table className="border-separate border-spacing-0 text-[12px] table-fixed" style={{ width: 1350 + customFields.length * 110 }}>
+        <table className="border-separate border-spacing-0 text-[12px] table-fixed w-full">
           <colgroup>
-          <col style={{ width: '90px' }} /><col style={{ width: '200px' }} /><col style={{ width: '120px' }} /><col style={{ width: '80px' }} /><col style={{ width: '80px' }} /><col style={{ width: '90px' }} />
+          <col style={{ width: '90px' }} /><col /><col style={{ width: '120px' }} /><col style={{ width: '80px' }} /><col style={{ width: '80px' }} /><col style={{ width: '90px' }} />
           {customFields.map((cf: any) => <col key={cf.id} style={{ width: '110px' }} />)}
           <col style={{ width: '140px' }} /><col style={{ width: '140px' }} /><col style={{ width: '140px' }} /><col style={{ width: '140px' }} />
-          <col style={{ width: '80px' }} /><col style={{ width: '50px' }} />
+          <col style={{ width: '90px' }} /><col style={{ width: '50px' }} />
         </colgroup>
           <thead>
             <tr>
