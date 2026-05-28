@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/prisma";
 import { Board } from "@/components/board";
-import { SplashWrapper } from "@/components/splash-wrapper";
 
 // Build nested children include up to maxDepth levels
 function buildChildrenInclude(depth: number): any {
@@ -91,17 +90,15 @@ export default async function Home({
   const stageGroupsList = stageGroups.map(g => ({ code: g.code, label: g.label }));
 
   return (
-    <SplashWrapper>
-      <Board
-        items={JSON.parse(JSON.stringify(items))}
-        stageFilter={stage || ""}
-        stageGroupMap={stageGroupMap}
-        stageGroups={stageGroupsList}
-        tags={JSON.parse(JSON.stringify(tags))}
-        milestones={JSON.parse(JSON.stringify(milestones))}
-        customFields={JSON.parse(JSON.stringify(customFields))}
-        selectedMilestone={milestone || ""}
-      />
-    </SplashWrapper>
+    <Board
+      items={JSON.parse(JSON.stringify(items))}
+      stageFilter={stage || ""}
+      stageGroupMap={stageGroupMap}
+      stageGroups={stageGroupsList}
+      tags={JSON.parse(JSON.stringify(tags))}
+      milestones={JSON.parse(JSON.stringify(milestones))}
+      customFields={JSON.parse(JSON.stringify(customFields))}
+      selectedMilestone={milestone || ""}
+    />
   );
 }
