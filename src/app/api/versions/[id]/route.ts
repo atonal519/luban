@@ -38,6 +38,16 @@ export async function PATCH(
       }
     }
 
+    if ('customFieldValues' in body && typeof body.customFieldValues === 'object' && body.customFieldValues !== null) {
+      for (const [fieldId, value] of Object.entries(body.customFieldValues)) {
+        await prisma.customFieldValue.upsert({
+          where: { itemId_fieldId: { itemId: id, fieldId } },
+          update: { value: String(value) },
+          create: { itemId: id, fieldId, value: String(value) },
+        });
+      }
+    }
+
     const updated = await prisma.item.update({
       where: { id },
       data,

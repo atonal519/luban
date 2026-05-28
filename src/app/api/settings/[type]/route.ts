@@ -11,6 +11,7 @@ const MODELS: Record<string, any> = {
   users: prisma.user,
   tags: prisma.tag,
   milestones: prisma.milestone,
+  customFields: prisma.customFieldDef,
 };
 
 const ALLOWED_FIELDS: Record<string, string[]> = {
@@ -23,9 +24,10 @@ const ALLOWED_FIELDS: Record<string, string[]> = {
   users: ['name', 'email', 'role'],
   tags: ['name', 'color', 'parentId'],
   milestones: ['name', 'archived'],
+  customFields: ['name', 'type', 'options', 'order', 'showInBoard', 'showInDrawer'],
 };
 
-const HAS_ORDER = new Set(['modules', 'natures', 'statuses', 'priorities', 'stageGroups', 'stageTemplates']);
+const HAS_ORDER = new Set(['modules', 'natures', 'statuses', 'priorities', 'stageGroups', 'stageTemplates', 'customFields']);
 
 function filterBody(type: string, body: Record<string, any>): Record<string, any> {
   const allowed = ALLOWED_FIELDS[type];

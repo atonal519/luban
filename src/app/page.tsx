@@ -1,13 +1,15 @@
 import { prisma } from "@/lib/prisma";
 import { Board } from "@/components/board";
+import { SplashWrapper } from "@/components/splash-wrapper";
 
 // Build nested children include up to maxDepth levels
 function buildChildrenInclude(depth: number): any {
-  if (depth === 0) return { include: { status: true, owner: true, priority: true, nature: true, modules: { include: { module: true } } }, orderBy: { order: "asc" } };
+  if (depth === 0) return { include: { status: true, owner: true, priority: true, nature: true, modules: { include: { module: true } }, customFieldValues: { include: { field: true } } }, orderBy: { order: "asc" } };
   return {
     include: {
       status: true, owner: true, priority: true, nature: true,
       modules: { include: { module: true } },
+      customFieldValues: { include: { field: true } },
       approvals: { where: { scope: "NODE" }, include: { events: { include: { actor: true }, orderBy: { createdAt: "asc" } } }, orderBy: { createdAt: "asc" }, take: 1 },
       children: buildChildrenInclude(depth - 1),
     },
@@ -35,7 +37,7 @@ export default async function Home({
     expandedTagIds = [...selectedTagIds, ...childIds];
   }
 
-  const [items, statuses, stageGroups, milestones] = await Promise.all([
+  const [items, statuses, stageGroups, milestones, customFields] = await Promise.all([
     prisma.item.findMany({
       where: {
         parentId: null,
@@ -63,6 +65,7 @@ export default async function Home({
           orderBy: { logDate: "desc" },
           take: 5,
         },
+        customFieldValues: { include: { field: true } },
         alerts: {
           where: { dismissedAt: null },
           orderBy: { createdAt: "desc" },
@@ -77,6 +80,7 @@ export default async function Home({
     prisma.statusDef.findMany({ orderBy: { order: "asc" } }),
     prisma.stageGroup.findMany({ orderBy: { order: "asc" } }),
     prisma.milestone.findMany({ orderBy: { createdAt: "asc" } }),
+    prisma.customFieldDef.findMany({ where: { showInBoard: true }, orderBy: { order: "asc" } }),
   ]);
 
   const stageGroupMap: Record<string, string> = {};
@@ -87,14 +91,17 @@ export default async function Home({
   const stageGroupsList = stageGroups.map(g => ({ code: g.code, label: g.label }));
 
   return (
-    <Board
-      items={JSON.parse(JSON.stringify(items))}
-      stageFilter={stage || ""}
-      stageGroupMap={stageGroupMap}
-      stageGroups={stageGroupsList}
-      tags={JSON.parse(JSON.stringify(tags))}
-      milestones={JSON.parse(JSON.stringify(milestones))}
-      selectedMilestone={milestone || ""}
-    />
+    <SplashWrapper>
+      <Board
+        items={JSON.parse(JSON.stringify(items))}
+        stageFilter={stage || ""}
+        stageGroupMap={stageGroupMap}
+        stageGroups={stageGroupsList}
+        tags={JSON.parse(JSON.stringify(tags))}
+        milestones={JSON.parse(JSON.stringify(milestones))}
+        customFields={JSON.parse(JSON.stringify(customFields))}
+        selectedMilestone={milestone || ""}
+      />
+    </SplashWrapper>
   );
 }

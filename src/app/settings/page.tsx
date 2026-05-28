@@ -12,6 +12,7 @@ const TABS = [
   { key: "statuses", label: "节点状态", fields: ["label", "color"] },
   { key: "tags", label: "RR", fields: ["name", "color", "parentId"] },
   { key: "milestones", label: "里程碑", fields: ["name"] },
+  { key: "customFields", label: "自定义字段", fields: ["name", "type", "options", "showInDrawer"] },
 ];
 
 export default function SettingsPage() {
@@ -46,6 +47,9 @@ export default function SettingsPage() {
   async function handleAdd() {
     if (!addData.name?.trim()) { alert("请填写名称"); return; }
     const data = { ...addData };
+    if (activeTab === "customFields" && data.options && typeof data.options === "string" && !data.options.startsWith("[")) {
+      data.options = JSON.stringify(data.options.split(",").map((s: string) => s.trim()).filter(Boolean));
+    }
     // Auto-generate code
     if ((activeTab === "natures" || activeTab === "statuses" || activeTab === "stageGroups") && data.label && !data.code) {
       data.code = data.label.toUpperCase().replace(/[^A-Z0-9\u4e00-\u9fff]/g, '_').replace(/_+/g, '_');
@@ -69,6 +73,9 @@ export default function SettingsPage() {
   }
 
   async function handleSave(id: string) {
+    if (activeTab === "customFields" && editData.options && typeof editData.options === "string" && !editData.options.startsWith("[")) {
+      editData.options = JSON.stringify(editData.options.split(",").map((s: string) => s.trim()).filter(Boolean));
+    }
     await fetch(`/api/settings/${activeTab}/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -177,6 +184,40 @@ export default function SettingsPage() {
         </select>
       );
     }
+    if (field === "type") {
+      return (
+        <select value={value || 'text'} onChange={(e) => onChange(e.target.value)} className="px-1.5 h-[26px] rounded border border-[var(--line-2)] bg-[var(--bg-2)] text-[12px] outline-none">
+          <option value="text">文本</option>
+          <option value="select">下拉选择</option>
+        </select>
+      );
+    }
+    if (field === "options") {
+      const itemType = editingId
+        ? (editData.type || items.find((i: any) => i.id === editingId)?.type)
+        : addData.type;
+      if (itemType !== "select") {
+        return <span className="text-[11px] text-[var(--txt-3)] h-[26px] flex items-center">仅下拉类型可用</span>;
+      }
+      // Parse JSON array to comma-separated for editing
+      const displayValue = typeof value === 'string' && value.startsWith('[')
+        ? (() => { try { return JSON.parse(value).join(', '); } catch { return value; } })()
+        : (value || '');
+      return <input type="text" value={displayValue} onChange={(e) => onChange(e.target.value)} placeholder="逗号分隔选项" className="px-1.5 h-[26px] rounded border border-[var(--line-2)] bg-[var(--bg-2)] text-[12px] outline-none focus:border-[var(--accent)] w-[200px]" />;
+    }
+    if (field === "showInDrawer") {
+      return (
+        <button
+          type="button"
+          onClick={() => onChange(!value)}
+          className={`px-2.5 h-[26px] rounded-md border text-[12px] font-medium transition-colors leading-[20px] ${
+            value ? 'bg-blue-500/10 text-blue-600 border-blue-500/20' : 'bg-[var(--bg-2)] text-[var(--txt-3)] border-[var(--line-2)]'
+          }`}
+        >
+          {value ? '是' : '否'}
+        </button>
+      );
+    }
     if (field === "stageGroupId") {
       return (
         <select value={value || ""} onChange={(e) => onChange(e.target.value)} className="px-1.5 h-[26px] rounded border border-[var(--line-2)] bg-[var(--bg-2)] text-[12px] outline-none">
@@ -197,6 +238,7 @@ export default function SettingsPage() {
     email: "邮箱", role: "角色", code: "编码",
     isParallel: "并行", parallelGroup: "并行组",
     stageGroup: "所属阶段", stageGroupId: "所属阶段", parentId: "父RR",
+    type: "类型", options: "选项", showInDrawer: "详情栏展示",
   };
 
   return (
@@ -229,7 +271,7 @@ export default function SettingsPage() {
         {/* Add button */}
         <div className="flex justify-between items-center mb-3">
           <span className="text-[11px] text-[var(--txt-2)] font-mono uppercase tracking-wider">{tab.label} · {items.length} 条</span>
-          <button onClick={() => { { const h = Math.floor(Math.random()*360); setShowAdd(true); setAddData({ color: `hsl(${h}, 65%, 45%)` }); } }} className="text-[11px] text-[var(--accent)] hover:underline">+ 新增</button>
+          <button onClick={() => { { const h = Math.floor(Math.random()*360); setShowAdd(true); setAddData({ color: `hsl(${h}, 65%, 45%)`, ...(activeTab === "customFields" ? { type: "text" } : {}) }); } }} className="text-[11px] text-[var(--accent)] hover:underline">+ 新增</button>
         </div>
 
         {/* Add form */}
