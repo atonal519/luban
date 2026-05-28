@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>鲁班 — 会议-门禁强关联 交互预览</title>
+<style>
+  :root {
+    --bg-base: #f0f1f5;
+    --bg-1: #ffffff;
+    --bg-2: #f5f6fa;
+    --bg-3: #eceef4;
+    --bg-4: #e2e5ee;
+    --line: rgba(0,0,0,0.07);
+    --line-2: rgba(0,0,0,0.12);
+    --txt-0: #1a1f2e;
+    --txt-1: #4a5270;
+    --txt-2: #7e8da8;
+    --txt-3: #b0b8cc;
+    --accent: #3b6ff0;
+    --accent-dim: rgba(59,111,240,0.10);
+    --ok: #18a870;
+    --risk: #d97706;
+    --late: #dc3535;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+    background: var(--bg-base);
+    color: var(--txt-0);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  * { scrollbar-width: thin; scrollbar-color: var(--bg-4) transparent; }
+
+  /* ── Layout ── */
+  .app { display: flex; height: 100vh; overflow: hidden; }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 220px; min-width: 220px;
+    background: var(--bg-1);
+    border-right: 1px solid var(--line);
+    display: flex; flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+  }
+  .sidebar-logo {
+    padding: 18px 16px 14px;
+    border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .sidebar-logo-text {
+    font-family: "Courier New", monospace;
+    font-size: 15px; font-weight: 700;
+    color: var(--txt-0); letter-spacing: 0.05em;
+  }
+  .sidebar-nav {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--line);
+  }
+  .sidebar-nav-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 8px; border-radius: 6px;
+    font-size: 12px; color: var(--txt-1);
+    cursor: pointer; transition: background 0.15s;
+    text-decoration: none;
+  }
+  .sidebar-nav-item:hover { background: var(--bg-3); }
+  .sidebar-nav-item.active { background: var(--accent-dim); color: var(--accent); font-weight: 600; }
+  .sidebar-section-label {
+    font-size: 10px; color: var(--txt-3);
+    letter-spacing: 0.12em; text-transform: uppercase;
+    font-family: "Courier New", monospace;
+    padding: 10px 16px 4px;
+  }
+  .sidebar-filter {
+    flex: 1; overflow-y: auto; padding: 0 10px 8px;
+  }
+  .sidebar-bottom {
+    border-top: 1px solid var(--line);
+    padding: 10px 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .avatar {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: linear-gradient(135deg, #3b6ff0, #7c3aed);
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 11px; font-weight: 700;
+    flex-shrink: 0;
+  }
+  .sidebar-user-name { font-size: 12px; font-weight: 500; color: var(--txt-0); }
+  .sidebar-user-role { font-size: 10px; color: var(--txt-2); }
+
+  /* ── Main ── */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* ── Toolbar ── */
+  .toolbar {
+    background: var(--bg-1);
+    border-bottom: 1px solid var(--line);
+    padding: 0 20px;
+    height: 48px;
+    display: flex; align-items: center; gap: 10px;
+    flex-shrink: 0;
+  }
+  .toolbar-title {
+    font-size: 13px; font-weight: 600; color: var(--txt-0);
+    margin-right: 8px;
+  }
+  .stage-tab {
+    padding: 4px 10px; border-radius: 5px;
+    font-size: 12px; color: var(--txt-1);
+    border: 1px solid var(--line-2);
+    background: var(--bg-1); cursor: pointer;
+    transition: all 0.15s; white-space: nowrap;
+  }
+  .stage-tab:hover { border-color: var(--accent); color: var(--txt-0); }
+  .stage-tab.active { background: var(--accent); color: white; border-color: var(--accent); font-weight: 500; }
+  .toolbar-spacer { flex: 1; }
+  .demo-switch {
+    display: flex; align-items: center; gap: 6px;
+    padding: 5px 12px; border-radius: 6px;
+    background: var(--bg-3); border: 1px solid var(--line-2);
+    font-size: 11px; color: var(--txt-1); cursor: pointer;
+    transition: all 0.15s;
+  }
+  .demo-switch:hover { border-color: var(--accent); color: var(--accent); }
+  .demo-switch.on { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  .switch-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--txt-3); transition: background 0.15s;
+  }
+  .demo-switch.on .switch-dot { background: var(--accent); }
+
+  /* ── Section header ── */
+  .section-header {
+    padding: 16px 20px 10px;
+    font-size: 11px; font-weight: 600;
+    color: var(--txt-2); letter-spacing: 0.06em; text-transform: uppercase;
+    font-family: "Courier New", monospace;
+  }
+  .section-divider {
+    border: none;
+    border-top: 2px dashed var(--line-2);
+    margin: 4px 20px 16px;
+  }
+
+  /* ── Table ── */
+  .content-area {
+    flex: 1; overflow: auto; padding: 0 20px 20px;
+  }
+  table {
+    width: 100%; border-collapse: separate; border-spacing: 0;
+    font-size: 12px; table-layout: fixed;
+    min-width: 900px;
+  }
+  colgroup .col-version { width: 90px; }
+  colgroup .col-project { width: 200px; }
+  colgroup .col-owner  { width: 100px; }
+  colgroup .col-status { width: 90px; }
+  colgroup .col-meeting { width: 80px; }
+  colgroup .col-action { width: 100px; }
+
+  thead th {
+    padding: 8px 12px;
+    text-align: left;
+    font-size: 11px; font-weight: 500; color: var(--txt-2);
+    background: var(--bg-1);
+    border-bottom: 1px solid var(--line-2);
+    white-space: nowrap;
+    position: sticky; top: 0; z-index: 5;
+  }
+  tbody tr {
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  tbody tr:hover td { background: var(--bg-2); }
+  tbody tr:hover .row-action-btn { opacity: 1; }
+  td {
+    padding: 7px 12px;
+    border-bottom: 1px solid var(--line);
+    background: var(--bg-1);
+    vertical-align: middle;
+    overflow: hidden;
+  }
+  .version-no {
+    font-family: "Courier New", monospace;
+    font-size: 11px; font-weight: 600;
+    color: var(--accent); white-space: nowrap;
+  }
+  .project-name {
+    font-size: 12px; font-weight: 500; color: var(--txt-0);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .owner-cell { display: flex; align-items: center; gap: 5px; }
+  .owner-avatar {
+    width: 18px; height: 18px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; font-weight: 700; color: white; flex-shrink: 0;
+  }
+  .status-badge {
+    display: inline-flex; align-items: center;
+    padding: 2px 7px; border-radius: 4px;
+    font-size: 11px; font-weight: 500; white-space: nowrap;
+  }
+  .status-ok  { background: rgba(24,168,112,.10); color: #18a870; }
+  .status-risk { background: rgba(217,119,6,.10);  color: #d97706; }
+  .status-late { background: rgba(220,53,53,.10); color: #dc3535; }
+  .status-normal { background: rgba(59,111,240,.08); color: #3b6ff0; }
+
+  .row-action-btn {
+    opacity: 0; transition: opacity 0.15s;
+    padding: 3px 8px; border-radius: 5px;
+    font-size: 11px; border: 1px solid var(--line-2);
+    background: var(--bg-1); color: var(--txt-1);
+    cursor: pointer; white-space: nowrap;
+  }
+  .row-action-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .row-action-btn.gate-btn {
+    background: var(--accent); color: white; border-color: var(--accent);
+    opacity: 0;
+  }
+  .row-action-btn.gate-btn:hover { background: #2f5fd6; }
+  tbody tr:hover .row-action-btn.gate-btn { opacity: 1; }
+
+  /* ── Meeting Icon ── */
+  .meeting-cell { position: relative; display: flex; align-items: center; }
+  .meeting-icon-wrap {
+    position: relative;
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border-radius: 6px;
+    cursor: pointer; transition: background 0.15s;
+    flex-shrink: 0;
+  }
+  .meeting-icon-wrap:hover { background: var(--bg-3); }
+  .meeting-badge {
+    position: absolute; top: 0; right: 0;
+    width: 14px; height: 14px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 8px; font-weight: 800;
+    border: 1.5px solid var(--bg-1);
+  }
+  .badge-warn  { background: #d97706; color: white; }
+  .badge-ok    { background: #18a870; color: white; }
+  .badge-count { background: var(--bg-3); color: var(--txt-1); border-color: var(--line-2); font-size: 9px; }
+
+  /* ── Tooltip ── */
+  .tooltip-wrap { position: relative; display: inline-flex; }
+  .tooltip {
+    position: absolute; bottom: calc(100% + 6px); left: 50%;
+    transform: translateX(-50%);
+    background: #1a1f2e; color: #fff;
+    font-size: 11px; padding: 5px 9px; border-radius: 5px;
+    white-space: nowrap; pointer-events: none;
+    opacity: 0; transition: opacity 0.15s;
+    z-index: 100;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  }
+  .tooltip::after {
+    content: ""; position: absolute; top: 100%; left: 50%;
+    transform: translateX(-50%);
+    border: 4px solid transparent; border-top-color: #1a1f2e;
+  }
+  .tooltip-wrap:hover .tooltip { opacity: 1; }
+
+  /* ── Popover ── */
+  .popover {
+    position: absolute; top: calc(100% + 6px); left: 0;
+    background: var(--bg-1);
+    border: 1px solid var(--line-2);
+    border-radius: 10px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
+    z-index: 200;
+    min-width: 220px;
+    animation: pop-in 0.15s ease-out both;
+  }
+  .popover.popover-warn { min-width: 240px; }
+  @keyframes pop-in {
+    from { opacity: 0; transform: translateY(4px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .popover-header {
+    padding: 10px 12px 8px;
+    border-bottom: 1px solid var(--line);
+    font-size: 11px; font-weight: 600; color: var(--txt-0);
+  }
+  .popover-body { padding: 8px 12px 10px; }
+  .popover-warn-box {
+    background: rgba(217,119,6,.08);
+    border: 1px solid rgba(217,119,6,.25);
+    border-radius: 7px; padding: 8px 10px;
+    font-size: 11px; color: #92400e;
+    margin-bottom: 8px; line-height: 1.55;
+  }
+  .popover-warn-box .warn-title { font-weight: 600; margin-bottom: 2px; }
+  .meeting-list-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 5px 2px; border-radius: 5px;
+    transition: background 0.1s;
+  }
+  .meeting-list-item:hover { background: var(--bg-2); padding-left: 4px; }
+  .meeting-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .meeting-dot.done { background: var(--ok); }
+  .meeting-dot.pending { background: var(--risk); }
+  .meeting-item-title { font-size: 12px; color: var(--txt-0); flex: 1; }
+  .meeting-item-date { font-size: 10px; color: var(--txt-2); white-space: nowrap; }
+  .meeting-item-status {
+    font-size: 10px; padding: 1px 5px; border-radius: 3px;
+    white-space: nowrap;
+  }
+  .mstatus-done { background: rgba(24,168,112,.10); color: #18a870; }
+  .mstatus-scheduled { background: rgba(59,111,240,.10); color: #3b6ff0; }
+
+  .btn-link {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 5px 10px; border-radius: 6px;
+    background: var(--accent-dim); color: var(--accent);
+    font-size: 11px; font-weight: 600; cursor: pointer;
+    border: none; transition: background 0.15s;
+    text-decoration: none; width: 100%; justify-content: center;
+    margin-top: 2px;
+  }
+  .btn-link:hover { background: rgba(59,111,240,0.18); }
+
+  /* ── Modal Overlay ── */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.28);
+    z-index: 300;
+    display: flex; align-items: center; justify-content: center;
+    animation: fade-bg 0.2s ease both;
+  }
+  @keyframes fade-bg {
+    from { opacity: 0; } to { opacity: 1; }
+  }
+  .modal {
+    background: var(--bg-1);
+    border: 1px solid var(--line-2);
+    border-radius: 14px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.18), 0 4px 16px rgba(0,0,0,0.1);
+    width: 420px; max-height: 88vh; overflow-y: auto;
+    padding: 22px;
+    animation: modal-in 0.2s ease both;
+  }
+  @keyframes modal-in {
+    from { opacity: 0; transform: translateY(10px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .modal-title {
+    font-size: 15px; font-weight: 700; color: var(--txt-0);
+    margin-bottom: 2px;
+  }
+  .modal-subtitle {
+    font-size: 11px; color: var(--txt-2); margin-bottom: 18px;
+  }
+  .form-label {
+    font-size: 11px; font-weight: 500; color: var(--txt-2);
+    display: block; margin-bottom: 4px;
+  }
+  .form-input {
+    width: 100%; padding: 8px 10px;
+    border: 1px solid var(--line-2); border-radius: 8px;
+    background: var(--bg-2); font-size: 12px; color: var(--txt-0);
+    outline: none; transition: border-color 0.15s;
+    font-family: inherit;
+  }
+  .form-input:focus { border-color: var(--accent); }
+  .form-input.mono { font-family: "Courier New", monospace; }
+  .form-row { margin-bottom: 14px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .form-textarea {
+    resize: none; min-height: 56px;
+  }
+
+  /* ── Warning box in modal ── */
+  .modal-warn-box {
+    background: rgba(220,53,53,.06);
+    border: 1px solid rgba(220,53,53,.22);
+    border-radius: 8px; padding: 12px 14px;
+    margin-bottom: 16px;
+  }
+  .modal-warn-title {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 700; color: #b91c1c;
+    margin-bottom: 4px;
+  }
+  .modal-warn-desc {
+    font-size: 11px; color: #92400e; line-height: 1.6;
+    margin-bottom: 10px;
+  }
+  .modal-warn-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .btn-primary {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 6px 14px; border-radius: 7px;
+    background: var(--accent); color: white;
+    font-size: 12px; font-weight: 600; cursor: pointer;
+    border: none; transition: background 0.15s;
+  }
+  .btn-primary:hover { background: #2f5fd6; }
+  .btn-force {
+    font-size: 11px; color: var(--txt-3);
+    background: none; border: none; cursor: pointer;
+    text-decoration: underline; text-decoration-style: dotted;
+    transition: color 0.15s;
+  }
+  .btn-force:hover { color: var(--late); }
+  .btn-force.confirm-1 { color: var(--risk); }
+  .btn-force.confirm-2 { color: var(--late); font-weight: 600; }
+
+  /* ── Modal success linked ── */
+  .modal-linked-banner {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px; border-radius: 8px;
+    background: rgba(24,168,112,.08);
+    border: 1px solid rgba(24,168,112,.22);
+    margin-bottom: 16px;
+    font-size: 12px; color: #18a870;
+  }
+  .modal-linked-label { font-weight: 600; }
+  .modal-linked-val { flex: 1; color: var(--txt-1); }
+
+  /* ── Footer actions ── */
+  .modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+  .btn-cancel {
+    padding: 7px 14px; border-radius: 7px;
+    border: 1px solid var(--line-2); background: var(--bg-1);
+    color: var(--txt-1); font-size: 12px; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-cancel:hover { border-color: var(--line-2); background: var(--bg-2); }
+  .btn-submit {
+    padding: 7px 16px; border-radius: 7px;
+    background: var(--accent); color: white;
+    font-size: 12px; font-weight: 600; cursor: pointer;
+    border: none; transition: background 0.15s;
+  }
+  .btn-submit:hover { background: #2f5fd6; }
+
+  /* ── Part label ── */
+  .part-label {
+    display: flex; align-items: center; gap: 10px;
+    padding: 14px 20px 0;
+  }
+  .part-num {
+    width: 22px; height: 22px; border-radius: 6px;
+    background: var(--accent); color: white;
+    font-size: 11px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .part-title { font-size: 12px; font-weight: 700; color: var(--txt-0); }
+  .part-desc { font-size: 11px; color: var(--txt-2); }
+
+  /* ── Demo controls ── */
+  .demo-controls {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 20px 2px;
+  }
+  .demo-label { font-size: 11px; color: var(--txt-2); }
+  .demo-toggle {
+    display: flex; align-items: center;
+    background: var(--bg-3); border-radius: 20px;
+    padding: 2px; border: 1px solid var(--line-2);
+  }
+  .demo-toggle-btn {
+    padding: 4px 12px; border-radius: 16px;
+    font-size: 11px; cursor: pointer; border: none;
+    background: none; color: var(--txt-2); transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .demo-toggle-btn.active {
+    background: var(--bg-1); color: var(--accent); font-weight: 600;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  }
+
+  /* ── Gate trigger button ── */
+  .gate-trigger {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 9px; border-radius: 5px;
+    font-size: 11px; font-weight: 500;
+    border: 1px solid var(--line-2); background: var(--bg-1);
+    color: var(--txt-1); cursor: pointer; transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .gate-trigger:hover { border-color: var(--accent); color: var(--accent); }
+  .gate-trigger svg { opacity: 0.6; }
+
+  /* hidden */
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <!-- Luban logo SVG -->
+      <svg width="28" height="28" viewBox="0 0 80 80" fill="none">
+        <rect width="80" height="80" rx="16" fill="#0A58CA"/>
+        <path d="M10 62L28 24l18 38H10z" fill="white" opacity="0.08"/>
+        <path d="M42 62L60 20l18 42H42z" fill="white" opacity="0.06"/>
+        <path d="M12 52 C20 52, 24 34, 30 32 C36 30, 42 52, 50 40 C56 32, 60 22, 64 20" stroke="white" stroke-width="3.5" stroke-linecap="round" fill="none" opacity="0.95"/>
+        <circle cx="30" cy="32" r="4" fill="white"/>
+        <circle cx="64" cy="20" r="4.5" fill="white"/>
+      </svg>
+      <span class="sidebar-logo-text">鲁班</span>
+    </div>
+    <div class="sidebar-nav">
+      <a class="sidebar-nav-item active">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        项目管理
+      </a>
+      <a class="sidebar-nav-item">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/></svg>
+        会议管理
+      </a>
+      <a class="sidebar-nav-item" style="color:var(--txt-3);cursor:not-allowed;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/></svg>
+        问题管理
+        <span style="font-size:9px;background:var(--bg-3);padding:1px 6px;border-radius:3px;margin-left:auto;">即将上线</span>
+      </a>
+    </div>
+    <div class="sidebar-section-label">筛选</div>
+    <div class="sidebar-filter">
+      <div style="padding:4px 8px 6px;">
+        <div style="font-size:12px;font-weight:600;color:var(--txt-0);padding:4px 4px 6px;">焦点计划</div>
+        <div style="display:flex;flex-direction:column;gap:2px;">
+          <div style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:5px;background:var(--accent-dim);">
+            <span style="width:8px;height:8px;border-radius:50%;background:#3b6ff0;flex-shrink:0;"></span>
+            <span style="font-size:12px;color:var(--accent);">本周计划</span>
+            <span style="margin-left:auto;font-size:10px;color:var(--accent);">✓</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:5px;">
+            <span style="width:8px;height:8px;border-radius:50%;background:#059669;flex-shrink:0;"></span>
+            <span style="font-size:12px;color:var(--txt-1);">下周计划</span>
+          </div>
+        </div>
+      </div>
+      <div style="padding:0 8px 6px;">
+        <div style="font-size:12px;font-weight:600;color:var(--txt-0);padding:4px 4px 6px;">研发模块</div>
+        <div style="display:flex;flex-direction:column;gap:2px;">
+          <div style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:5px;background:var(--accent-dim);">
+            <span style="width:8px;height:8px;border-radius:50%;background:#3b6ff0;flex-shrink:0;"></span>
+            <span style="font-size:12px;color:var(--accent);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">感知算法</span>
+            <span style="margin-left:auto;font-size:10px;color:var(--accent);">✓</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:5px;">
+            <span style="width:8px;height:8px;border-radius:50%;background:#7c3aed;flex-shrink:0;"></span>
+            <span style="font-size:12px;color:var(--txt-1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">规划控制</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:5px;">
+            <span style="width:8px;height:8px;border-radius:50%;background:#d97706;flex-shrink:0;"></span>
+            <span style="font-size:12px;color:var(--txt-1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">系统集成</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="sidebar-bottom">
+      <div class="avatar">张</div>
+      <div style="flex:1;min-width:0;">
+        <div class="sidebar-user-name">张磊</div>
+        <div class="sidebar-user-role">研发主管</div>
+      </div>
+      <span style="font-size:10px;color:var(--txt-3);cursor:pointer;">退出</span>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <span class="toolbar-title">版本看板</span>
+      <a class="stage-tab">全部</a>
+      <a class="stage-tab">需求</a>
+      <a class="stage-tab active">开发</a>
+      <a class="stage-tab">测试</a>
+      <a class="stage-tab">交付</a>
+      <div class="toolbar-spacer"></div>
+      <!-- Demo gate switch -->
+      <span style="font-size:11px;color:var(--txt-2);">模拟场景：</span>
+      <div class="demo-toggle" id="gateSceneToggle">
+        <button class="demo-toggle-btn active" onclick="setGateScene('no-meeting')" id="btn-no-meeting">无提测会</button>
+        <button class="demo-toggle-btn" onclick="setGateScene('has-meeting')" id="btn-has-meeting">有提测会</button>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="content-area">
+
+      <!-- Part 1 -->
+      <div class="part-label">
+        <div class="part-num">1</div>
+        <div>
+          <div class="part-title">看板表格 — 会议状态列</div>
+          <div class="part-desc">点击"会议"列图标可触发 popover，悬浮查看 tooltip</div>
+        </div>
+      </div>
+
+      <div style="padding:10px 20px 0;">
+        <table>
+          <colgroup>
+            <col class="col-version">
+            <col class="col-project">
+            <col class="col-owner">
+            <col class="col-status">
+            <col class="col-meeting">
+            <col class="col-action">
+          </colgroup>
+          <thead>
+            <tr>
+              <th>版本号</th>
+              <th>项目名称</th>
+              <th>责任人</th>
+              <th>整体状态</th>
+              <th>会议</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Row A: 橙色警示 -->
+            <tr onclick="void(0)">
+              <td><span class="version-no">V2.4.0</span></td>
+              <td><span class="project-name">感知算法 OD 优化</span></td>
+              <td>
+                <div class="owner-cell">
+                  <div class="owner-avatar" style="background:#3b6ff0;">王</div>
+                  <span style="font-size:12px;color:var(--txt-1);">王晓明</span>
+                </div>
+              </td>
+              <td><span class="status-badge status-risk">风险</span></td>
+              <td>
+                <!-- State A: 橙色警示 -->
+                <div class="meeting-cell">
+                  <div class="tooltip-wrap" id="iconWrapA">
+                    <div class="meeting-icon-wrap" onclick="togglePopover('popoverA', event)">
+                      <!-- Calendar SVG -->
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M8 2v4M16 2v4"/>
+                        <rect x="3" y="4" width="18" height="18" rx="2"/>
+                        <path d="M3 10h18"/>
+                      </svg>
+                      <!-- Exclamation badge -->
+                      <span class="meeting-badge badge-warn">!</span>
+                    </div>
+                    <div class="tooltip">开发→测试需要提测会，尚未关联</div>
+                  </div>
+                  <!-- Popover A -->
+                  <div class="popover popover-warn hidden" id="popoverA" onclick="event.stopPropagation()">
+                    <div class="popover-header">
+                      <span style="color:#d97706;">⚠</span> 当前阶段缺少会议
+                    </div>
+                    <div class="popover-body">
+                      <div class="popover-warn-box">
+                        <div class="warn-title">该阶段需要【提测会】才能提交门禁</div>
+                        <div style="font-size:11px;margin-top:2px;">开发 → 测试 阶段的门禁要求完成提测评审后方可推进</div>
+                      </div>
+                      <button class="btn-link" onclick="closeAllPopovers();showToast('已跳转到会议管理')">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+                        + 去创建提测会
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div style="display:flex;gap:4px;align-items:center;">
+                  <button class="gate-trigger" onclick="openGateModal(event)">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    提测申请
+                  </button>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Row B: 绿色已完成 -->
+            <tr onclick="void(0)">
+              <td><span class="version-no">V2.3.5</span></td>
+              <td><span class="project-name">规划控制轨迹平滑</span></td>
+              <td>
+                <div class="owner-cell">
+                  <div class="owner-avatar" style="background:#7c3aed;">陈</div>
+                  <span style="font-size:12px;color:var(--txt-1);">陈宇航</span>
+                </div>
+              </td>
+              <td><span class="status-badge status-ok">正常</span></td>
+              <td>
+                <!-- State B: 绿色已完成 -->
+                <div class="meeting-cell">
+                  <div class="tooltip-wrap" id="iconWrapB">
+                    <div class="meeting-icon-wrap" onclick="togglePopover('popoverB', event)">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#18a870" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M8 2v4M16 2v4"/>
+                        <rect x="3" y="4" width="18" height="18" rx="2"/>
+                        <path d="M3 10h18"/>
+                      </svg>
+                      <span class="meeting-badge badge-ok">✓</span>
+                    </div>
+                    <div class="tooltip">提测会已完成 ✓</div>
+                  </div>
+                  <!-- Popover B -->
+                  <div class="popover hidden" id="popoverB" onclick="event.stopPropagation()">
+                    <div class="popover-header">已关联会议</div>
+                    <div class="popover-body">
+                      <div class="meeting-list-item">
+                        <span class="meeting-dot done"></span>
+                        <span class="meeting-item-title">V2.3.5 提测评审</span>
+                        <span class="meeting-item-date">05-16</span>
+                        <span class="meeting-item-status mstatus-done">已完成</span>
+                      </div>
+                      <div class="meeting-list-item">
+                        <span class="meeting-dot done"></span>
+                        <span class="meeting-item-title">V2.3.5 需求评审</span>
+                        <span class="meeting-item-date">05-09</span>
+                        <span class="meeting-item-status mstatus-done">已完成</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div style="display:flex;gap:4px;align-items:center;">
+                  <button class="gate-trigger" onclick="openGateModal(event)">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    提测申请
+                  </button>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Row C: 灰色，有关联但无要求 -->
+            <tr onclick="void(0)">
+              <td><span class="version-no">V2.3.2</span></td>
+              <td><span class="project-name">系统集成接口优化</span></td>
+              <td>
+                <div class="owner-cell">
+                  <div class="owner-avatar" style="background:#d97706;">李</div>
+                  <span style="font-size:12px;color:var(--txt-1);">李建国</span>
+                </div>
+              </td>
+              <td><span class="status-badge status-normal">进行中</span></td>
+              <td>
+                <!-- State C: 灰色 + 数字 -->
+                <div class="meeting-cell">
+                  <div class="tooltip-wrap" id="iconWrapC">
+                    <div class="meeting-icon-wrap" onclick="togglePopover('popoverC', event)">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--txt-3)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M8 2v4M16 2v4"/>
+                        <rect x="3" y="4" width="18" height="18" rx="2"/>
+                        <path d="M3 10h18"/>
+                      </svg>
+                      <span class="meeting-badge badge-count">2</span>
+                    </div>
+                    <div class="tooltip">已有 2 个关联会议</div>
+                  </div>
+                  <!-- Popover C -->
+                  <div class="popover hidden" id="popoverC" onclick="event.stopPropagation()">
+                    <div class="popover-header" style="color:var(--txt-1);">关联会议列表</div>
+                    <div class="popover-body">
+                      <div class="meeting-list-item">
+                        <span class="meeting-dot done"></span>
+                        <span class="meeting-item-title">V2.3.2 需求评审</span>
+                        <span class="meeting-item-date">04-28</span>
+                        <span class="meeting-item-status mstatus-done">已完成</span>
+                      </div>
+                      <div class="meeting-list-item">
+                        <span class="meeting-dot pending"></span>
+                        <span class="meeting-item-title">V2.3.2 架构设计评审</span>
+                        <span class="meeting-item-date">05-22</span>
+                        <span class="meeting-item-status mstatus-scheduled">待召开</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div style="display:flex;gap:4px;align-items:center;">
+                  <button class="gate-trigger" style="color:var(--txt-3);cursor:not-allowed;opacity:0.5;" disabled>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    提测申请
+                  </button>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Row 4: placeholder -->
+            <tr onclick="void(0)" style="opacity:0.4;pointer-events:none;">
+              <td><span class="version-no">V2.2.9</span></td>
+              <td><span class="project-name">仿真平台回归验证</span></td>
+              <td>
+                <div class="owner-cell">
+                  <div class="owner-avatar" style="background:#059669;">刘</div>
+                  <span style="font-size:12px;color:var(--txt-1);">刘梦溪</span>
+                </div>
+              </td>
+              <td><span class="status-badge" style="background:rgba(59,111,240,.08);color:#3b6ff0;">完成</span></td>
+              <td>
+                <div class="meeting-cell">
+                  <div class="meeting-icon-wrap" style="cursor:default;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--txt-3)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18"/></svg>
+                    <span class="meeting-badge badge-count" style="background:rgba(24,168,112,.12);color:#18a870;border-color:rgba(24,168,112,.2);">3</span>
+                  </div>
+                </div>
+              </td>
+              <td>—</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Part 2 -->
+      <div class="part-label" style="margin-top:28px;">
+        <div class="part-num">2</div>
+        <div>
+          <div class="part-title">门禁弹窗 — 会议阻断提示</div>
+          <div class="part-desc">点击任意行"提测申请"按钮触发，右上角可切换"有无提测会"两种场景</div>
+        </div>
+      </div>
+
+      <div class="demo-controls">
+        <span class="demo-label">当前门禁弹窗模拟场景：</span>
+        <strong id="currentSceneLabel" style="font-size:11px;color:var(--accent);">无提测会（显示阻断警告）</strong>
+      </div>
+
+      <div style="padding:10px 20px 0;display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn-primary" style="font-size:12px;" onclick="openGateModal()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          点击预览门禁弹窗
+        </button>
+        <span style="font-size:11px;color:var(--txt-2);align-self:center;">（直接点击上方表格行的"提测申请"按钮也可触发）</span>
+      </div>
+
+      <div style="height:40px;"></div>
+
+    </div><!-- /content-area -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- Gate Modal -->
+<div class="modal-overlay hidden" id="gateOverlay" onclick="closeGateModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title">提交测试申请</div>
+    <div class="modal-subtitle" id="gateSubtitle">开发 → 测试 · 阶段门禁</div>
+
+    <!-- Warning box (no meeting) -->
+    <div class="modal-warn-box" id="warnBox">
+      <div class="modal-warn-title">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b91c1c" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        尚未关联提测会
+      </div>
+      <div class="modal-warn-desc">当前阶段门禁要求先完成提测会审议，才可提交测试申请。请先创建并完成【提测会】，再回来提交。</div>
+      <div class="modal-warn-actions">
+        <button class="btn-primary" id="goCreateMeetingBtn" onclick="handleGoCreateMeeting()">
+          去创建提测会 →
+        </button>
+        <button class="btn-force" id="forceBtn" onclick="handleForceSubmit()">忽略并强制提交</button>
+      </div>
+    </div>
+
+    <!-- Linked banner (has meeting) -->
+    <div class="modal-linked-banner hidden" id="linkedBanner">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#18a870" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      <span class="modal-linked-label">已关联：</span>
+      <span class="modal-linked-val">V2.3.5 提测评审 &nbsp;✓</span>
+    </div>
+
+    <!-- Form -->
+    <div class="form-grid">
+      <div>
+        <label class="form-label">分支名</label>
+        <input class="form-input mono" type="text" placeholder="feature/od-v2.4.0" value="feature/od-v2.4.0">
+      </div>
+      <div>
+        <label class="form-label">Commit ID</label>
+        <input class="form-input mono" type="text" placeholder="a3f2c91" value="a3f2c91">
+      </div>
+    </div>
+    <div class="form-row">
+      <label class="form-label">操作人 *</label>
+      <select class="form-input">
+        <option>选择操作人</option>
+        <option selected>王晓明</option>
+        <option>陈宇航</option>
+        <option>张磊</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label class="form-label">备注</label>
+      <textarea class="form-input form-textarea" placeholder="备注…（可选，Shift+Enter 换行）"></textarea>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeGateModal()">取消</button>
+      <button class="btn-submit" id="submitBtn">提交凭证</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" style="
+  position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(10px);
+  background:#1a1f2e;color:#fff;
+  padding:8px 18px;border-radius:8px;
+  font-size:12px;
+  opacity:0;transition:all 0.25s;
+  z-index:999;pointer-events:none;
+  box-shadow:0 4px 16px rgba(0,0,0,0.2);
+">跳转中…</div>
+
+<script>
+  // ── State ──
+  let activePopover = null;
+  let gateScene = 'no-meeting'; // 'no-meeting' | 'has-meeting'
+  let forceStep = 0; // 0=initial, 1=first confirm, 2=second confirm
+
+  // ── Scene Toggle ──
+  function setGateScene(scene) {
+    gateScene = scene;
+    document.getElementById('btn-no-meeting').className = 'demo-toggle-btn' + (scene === 'no-meeting' ? ' active' : '');
+    document.getElementById('btn-has-meeting').className = 'demo-toggle-btn' + (scene === 'has-meeting' ? ' active' : '');
+    const label = document.getElementById('currentSceneLabel');
+    if (scene === 'no-meeting') {
+      label.textContent = '无提测会（显示阻断警告）';
+      label.style.color = '#d97706';
+    } else {
+      label.textContent = '有提测会（正常提交，显示关联信息）';
+      label.style.color = '#18a870';
+    }
+  }
+
+  // ── Popover ──
+  function togglePopover(id, e) {
+    e.stopPropagation();
+    const el = document.getElementById(id);
+    if (activePopover && activePopover !== el) {
+      activePopover.classList.add('hidden');
+    }
+    const isHidden = el.classList.contains('hidden');
+    el.classList.toggle('hidden');
+    activePopover = isHidden ? el : null;
+  }
+
+  function closeAllPopovers() {
+    document.querySelectorAll('.popover').forEach(p => p.classList.add('hidden'));
+    activePopover = null;
+  }
+
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('.meeting-cell')) {
+      closeAllPopovers();
+    }
+  });
+
+  // ── Gate Modal ──
+  function openGateModal(e) {
+    if (e) e.stopPropagation();
+    forceStep = 0;
+    resetForceBtn();
+    const overlay = document.getElementById('gateOverlay');
+    overlay.classList.remove('hidden');
+    updateModalForScene();
+    document.body.style.overflow = 'hidden';
+  }
+
+  function updateModalForScene() {
+    const warnBox = document.getElementById('warnBox');
+    const linkedBanner = document.getElementById('linkedBanner');
+    const submitBtn = document.getElementById('submitBtn');
+
+    if (gateScene === 'no-meeting') {
+      warnBox.classList.remove('hidden');
+      linkedBanner.classList.add('hidden');
+      submitBtn.style.opacity = '0.45';
+      submitBtn.style.cursor = 'not-allowed';
+      submitBtn.title = '请先关联提测会';
+    } else {
+      warnBox.classList.add('hidden');
+      linkedBanner.classList.remove('hidden');
+      submitBtn.style.opacity = '1';
+      submitBtn.style.cursor = 'pointer';
+      submitBtn.title = '';
+    }
+  }
+
+  function closeGateModal() {
+    document.getElementById('gateOverlay').classList.add('hidden');
+    document.body.style.overflow = '';
+    forceStep = 0;
+    resetForceBtn();
+  }
+
+  function handleGoCreateMeeting() {
+    closeGateModal();
+    showToast('已跳转到会议管理 — 请创建提测会');
+  }
+
+  // Two-step force submit
+  function handleForceSubmit() {
+    const btn = document.getElementById('forceBtn');
+    if (forceStep === 0) {
+      forceStep = 1;
+      btn.textContent = '⚠ 再次确认强制提交？';
+      btn.className = 'btn-force confirm-1';
+    } else if (forceStep === 1) {
+      forceStep = 2;
+      btn.textContent = '强制提交（不推荐）';
+      btn.className = 'btn-force confirm-2';
+      // Flash warning box border
+      const wb = document.getElementById('warnBox');
+      wb.style.transition = 'border-color 0.2s';
+      wb.style.borderColor = '#dc3535';
+      setTimeout(() => {
+        forceStep = 0;
+        resetForceBtn();
+        closeGateModal();
+        showToast('已强制提交 — 记录将标注"跳过提测会"');
+      }, 300);
+    }
+  }
+
+  function resetForceBtn() {
+    const btn = document.getElementById('forceBtn');
+    if (btn) {
+      btn.textContent = '忽略并强制提交';
+      btn.className = 'btn-force';
+    }
+    const wb = document.getElementById('warnBox');
+    if (wb) wb.style.borderColor = '';
+  }
+
+  // ── Toast ──
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.opacity = '1';
+    t.style.transform = 'translateX(-50%) translateY(0)';
+    setTimeout(() => {
+      t.style.opacity = '0';
+      t.style.transform = 'translateX(-50%) translateY(10px)';
+    }, 2200);
+  }
+
+  // ── ESC close ──
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      closeGateModal();
+      closeAllPopovers();
+    }
+  });
+</script>
+</body>
+</html>

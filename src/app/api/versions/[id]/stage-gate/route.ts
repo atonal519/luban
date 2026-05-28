@@ -78,5 +78,21 @@ export async function POST(
     return NextResponse.json({ ok: true, state: 'REJECTED' });
   }
 
+  // 撤回发起（WAITING_SUBMIT → 删除整个 approval）
+  if (action === 'withdraw') {
+    await prisma.approvalEvent.deleteMany({ where: { approvalId: gate.id } });
+    await prisma.approval.delete({ where: { id: gate.id } });
+    return NextResponse.json({ ok: true, state: null });
+  }
+
+  // 撤回提交（SUBMITTED → WAITING_SUBMIT）
+  if (action === 'recall') {
+    await prisma.approvalEvent.create({
+      data: { approvalId: gate.id, type: 'REQUEST', actorId, note: note || '撤回提交' },
+    });
+    await prisma.approval.update({ where: { id: gate.id }, data: { state: 'WAITING_SUBMIT' } });
+    return NextResponse.json({ ok: true, state: 'WAITING_SUBMIT' });
+  }
+
   return NextResponse.json({ error: '未知操作' }, { status: 400 });
 }
