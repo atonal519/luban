@@ -29,6 +29,10 @@ model User {
   dailyLogs       DailyLog[]
   rejections      Rejection[]
   filterPrefs     UserFilterPref[]
+  hostedMeetings   Meeting[]     @relation("MeetingHost")
+  recordedMeetings Meeting[]     @relation("MeetingRecorder")
+  actionItems      ActionItem[]
+  gateSkips        GateSkip[]
 }
 
 // ── 里程碑 ───────────────────────────────────────────
@@ -197,6 +201,8 @@ model Item {
   dailyLogs  DailyLog[]
   alerts     Alert[]
   rejections Rejection[]
+  meetings   MeetingItem[]
+  gateSkips  GateSkip[]
   customFieldValues CustomFieldValue[]
 
   createdAt DateTime @default(now())
