@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>鲁班研发 · 鲁班</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script defer src="./app.js"></script>
+</head>
+<body>
+  <aside class="sidebar" aria-label="主导航">
+    <a class="brand" href="./" aria-label="鲁班首页">
+      <span class="brand-mark"><svg viewBox="0 0 28 28" fill="none" aria-hidden="true"><path d="M7 6h6v6H7zM16 6h5v6h-5zM7 15h6v7H7zM16 15h5v7h-5z" fill="currentColor"/><path d="M4 3h20v22H4z" stroke="currentColor" stroke-width="1.6"/></svg></span>
+      <span>鲁班 <small>LUBAN</small></span>
+    </a>
+    <div class="workspace-name"><span class="workspace-logo">研</span><span>产研项目管理</span></div>
+    <p class="nav-caption">工作空间</p>
+    <nav>
+      <button class="nav-item" data-action="outside"><span data-icon="briefcase"></span>项目管理</button>
+      <div class="nav-item section-current"><span data-icon="layers"></span>研发</div>
+      <div class="subnav">
+        <div class="subnav-section" role="group" aria-labelledby="nav-demand-caption">
+          <p class="subnav-caption" id="nav-demand-caption">需求准备</p>
+          <button class="subnav-item" data-action="book-workspace" data-workspace="demand">需求池</button>
+        </div>
+        <div class="subnav-section" role="group" aria-labelledby="nav-follow-caption">
+          <p class="subnav-caption" id="nav-follow-caption">研发跟进</p>
+          <button class="subnav-item active" data-action="book-workspace" data-workspace="fe">FE 清单<span class="nav-count" id="nav-count" aria-hidden="true"></span></button>
+          <button class="subnav-item" data-action="outside">专项与指标</button>
+        </div>
+        <div class="subnav-section" role="group" aria-labelledby="nav-release-caption">
+          <p class="subnav-caption" id="nav-release-caption">版本发布</p>
+          <button class="subnav-item" data-action="book-workspace" data-workspace="today">今日重点</button>
+          <button class="subnav-item" data-action="book-workspace" data-workspace="versions">版本管理</button>
+        </div>
+        <div class="subnav-utility"><button class="subnav-item" data-action="book-workspace" data-workspace="source">数据记录</button></div>
+      </div>
+      <button class="nav-item" data-action="outside"><span data-icon="truck"></span>交付</button>
+      <button class="nav-item" data-action="outside"><span data-icon="headphones"></span>技术支持</button>
+      <button class="nav-item" data-action="outside"><span data-icon="calendar"></span>会议管理</button>
+    </nav>
+    <div class="sidebar-bottom"><button class="nav-item sidebar-settings" data-action="book-workspace" data-workspace="settings"><span data-icon="settings"></span>设置</button><span class="online-dot"></span><span>鲁班研发</span><small>v0.3</small></div>
+  </aside>
+  <div class="app">
+    <header class="topbar">
+      <div class="breadcrumbs"><span data-icon="layers"></span><span id="breadcrumb-section">研发</span><span class="slash">/</span><strong id="breadcrumb-current">FE 清单</strong></div>
+      <div class="topbar-right"><button type="button" class="btn" data-action="book-workspace" data-workspace="reports">填写今日进度</button><button type="button" class="btn" id="workflow-tasks">我的待办 0</button><span class="demo-badge">开发版</span><label for="actor" class="actor-label">当前角色</label><select id="actor" aria-label="当前角色"></select><span id="actor-avatar" class="avatar">规</span></div>
+    </header>
+    <nav class="book-mobile-nav" aria-label="研发页面"><button data-action="book-workspace" data-workspace="demand">需求池</button><button data-action="book-workspace" data-workspace="today">今日重点</button><button data-action="book-workspace" data-workspace="fe">FE 清单</button><button data-action="book-workspace" data-workspace="versions">版本管理</button><button data-action="book-workspace" data-workspace="source">数据记录</button><button data-action="book-workspace" data-workspace="settings">设置</button></nav>
+    <main id="fe-workspace">
+      <div class="page-heading">
+        <div class="page-title"><h1>研发 FE</h1><span id="total-label" class="total-label"></span></div>
+        <div class="heading-actions">
+          <label class="month-control"><span data-icon="calendar"></span><select id="month" aria-label="管理月份"><option value="all">全部计划</option><option value="2026-10">2026 年 10 月</option><option value="2026-11">2026 年 11 月</option></select></label>
+          <button class="btn" data-action="planning-preview">自动排期</button>
+          <button class="btn" id="export"><span data-icon="download"></span>导出</button>
+          <button class="btn primary" id="new-fe"><span data-icon="plus"></span>新建 FE</button>
+        </div>
+      </div>
+      <div class="views-row table-view-tabs"><div id="views" class="views" role="tablist" aria-label="FE 工作视图"></div><div class="view-options-control"><button type="button" class="btn icon-button" data-action="view-options" aria-label="视图选项">⋯</button><div id="view-options-menu" class="view-options-menu" hidden></div></div></div>
+      <div class="toolbar table-view-toolbar">
+        <label class="search"><span data-icon="search"></span><input id="search" placeholder="搜索 FE、问题或包名…" aria-label="搜索 FE"><kbd>/</kbd></label>
+        <div class="table-view-tools">
+          <button type="button" class="btn" id="columns-button" data-action="view-config" data-view-config="columns"><span data-icon="columns"></span>显示字段</button>
+          <button type="button" class="btn view-filter-tool" data-action="view-config" data-view-config="filters">筛选</button>
+          <button type="button" class="btn view-group-tool" data-action="view-config" data-view-config="groups">分组</button>
+          <button type="button" class="btn" data-action="view-config" data-view-config="sorts">排序</button>
+          <span id="group-actions"><button type="button" class="text-button" data-action="expand-fe-groups">全部展开</button><button type="button" class="text-button" data-action="collapse-fe-groups">全部收起</button></span>
+          <button class="text-button clear-filters" id="clear-filters" hidden>清空筛选</button>
+        </div>
+      </div>
+      <div id="view-filter-summary" class="view-filter-summary" hidden></div>
+      <div class="view-context-line"><span id="view-scope-label">全研发</span><span id="view-save-status">视图已保存</span></div>
+      <section class="table-region" aria-label="研发 FE 清单">
+        <table id="fe-table">
+          <caption class="sr-only">研发 FE 清单：包名、基础信息、当前阶段及全部未来排期，可按阶段和包嵌套分组。阶段日期显示计划进入与实际进入。</caption>
+          <colgroup id="cols"></colgroup>
+          <thead id="table-head"></thead>
+          <tbody id="rows"></tbody>
+        </table>
+        <div id="empty" class="empty" hidden><span data-icon="search"></span><strong>没有符合条件的 FE</strong><p>试试其他关键词，或清空筛选。</p><button class="btn" data-action="clear">清空筛选</button></div>
+      </section>
+      <div class="schedule-legend"><span><i class="legend-today"></i>今日计划</span><span><i class="legend-past"></i>已过阶段</span><span>已到阶段优先实际 · 未到阶段优先计划</span><span><i class="legend-stage-light"></i>PM 发起后显示办理标记</span><span class="legend-scroll">横向滚动查看全部排期</span></div>
+      <footer class="list-footer"><span id="result-count"></span><div><span class="save-dot"></span><span id="save-label">已加载</span></div></footer>
+    </main>
+    <main id="aux-workspace" hidden></main>
+  </div>
+  <dialog id="report-dialog" class="modal" aria-labelledby="report-dialog-title"></dialog>
+  <dialog id="report-discard-dialog" class="modal small-modal" aria-labelledby="report-discard-title"><div class="modal-heading"><h2 id="report-discard-title">还有未保存的填写</h2></div><p class="modal-copy">可以继续填写，或放弃本次修改。</p><div class="modal-footer"><button type="button" class="btn" data-discard="no">继续填写</button><button type="button" class="btn primary" data-discard="yes">放弃修改</button></div></dialog>
+  <dialog id="planning-dialog" class="modal planning-modal" aria-labelledby="planning-title"></dialog>
+  <dialog id="planning-preview-dialog" class="modal planning-preview-modal" aria-labelledby="planning-preview-title"></dialog>
+  <dialog id="view-config-dialog" class="modal view-config-modal" aria-labelledby="view-config-title"></dialog>
+  <dialog id="view-name-dialog" class="modal small-modal" aria-labelledby="view-name-title"></dialog>
+  <dialog id="package-dialog" class="modal package-modal" aria-labelledby="package-title"></dialog>
+  <dialog id="simulate-dialog" class="modal small-modal" aria-labelledby="simulate-title"></dialog>
+  <dialog id="intake-dialog" class="modal intake-modal" aria-labelledby="intake-title"></dialog>
+  <dialog id="intake-detail" class="drawer intake-detail" aria-labelledby="intake-detail-title"></dialog>
+  <dialog id="intake-discard-dialog" class="modal small-modal" aria-labelledby="intake-discard-title"><div class="modal-heading"><h2 id="intake-discard-title">还有未保存的修改</h2></div><p class="modal-copy">可以继续编辑，或放弃本次修改。</p><div class="modal-footer"><button type="button" class="btn" data-discard="no">继续编辑</button><button type="button" class="btn primary" data-discard="yes">放弃修改</button></div></dialog>
+  <dialog id="detail" class="drawer" aria-labelledby="detail-title"></dialog>
+  <dialog id="quick-dialog" class="modal" aria-labelledby="quick-title"></dialog>
+  <dialog id="state-dialog" class="modal small-modal" aria-labelledby="state-title"></dialog>
+  <dialog id="workflow-dialog" class="modal workflow-modal" aria-labelledby="workflow-title"></dialog>
+  <dialog id="workflow-discard-dialog" class="modal small-modal" aria-labelledby="workflow-discard-title"><div class="modal-heading"><h2 id="workflow-discard-title">还有未保存的修改</h2></div><p class="modal-copy">关闭会放弃本次尚未保存的内容。</p><div class="modal-footer"><button type="button" class="btn" data-discard="no">继续编辑</button><button type="button" class="btn primary" data-discard="yes">放弃修改</button></div></dialog>
+  <dialog id="discard-dialog" class="modal small-modal" aria-labelledby="discard-title"><div class="modal-heading"><h2 id="discard-title">还有未保存的修改</h2></div><p class="modal-copy">保存后再离开，或放弃这次修改。</p><div class="modal-footer"><button class="btn" data-action="keep-editing">继续编辑</button><button class="btn" data-action="discard-changes">放弃修改</button><button class="btn primary" data-action="save-and-leave">保存并离开</button></div></dialog>
+  <dialog id="gate-dialog" class="modal gate-modal" aria-labelledby="gate-title"></dialog>
+  <dialog id="reset-dialog" class="modal small-modal" aria-labelledby="reset-title"><div class="modal-heading"><h2 id="reset-title">恢复初始数据？</h2><button class="btn icon-button" data-action="close-reset" aria-label="关闭"><span data-icon="close"></span></button></div><p class="modal-copy">此操作会清除当前修改、进展，以及需求池中的需求、月度计划和进度收集记录，恢复初始数据。请确认不再需要这些修改。</p><div class="modal-footer"><button class="btn" data-action="close-reset">取消</button><button class="btn primary" id="confirm-reset">恢复初始数据</button></div></dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

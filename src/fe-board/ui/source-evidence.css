@@ -1,0 +1,22 @@
+.source-evidence{min-width:0;margin-bottom:20px}
+.source-evidence>.luban-rich-editor{margin-bottom:0}
+.source-evidence .luban-rich-toolbar .source-evidence-image-button{width:auto;min-width:0;margin-left:auto;padding-inline:8px;font-size:inherit;white-space:nowrap}
+.source-evidence [data-source-file]{display:none!important}
+.source-evidence-images{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;min-width:0;padding:0 12px 12px}
+.source-evidence-images:empty{display:none}
+.source-evidence-image{min-width:0;margin:0;overflow:hidden;background:#f6f8fb;border-radius:4px}
+.source-evidence-image>a{display:flex;align-items:center;justify-content:center;height:140px;padding:5px}
+.source-evidence-image img{display:block;max-width:100%;max-height:130px;object-fit:contain}
+.source-evidence-image figcaption{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 9px;color:#8293ac;line-height:1.7;font-size:inherit}
+.source-evidence-image figcaption>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.source-evidence-image figcaption .text-button{flex:none;font-size:inherit}
+.source-evidence-image-status{display:flex;align-items:center;justify-content:center;min-height:100px;padding:12px;color:#97a6ba;line-height:1.7;text-align:center;font-size:inherit}
+.source-evidence-uploads{padding-inline:12px}
+.source-evidence-uploads:empty{display:none}
+.source-evidence-upload{display:flex;align-items:flex-start;gap:9px;margin-bottom:8px;padding:8px 10px;border:1px solid #e4eaf2;border-radius:5px;background:#fafbfd;color:#8b9db5;line-height:1.7;overflow-wrap:anywhere;font-size:inherit}
+.source-evidence-upload>span{flex:1;min-width:0}
+.source-evidence-upload.has-error{border-color:#eeddd7;background:#fffaf7;color:#ad7c63}
+.source-evidence-upload .text-button{flex:none;font-size:inherit;line-height:1.7}
+.source-evidence-notice{margin:0;padding:0 12px 10px;color:#ad7c63;line-height:1.8;font-size:inherit}
+.source-evidence-notice:empty{display:none}
+@media(max-width:480px){.source-evidence-images{grid-template-columns:1fr;padding-inline:10px}.source-evidence-image>a{height:160px}.source-evidence-image img{max-height:150px}.source-evidence-uploads{padding-inline:10px}.source-evidence-notice{padding-inline:10px}}

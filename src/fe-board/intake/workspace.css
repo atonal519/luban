@@ -1,0 +1,128 @@
+/* Shared density for all three demand-pool views and their editors. */
+:root{--intake-control-height:32px;--intake-cell-block:10px;--intake-header-block:12px;--intake-cell-inline:12px;--intake-section-gap:18px;--intake-field-gap:16px;--intake-tab-gap:24px;--intake-form-height:38px}
+@media(max-width:600px){:root{--intake-tab-gap:18px}}
+#aux-workspace .inline-select-trigger>svg,.intake-quick .inline-select-trigger>svg,.intake-detail .inline-select-trigger>svg{display:none}
+#aux-workspace .inline-select-trigger,.intake-quick .inline-select-trigger,.intake-detail .inline-select-trigger{padding-right:12px}
+.intake-quick{width:560px;max-width:calc(100vw - 32px);max-height:calc(100dvh - 40px);border-radius:8px}
+.intake-quick .modal-heading{padding:18px 24px}
+.intake-quick .modal-heading h2{font-size:17px}
+.intake-quick .modal-body{padding:20px 24px 5px}
+.intake-quick .modal-footer{padding:15px 24px;justify-content:flex-end}
+.intake-quick .modal-footer [role=alert]{flex-basis:100%;margin:0}
+.intake-quick .form-field{margin-bottom:var(--intake-field-gap)}
+.intake-quick textarea{resize:vertical;min-height:68px}
+.intake-quick .check-dropdown-trigger,.intake-detail .check-dropdown-trigger{width:100%;max-width:none;min-height:38px;height:auto;font-size:12px!important;line-height:20px}
+.intake-quick .check-dropdown-panel,.intake-detail .check-dropdown-panel{left:0;right:auto;max-height:250px;z-index:20}
+.intake-quick .form-grid,.intake-detail .form-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 16px}
+.intake-quick-month{max-width:180px}
+.intake-detail{width:min(650px,100vw);max-width:100vw;z-index:100}
+.intake-detail .drawer-top{padding:15px 26px}
+.intake-detail .detail-heading{padding:20px 26px 16px}
+.intake-detail .detail-heading h2{overflow-wrap:anywhere}
+.intake-detail .detail-meta{margin-top:7px}
+.intake-detail .drawer-scroll{padding:22px 26px;min-height:0;flex:1;overflow:auto}
+.intake-detail .detail-footer{padding:15px 26px;flex:none}
+.intake-detail .form-field{margin-bottom:var(--intake-field-gap)}
+.intake-detail textarea{resize:vertical;min-height:65px}
+.intake-detail-actions{display:flex;gap:18px;align-items:center}
+.intake-drawer-approval{display:flex;gap:6px;align-items:center;font-size:12px;color:#647d9b}
+.intake-approval{display:inline-flex;align-items:center;gap:7px;padding:3px;cursor:pointer}
+.intake-approval input[type=radio]{appearance:auto;accent-color:#4d7fc5;width:15px;height:15px;min-width:15px;min-height:15px;padding:0;margin:0;flex:none}
+.intake-approval .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.intake-drawer-error{padding:12px 26px;margin:0;border-top:1px solid var(--line);font-size:12px}
+.intake-drawer-error:empty{display:none}
+.intake-assignment-module{margin:0 0 7px}
+.intake-assignments>.intake-assignment+.intake-assignment{padding-top:6px}
+.intake-table .fe-link{font-size:13px;font-weight:500;line-height:1.8;padding:0;display:flex;align-items:center;min-height:var(--intake-control-height);max-width:100%}
+.intake-plans td:first-child{max-width:none;min-width:0}
+.intake-plans td:last-child{min-width:0}
+.intake-demands{min-width:1000px;table-layout:fixed}
+.intake-demands td:first-child{max-width:none;min-width:0}
+.intake-demands .intake-material-summary{display:block;max-width:none;max-height:54px;overflow:hidden;white-space:pre-wrap}
+.intake-demands td:last-child{min-width:0}
+.check-dropdown-trigger{justify-content:flex-start}
+@media(max-width:600px){.intake-quick{width:calc(100vw - 24px);max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px)}.intake-quick .modal-heading,.intake-quick .modal-body,.intake-quick .modal-footer{padding-left:18px;padding-right:18px}.intake-detail{width:100vw}.intake-detail .drawer-top,.intake-detail .detail-heading,.intake-detail .drawer-scroll,.intake-detail .detail-footer{padding-left:20px;padding-right:20px}.intake-quick .form-grid,.intake-detail .form-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 12px}.intake-detail .detail-footer{align-items:center;gap:10px}.intake-detail .footer-note{max-width:120px;font-size:10px}.intake-detail-actions{gap:10px}.intake-detail .check-dropdown-panel,.intake-quick .check-dropdown-panel{width:210px}.intake-quick .form-grid>.form-field:nth-child(2) .check-dropdown-panel{left:auto;right:0}.intake-quick-month{max-width:100%}.intake-plans td:first-child,.intake-plans th:first-child{position:static}.intake-tabs{margin-top:0}}
+
+.intake-review-field{display:flex;align-items:center;gap:10px;white-space:nowrap;font-size:11px;color:#647d9b}
+.intake-approval input[type=radio]{appearance:none;position:relative;width:14px;height:14px;min-width:14px;min-height:14px;background:#fff;border:1px solid #b8c6d7;border-radius:3px;cursor:pointer}
+.intake-approval input[type=radio]:checked{background:#4d7fc5;border-color:#4d7fc5}
+.intake-approval input[type=radio]:checked:after{content:'✓';position:absolute;inset:-2px 0 0;text-align:center;font-size:12px;line-height:15px;color:white}
+.intake-approval input[type=radio]:focus-visible{outline:2px solid #99b8eb;outline-offset:2px}
+
+.intake-quick .form-field>.check-dropdown,.intake-detail .form-field>.check-dropdown{width:100%;align-self:stretch}
+.intake-review-field{display:block;min-width:86px}
+.intake-review-field .inline-select{width:100%}
+.intake-review-field .inline-select-trigger{min-height:30px;height:var(--intake-control-height);min-width:0;padding:5px 8px;font-size:12px}
+.review-passed .inline-select-trigger{background:#f0f7f2;color:#5b886b;border-color:#dfebe3}
+.review-rejected .inline-select-trigger{background:#fcf1ef;color:#a7796f;border-color:#f0dfda}
+.review-empty .inline-select-trigger{background:#f6f8fb;color:#8293aa}
+
+.intake-review-select{appearance:none;width:100%;min-height:var(--intake-control-height);height:var(--intake-control-height);padding:5px 8px;border:1px solid #dfe5ee;border-radius:4px;background:#f6f8fb;color:#8293aa;font:inherit;font-size:11px;cursor:pointer;line-height:20px}
+.intake-review-select:focus-visible{outline:2px solid #8cacfa;outline-offset:2px}
+.review-passed .intake-review-select{background:#f0f7f2;color:#5b886b;border-color:#dfebe3}
+.review-rejected .intake-review-select{background:#fcf1ef;color:#a7796f;border-color:#f0dfda}
+
+.intake-quick-context{font-size:11px;font-weight:400;color:#8da0b8;margin-left:10px}
+
+/* Shared filter/table baseline; short plan fields stay independently editable. */
+.intake-toolbar-tools{margin-left:auto;align-self:end;display:flex;align-items:center}
+.intake-detail-tabs{padding:0 26px;gap:24px;flex:none}
+.intake-detail [data-detail-panel]{min-width:0}
+.intake-detail [data-detail-panel][hidden]{display:none}
+.intake-detail .luban-rich-surface{min-height:150px;max-height:420px}
+.intake-detail [data-rich-editor="intake-story"] .luban-rich-surface{min-height:180px}
+.intake-field-conflict{color:#a48057;font-size:10px;line-height:1.6;overflow-wrap:anywhere}
+.intake-plans .rat-short-value{display:block;white-space:nowrap;line-height:inherit}
+.rat-cell-field{display:block;width:100%;padding:0;border:0;background:none;font:inherit;color:#67809f;text-align:left;line-height:1.7;cursor:pointer}
+.rat-cell-field:hover{text-decoration:underline;text-underline-offset:3px}
+.rat-cell-field:focus-visible{outline:2px solid #9ab9e8;outline-offset:3px;border-radius:3px}
+@media(max-width:600px){.intake-toolbar-tools{margin-left:auto}.intake-detail-tabs{padding:0 20px;gap:22px}.intake-detail-tabs button{font-size:11px}.intake-detail .luban-rich-surface{min-height:140px}}
+
+/* Keep shared table text explicit: global td and per-view controls must not set competing scales. */
+.intake-table td{font-size:12px;font-weight:400;line-height:1.8}
+.intake-table thead th{font-size:11px;font-weight:500;line-height:1.8}
+.intake-table .btn,.intake-table .text-button,.intake-table .intake-review-field,.intake-table .intake-review-select{font-size:12px}
+.intake-table .rat-cell-field{font-size:inherit;font-weight:inherit;line-height:inherit}
+.intake-table .rat-person-button,.rat-resource-expanded [data-resource-action="task"]{font-size:13px;font-weight:500;line-height:1.8}
+.rat-resource-expanded p{font-size:12px;font-weight:400;line-height:1.8}
+.intake-toolbar .search input,.intake-toolbar .inline-select-trigger{font-size:12px;font-weight:400}
+
+/* Compact filters and row actions share a single size across demand, RAT and resource tables. */
+.intake-toolbar .inline-select-trigger,.intake-toolbar .check-dropdown-trigger{height:var(--intake-control-height);min-height:var(--intake-control-height);line-height:20px;padding-block:5px}
+.intake-table .btn{height:var(--intake-control-height);min-height:var(--intake-control-height);padding:5px 10px;line-height:20px;white-space:nowrap}
+.intake-table .rat-person-button{padding:0;min-height:var(--intake-control-height);display:inline-flex;align-items:center}
+.intake-table .module-chips{flex-wrap:wrap;white-space:normal}
+/* Labels and form controls align within each grid row, including native date inputs. */
+.intake-quick .form-field,.intake-detail .form-field{line-height:20px;gap:8px}
+.intake-quick .field-heading,.intake-detail .field-heading{min-height:20px;line-height:20px}
+.intake-quick .form-field input:not([type=checkbox]):not([type=radio]):not([type=file]),.intake-detail .form-field input:not([type=checkbox]):not([type=radio]):not([type=file]),.intake-quick .form-field .inline-select-trigger,.intake-detail .form-field .inline-select-trigger,.intake-quick .check-dropdown-trigger,.intake-detail .check-dropdown-trigger{height:var(--intake-form-height);min-height:var(--intake-form-height);line-height:20px;padding-block:8px;font-size:12px}
+.intake-quick .luban-rich-editor,.intake-detail .luban-rich-editor,.intake-detail .source-evidence{margin-bottom:var(--intake-field-gap)}
+.intake-quick .modal-body>:last-child,.intake-detail [data-detail-panel]>:last-child{margin-bottom:0}
+.intake-detail .luban-rich-label,.intake-quick .luban-rich-label{line-height:20px;margin-bottom:0}
+.intake-detail .source-evidence>.luban-rich-editor{margin-bottom:0}
+@media(max-width:600px){.rat-resource-toolbar .search{order:-1;flex-basis:100%}.intake-toolbar{row-gap:12px}.intake-toolbar>label:not(.search){min-width:112px}.intake-toolbar>.check-dropdown,.intake-toolbar-tools{margin-left:auto}}
+
+/* RAT is one editing job; retain the field bindings without separate navigation. */
+.intake-detail[data-intake-layout="continuous"] [data-detail-panel]+[data-detail-panel]{margin-top:var(--intake-field-gap)}
+.intake-detail[data-intake-layout="continuous"] .intake-assignment+.intake-assignment{padding-top:0}
+.intake-detail[data-intake-layout="continuous"] .intake-assignment:last-child .form-field{margin-bottom:0}
+.intake-detail[data-intake-layout="continuous"] .luban-rich-surface{min-height:72px;max-height:none;overflow:visible;resize:none}
+.intake-detail[data-intake-layout="continuous"] .is-readonly .luban-rich-surface{min-height:0}
+.intake-detail[data-intake-layout="continuous"] textarea[name="notesText"]{min-height:72px;overflow:hidden;resize:none}
+.intake-detail[data-intake-layout="continuous"] .detail-heading h2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+
+/* Demand labels share the compact controls and remain local to intake. */
+.intake-toolbar .search{width:260px}
+.intake-demands{min-width:1140px}
+.intake-toolbar>label:not(.search),.intake-tag-filter{font-size:11px;line-height:20px;color:#77899e}
+.intake-tag-filter{display:grid;gap:5px;min-width:130px;align-self:end}
+.intake-tag-filter .check-dropdown-trigger{width:160px;max-width:190px;min-width:0}
+.intake-tag-field{min-width:0}
+.intake-tag-field .check-dropdown{width:100%;min-width:0}
+.intake-tag-field .check-dropdown-trigger{min-width:0}
+.check-dropdown-choices{max-height:180px;overflow:auto}
+.check-dropdown-choices label>span{white-space:normal;overflow-wrap:anywhere}
+.check-dropdown-create{display:flex;gap:6px;align-items:center;padding:8px 2px 2px;border-top:1px solid var(--line);background:#fff;position:sticky;bottom:-6px}
+.check-dropdown-create input{min-width:0;width:100%;border:1px solid var(--line);border-radius:4px;padding:6px 8px;font:inherit;color:inherit}
+.check-dropdown-create .btn{flex:none;white-space:nowrap}
+@media(max-width:600px){.intake-toolbar .search{width:100%}.intake-tag-filter{flex:1;min-width:140px}.intake-tag-filter .check-dropdown-trigger{width:100%;max-width:none}}

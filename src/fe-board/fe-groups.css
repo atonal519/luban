@@ -1,0 +1,26 @@
+/* Group presentation is independent of scheduling settings. */
+#fe-table .fe-group-row{--group-bg:#f0f3f7;--group-text:#4e627c;--group-accent:#8a9bb1;--group-line:#dfe5ed}
+#fe-table .fe-group-row[data-group-tone=blue]{--group-bg:#edf4ff;--group-text:#315f9f;--group-accent:#779bd0;--group-line:#dbe7f7}
+#fe-table .fe-group-row[data-group-tone=indigo]{--group-bg:#f0f0fc;--group-text:#5e5995;--group-accent:#9690c5;--group-line:#e1dff1}
+#fe-table .fe-group-row[data-group-tone=violet]{--group-bg:#f5effa;--group-text:#805a99;--group-accent:#b297c6;--group-line:#e9ddf1}
+#fe-table .fe-group-row[data-group-tone=cyan]{--group-bg:#eaf5f8;--group-text:#367a88;--group-accent:#79adb8;--group-line:#d5e9ef}
+#fe-table .fe-group-row[data-group-tone=teal]{--group-bg:#edf7f3;--group-text:#387d68;--group-accent:#7db29e;--group-line:#d8eae2}
+#fe-table .fe-group-row[data-group-tone=amber]{--group-bg:#fcf5e9;--group-text:#906d31;--group-accent:#c5a269;--group-line:#efe3cd}
+#fe-table .fe-group-row[data-group-tone=green]{--group-bg:#eef6ed;--group-text:#557b46;--group-accent:#98b488;--group-line:#e0eadb}
+#fe-table .fe-group-row th{padding:0;border-bottom:1px solid var(--group-line);background:var(--group-bg);box-shadow:inset 3px 0 var(--group-accent)}
+#fe-table .fe-group-row[data-group-tone=nested] th{background:#f8fafc;border-bottom:1px solid #e7edf4;box-shadow:none}
+#fe-table .fe-group-label{padding:0 10px!important;width:min(760px,calc(100vw - 300px));max-width:100%;min-height:34px;position:sticky;left:0}
+#fe-table .fe-group-toggle{position:relative;width:100%;padding:7px 112px 7px 0;display:flex;gap:9px;flex-wrap:wrap;min-height:34px}
+#fe-table .fe-group-toggle strong{order:0;font-size:12px;line-height:1.5;color:var(--group-text)}
+#fe-table .fe-group-field{order:1;font-size:10px;color:#7c8ba0}
+#fe-table .fe-group-count{order:2;font-size:10px;color:#7c8ba0}
+#fe-table .group-toggle-mark{position:absolute;right:0;top:50%;transform:translateY(-50%);width:17px;height:17px;font-size:13px}
+#fe-table .fe-group-label>.text-button{position:absolute;right:40px;font-size:11px}
+#fe-table .fe-group-row[data-group-tone=nested] .fe-group-toggle strong{font-weight:500;color:#526b8e}
+@media(max-width:550px){
+ #fe-table .fe-group-label{width:calc(100vw - 48px);min-height:34px}
+ #fe-table .fe-group-toggle{padding-right:96px;gap:6px}
+ #fe-table .fe-group-label>.text-button{right:30px}
+ #fe-table .fe-group-count{font-size:9px}
+ #fe-table .group-toggle-mark{right:0}
+}

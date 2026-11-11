@@ -1,0 +1,22 @@
+/* One reading scale for today's input, dated history and revision bodies. */
+.daily-editor textarea,.daily-history p,.daily-revisions p,.daily-editor .daily-other p{font-size:14px;line-height:1.8;color:#344b67;white-space:pre-wrap;overflow-wrap:anywhere}
+.daily-entry-heading{gap:8px 16px;flex-wrap:wrap}
+.daily-entry-heading h3{font-size:13px;font-weight:600;line-height:1.6;color:#374b66}
+.daily-entry-heading>span,.daily-entry-line .daily-save-feedback{font-size:12px;line-height:1.6;color:#64748b}
+.daily-history{font-size:14px;line-height:1.8;margin:22px 0 0;color:#344b67}
+.daily-history>summary{font-size:13px;font-weight:600;line-height:1.6;color:#405876;padding:0 0 12px}
+.daily-history>summary::marker{font-size:12px;color:#7c8fa7}
+.daily-history[open]>summary{border-bottom:1px solid var(--line)}
+.daily-history>div,.daily-history>.daily-record{padding:14px 0;border-top:0;border-bottom:1px solid var(--line)}
+.daily-history>div,.daily-history>.daily-record{padding-left:12px;padding-right:12px}
+.daily-history>div:last-child,.daily-history>.daily-record:last-child{border-bottom:0;padding-bottom:0}
+.daily-history>div>strong,.daily-history>.daily-record>strong,.daily-editor .daily-other strong{display:block;font-size:12px;font-weight:500;line-height:1.6;color:#64748b}
+.daily-history>div>p,.daily-history>.daily-record>p{margin:8px 0 0}
+.daily-editor .daily-other p{margin:12px 0 16px}
+.daily-editor .daily-other strong{margin-bottom:5px}
+.daily-editor .daily-other strong+br{display:none}
+.daily-revisions{font-size:12px;line-height:1.6;color:#64748b;margin-top:10px}
+.daily-revisions>summary{font-size:12px;font-weight:400;padding:4px 0;color:#64748b}
+.daily-revisions p{margin:8px 0 12px}
+.daily-revisions small,.daily-record>small{font-size:12px;line-height:1.6;color:#64748b}
+@media(max-width:550px){.daily-entry-heading{align-items:flex-start}.daily-history{margin-top:20px}.daily-history>div,.daily-history>.daily-record{padding-top:12px;padding-bottom:12px}}

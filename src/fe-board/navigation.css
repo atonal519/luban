@@ -1,0 +1,11 @@
+/* Application navigation owns grouping and Settings placement. */
+.sidebar>nav{overflow-y:auto;min-height:0;scrollbar-width:thin}
+.subnav-section+.subnav-section{margin-top:11px}
+.subnav-caption{margin:9px 11px 3px;font-size:10px;font-weight:500;color:#8998ac;line-height:1.5}
+.subnav-section .subnav-item{padding-top:7px;padding-bottom:7px}
+.subnav-utility{margin-top:12px;border-top:1px solid var(--line);padding-top:5px}
+.sidebar-bottom{flex-wrap:wrap;flex:none}
+.sidebar-settings{width:100%;margin:0 0 10px!important;min-height:34px;text-align:left}
+.sidebar-settings svg{width:16px;height:16px}
+.sidebar-settings.active{background:#e9effa;color:#3e68b1;font-weight:600}
+@media(max-width:550px){.book-mobile-nav{gap:3px}.book-mobile-nav button{padding-left:7px;padding-right:7px}}
